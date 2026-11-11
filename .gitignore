@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+dist/
+*.db
+*.db-shm
+*.db-wal
+data/
+.env
+.env.local
+.DS_Store
+Thumbs.db
+tsconfig.tsbuildinfo
+api/config.local.php
+.tmp-api-backup/
+
