@@ -6,7 +6,7 @@ RewriteEngine On
 
 # Block internal source, database, build, and config files from public HTTP access
 RewriteRule ^(src|tests|scripts|data|node_modules|\.next|\.git)(/|$) - [F,L]
-RewriteRule ^api/(config\.local\.php|config\.example\.php|schema_mysql\.sql|db\.php|fbr\.php|seed\.php|pos_service\.php)$ - [F,L]
+RewriteRule ^api/(data(/|$)|config\.local\.php|config\.example\.php|schema_mysql\.sql|schema_sqlite\.sql|db\.php|fbr\.php|seed\.php|pos_service\.php) - [F,L]
 RewriteRule ^(package\.json|package-lock\.json|tsconfig\.json|next\.config\.ts|postcss\.config\.mjs|\.gitignore|README\.md)$ - [F,L]
 
 # Route /api/* requests to PHP API router

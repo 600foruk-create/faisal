@@ -12,5 +12,6 @@ data/
 Thumbs.db
 tsconfig.tsbuildinfo
 api/config.local.php
+api/data/
 .tmp-api-backup/
 

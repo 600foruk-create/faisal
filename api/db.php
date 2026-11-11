@@ -52,12 +52,36 @@ function create_pdo_from_config(array $cfg): PDO
     ]);
 }
 
-function ensure_mysql_schema(PDO $pdo): void
+function create_sqlite_pdo(): PDO
 {
-    $schemaPath = __DIR__ . '/schema_mysql.sql';
-    $sql = file_get_contents($schemaPath);
+    $dataDir = __DIR__ . '/data';
+    if (!is_dir($dataDir)) {
+        @mkdir($dataDir, 0755, true);
+    }
+    $dbPath = (is_dir($dataDir) && is_writable($dataDir))
+        ? ($dataDir . '/pos.db')
+        : (rtrim(sys_get_temp_dir(), '/\\') . '/seastone_pos.db');
+
+    $pdo = new PDO('sqlite:' . $dbPath, null, null, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ]);
+    $pdo->exec('PRAGMA journal_mode = WAL;');
+    $pdo->exec('PRAGMA foreign_keys = ON;');
+    return $pdo;
+}
+
+function is_sqlite_pdo(PDO $pdo): bool
+{
+    return $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite';
+}
+
+function ensure_database_schema(PDO $pdo): void
+{
+    $schemaFile = is_sqlite_pdo($pdo) ? (__DIR__ . '/schema_sqlite.sql') : (__DIR__ . '/schema_mysql.sql');
+    $sql = file_get_contents($schemaFile);
     if ($sql === false) {
-        throw new RuntimeException('Missing schema_mysql.sql');
+        throw new RuntimeException('Missing schema SQL file');
     }
     $statements = array_filter(array_map('trim', explode(';', $sql)));
     foreach ($statements as $stmt) {
@@ -75,14 +99,26 @@ function get_pdo(): PDO
     }
 
     $cfg = get_db_config();
-    if ($cfg === null) {
-        throw new RuntimeException('DATABASE_NOT_CONFIGURED');
+    if ($cfg !== null) {
+        try {
+            $pdo = create_pdo_from_config($cfg);
+        } catch (Throwable $e) {
+            $pdo = null;
+        }
     }
 
-    $pdo = create_pdo_from_config($cfg);
-    $check = $pdo->query("SHOW TABLES LIKE 'branches'")->fetchColumn();
+    if ($pdo === null) {
+        $pdo = create_sqlite_pdo();
+    }
+
+    if (is_sqlite_pdo($pdo)) {
+        $check = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='branches'")->fetchColumn();
+    } else {
+        $check = $pdo->query("SHOW TABLES LIKE 'branches'")->fetchColumn();
+    }
+
     if (!$check) {
-        ensure_mysql_schema($pdo);
+        ensure_database_schema($pdo);
     }
     seed_initial_mysql_data($pdo);
     return $pdo;

@@ -38,84 +38,13 @@ $route = trim((string)($_GET['route'] ?? ''), '/');
 $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
 
 try {
+    $pdo = get_pdo();
+
     if ($route === 'setup') {
-        if ($method === 'GET') {
-            $cfg = get_db_config();
-            json_out([
-                'configured' => $cfg !== null,
-                'defaults' => [
-                    'host' => '127.0.0.1',
-                    'database' => 'u2456697138_faisal',
-                    'username' => 'u2456697138_faisal',
-                ],
-            ]);
-        }
-        if ($method === 'POST') {
-            if (get_db_config() !== null) {
-                json_out(['ok' => true, 'alreadyConfigured' => true]);
-            }
-            $body = read_json_body();
-            $host = trim((string)($body['host'] ?? '127.0.0.1')) ?: '127.0.0.1';
-            $database = trim((string)($body['database'] ?? ''));
-            $username = trim((string)($body['username'] ?? ''));
-            $password = (string)($body['password'] ?? '');
-
-            if ($database === '' || $username === '') {
-                json_out(['error' => 'Database name and username are required'], 400);
-            }
-
-            $cfg = [
-                'host' => $host,
-                'database' => $database,
-                'username' => $username,
-                'password' => $password,
-            ];
-
-            try {
-                $pdo = create_pdo_from_config($cfg);
-            } catch (PDOException $firstErr) {
-                $fallbackHost = $host === '127.0.0.1' ? 'localhost' : ($host === 'localhost' ? '127.0.0.1' : '');
-                if ($fallbackHost !== '') {
-                    $cfg['host'] = $fallbackHost;
-                    $pdo = create_pdo_from_config($cfg);
-                } else {
-                    throw $firstErr;
-                }
-            }
-            ensure_mysql_schema($pdo);
-            seed_initial_mysql_data($pdo);
-
-            $phpContent = "<?php\nreturn " . var_export($cfg, true) . ";\n";
-            $written = @file_put_contents(__DIR__ . '/config.local.php', $phpContent, LOCK_EX);
-            if ($written === false) {
-                json_out([
-                    'ok' => false,
-                    'error' => 'Connected to MySQL and installed tables, but api/config.local.php is not writable.',
-                    'manualConfig' => $phpContent,
-                ], 500);
-            }
-
-            json_out(['ok' => true]);
-        }
-        json_out(['error' => 'Method not allowed'], 405);
-    }
-
-    // All other routes require configured MySQL DB
-    try {
-        $pdo = get_pdo();
-    } catch (RuntimeException $e) {
-        if ($e->getMessage() === 'DATABASE_NOT_CONFIGURED') {
-            json_out([
-                'needsSetup' => true,
-                'defaults' => [
-                    'host' => '127.0.0.1',
-                    'database' => 'u2456697138_faisal',
-                    'username' => 'u2456697138_faisal',
-                ],
-                'error' => 'Database is not configured yet.',
-            ], 503);
-        }
-        throw $e;
+        json_out([
+            'configured' => true,
+            'driver' => $pdo->getAttribute(PDO::ATTR_DRIVER_NAME),
+        ]);
     }
 
     if ($route === 'context') {

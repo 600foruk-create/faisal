@@ -185,3 +185,4 @@ CREATE TABLE IF NOT EXISTS business_settings (
   setting_key VARCHAR(80) PRIMARY KEY,
   setting_value TEXT NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

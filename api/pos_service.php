@@ -142,10 +142,12 @@ function mysql_get_business_settings(PDO $pdo): array
 function mysql_update_business_settings(PDO $pdo, array $updates): array
 {
     $allowed = ['business_name', 'ntn', 'strn', 'default_tax_rate', 'receipt_footer', 'currency_symbol'];
-    $stmt = $pdo->prepare(
-        'INSERT INTO business_settings (setting_key, setting_value) VALUES (?, ?)
-         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)'
-    );
+    $sql = is_sqlite_pdo($pdo)
+        ? 'INSERT INTO business_settings (setting_key, setting_value) VALUES (?, ?)
+           ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value'
+        : 'INSERT INTO business_settings (setting_key, setting_value) VALUES (?, ?)
+           ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)';
+    $stmt = $pdo->prepare($sql);
     $pdo->beginTransaction();
     try {
         foreach ($allowed as $k) {
@@ -305,18 +307,24 @@ function mysql_save_product(PDO $pdo, array $input): array
             $productId = (int)$pdo->lastInsertId();
 
             $branchIds = $pdo->query('SELECT id FROM branches')->fetchAll(PDO::FETCH_COLUMN);
-            $invStmt = $pdo->prepare('INSERT IGNORE INTO branch_inventory (branch_id, product_id, stock_qty) VALUES (?, ?, 0)');
+            $invIgnoreSql = is_sqlite_pdo($pdo)
+                ? 'INSERT OR IGNORE INTO branch_inventory (branch_id, product_id, stock_qty) VALUES (?, ?, 0)'
+                : 'INSERT IGNORE INTO branch_inventory (branch_id, product_id, stock_qty) VALUES (?, ?, 0)';
+            $invStmt = $pdo->prepare($invIgnoreSql);
             foreach ($branchIds as $bid) {
                 $invStmt->execute([(int)$bid, $productId]);
             }
         }
 
         if (!empty($input['branch_id']) && array_key_exists('stock_qty', $input)) {
-            $pdo->prepare(
-                'INSERT INTO branch_inventory (branch_id, product_id, stock_qty)
-                 VALUES (?, ?, ?)
-                 ON DUPLICATE KEY UPDATE stock_qty = VALUES(stock_qty)'
-            )->execute([(int)$input['branch_id'], $productId, (float)$input['stock_qty']]);
+            $invSetSql = is_sqlite_pdo($pdo)
+                ? 'INSERT INTO branch_inventory (branch_id, product_id, stock_qty)
+                   VALUES (?, ?, ?)
+                   ON CONFLICT(branch_id, product_id) DO UPDATE SET stock_qty = excluded.stock_qty'
+                : 'INSERT INTO branch_inventory (branch_id, product_id, stock_qty)
+                   VALUES (?, ?, ?)
+                   ON DUPLICATE KEY UPDATE stock_qty = VALUES(stock_qty)';
+            $pdo->prepare($invSetSql)->execute([(int)$input['branch_id'], $productId, (float)$input['stock_qty']]);
         }
 
         $pdo->commit();
@@ -666,13 +674,15 @@ function mysql_create_sale(PDO $pdo, array $input): array
     $invoiceDate = date('Y-m-d');
     $createdAt = date('Y-m-d H:i:s');
 
+    $isSqlite = is_sqlite_pdo($pdo);
+    $forUpdate = $isSqlite ? '' : ' FOR UPDATE';
     $pdo->beginTransaction();
     try {
         if (!empty($input['terminalId'])) {
-            $tStmt = $pdo->prepare('SELECT * FROM pos_terminals WHERE id = ? AND branch_id = ? AND is_active = 1 FOR UPDATE');
+            $tStmt = $pdo->prepare("SELECT * FROM pos_terminals WHERE id = ? AND branch_id = ? AND is_active = 1{$forUpdate}");
             $tStmt->execute([(int)$input['terminalId'], $branchId]);
         } else {
-            $tStmt = $pdo->prepare('SELECT * FROM pos_terminals WHERE branch_id = ? AND is_active = 1 ORDER BY id ASC LIMIT 1 FOR UPDATE');
+            $tStmt = $pdo->prepare("SELECT * FROM pos_terminals WHERE branch_id = ? AND is_active = 1 ORDER BY id ASC LIMIT 1{$forUpdate}");
             $tStmt->execute([$branchId]);
         }
         $terminal = $tStmt->fetch();
@@ -830,11 +840,14 @@ function mysql_create_sale(PDO $pdo, array $input): array
                tax_rate, tax_charged, line_total
              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
-        $invUpdateStmt = $pdo->prepare(
-            'INSERT INTO branch_inventory (branch_id, product_id, stock_qty)
-             VALUES (?, ?, ?)
-             ON DUPLICATE KEY UPDATE stock_qty = stock_qty + VALUES(stock_qty)'
-        );
+        $invUpdateSql = $isSqlite
+            ? 'INSERT INTO branch_inventory (branch_id, product_id, stock_qty)
+               VALUES (?, ?, ?)
+               ON CONFLICT(branch_id, product_id) DO UPDATE SET stock_qty = branch_inventory.stock_qty + excluded.stock_qty'
+            : 'INSERT INTO branch_inventory (branch_id, product_id, stock_qty)
+               VALUES (?, ?, ?)
+               ON DUPLICATE KEY UPDATE stock_qty = stock_qty + VALUES(stock_qty)';
+        $invUpdateStmt = $pdo->prepare($invUpdateSql);
 
         foreach ($computedItems as $ci) {
             $itemStmt->execute([
@@ -882,9 +895,11 @@ function mysql_create_sales_return(PDO $pdo, array $input): array
     $invoiceDate = date('Y-m-d');
     $createdAt = date('Y-m-d H:i:s');
 
+    $isSqlite = is_sqlite_pdo($pdo);
+    $forUpdate = $isSqlite ? '' : ' FOR UPDATE';
     $pdo->beginTransaction();
     try {
-        $tStmt = $pdo->prepare('SELECT * FROM pos_terminals WHERE id = ? FOR UPDATE');
+        $tStmt = $pdo->prepare("SELECT * FROM pos_terminals WHERE id = ?{$forUpdate}");
         $tStmt->execute([$orig['terminal_id']]);
         $terminal = $tStmt->fetch();
         if (!$terminal) {
@@ -997,11 +1012,14 @@ function mysql_create_sales_return(PDO $pdo, array $input): array
                tax_rate, tax_charged, line_total
              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
-        $invRestoreStmt = $pdo->prepare(
-            'INSERT INTO branch_inventory (branch_id, product_id, stock_qty)
-             VALUES (?, ?, ?)
-             ON DUPLICATE KEY UPDATE stock_qty = stock_qty + VALUES(stock_qty)'
-        );
+        $invRestoreSql = $isSqlite
+            ? 'INSERT INTO branch_inventory (branch_id, product_id, stock_qty)
+               VALUES (?, ?, ?)
+               ON CONFLICT(branch_id, product_id) DO UPDATE SET stock_qty = branch_inventory.stock_qty + excluded.stock_qty'
+            : 'INSERT INTO branch_inventory (branch_id, product_id, stock_qty)
+               VALUES (?, ?, ?)
+               ON DUPLICATE KEY UPDATE stock_qty = stock_qty + VALUES(stock_qty)';
+        $invRestoreStmt = $pdo->prepare($invRestoreSql);
 
         foreach ($lineRecords as $line) {
             $itemStmt->execute([
@@ -1387,7 +1405,10 @@ function mysql_save_branch_and_terminal(PDO $pdo, array $input): array
             )->execute([$branchId, "Walk-in (Cash) Customer ( {$name} )", $now]);
 
             $prodIds = $pdo->query('SELECT id FROM products')->fetchAll(PDO::FETCH_COLUMN);
-            $invStmt = $pdo->prepare('INSERT IGNORE INTO branch_inventory (branch_id, product_id, stock_qty) VALUES (?, ?, 0)');
+            $invIgnoreSql = is_sqlite_pdo($pdo)
+                ? 'INSERT OR IGNORE INTO branch_inventory (branch_id, product_id, stock_qty) VALUES (?, ?, 0)'
+                : 'INSERT IGNORE INTO branch_inventory (branch_id, product_id, stock_qty) VALUES (?, ?, 0)';
+            $invStmt = $pdo->prepare($invIgnoreSql);
             foreach ($prodIds as $pid) {
                 $invStmt->execute([$branchId, (int)$pid]);
             }

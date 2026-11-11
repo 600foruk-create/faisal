@@ -243,3 +243,4 @@ function dispatch_to_fbr(string $mode, string $token, array $payload, bool $simu
         'responsePayload' => (string)$raw,
     ];
 }
+

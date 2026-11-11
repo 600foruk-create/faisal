@@ -36,11 +36,15 @@ function seed_initial_mysql_data(PDO $pdo): void
     $yesterday = date('Y-m-d', strtotime('-1 day'));
     $nowTs = date('Y-m-d H:i:s');
 
+    $isSqlite = is_sqlite_pdo($pdo);
     $pdo->beginTransaction();
     try {
         $stmtSetting = $pdo->prepare(
-            'INSERT INTO business_settings (setting_key, setting_value) VALUES (?, ?)
-             ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)'
+            $isSqlite
+                ? 'INSERT INTO business_settings (setting_key, setting_value) VALUES (?, ?)
+                   ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value'
+                : 'INSERT INTO business_settings (setting_key, setting_value) VALUES (?, ?)
+                   ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)'
         );
         $settings = [
             ['business_name', 'SEASTONE RETAIL OUTLET'],
@@ -222,3 +226,4 @@ function seed_initial_mysql_data(PDO $pdo): void
         throw $e;
     }
 }
+
