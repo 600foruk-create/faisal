@@ -31,6 +31,12 @@ describe('Multi-Branch POS & FBR Integration Service', () => {
     assert.equal(summary.total_sale, 459895.52);
     assert.equal(summary.cash_received, 459895.52);
     assert.equal(summary.fbr_pending, 0);
+    assert.equal(summary.fbr_submitted, 6);
+    assert.ok(summary.avg_ticket > 0);
+    assert.ok(summary.tax_collected > 0);
+    assert.equal(summary.branch_breakdown.length, 2);
+    assert.ok(summary.sales_trend.length >= 1);
+    assert.equal(summary.low_stock_items.length, 5);
     assert.equal(summary.recent_invoices.length, 6);
     assert.equal(summary.recent_invoices[0].invoice_no, 'SWT-A-POS-63');
   });

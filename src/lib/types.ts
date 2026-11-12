@@ -122,12 +122,43 @@ export interface InvoiceDetail extends InvoiceRecord {
   returned_quantities?: Record<number, number>;
 }
 
+export interface DashboardBranchBreakdown {
+  branch_id: number;
+  branch_name: string;
+  display_name: string;
+  total_sale: number;
+  invoice_count: number;
+  fbr_pending: number;
+}
+
+export interface DashboardTrendPoint {
+  label: string;
+  sale_amount: number;
+  invoice_count: number;
+}
+
+export interface LowStockAlertItem {
+  product_id: number;
+  sku: string;
+  name: string;
+  unit: string;
+  stock_qty: number;
+}
+
 export interface DashboardSummary {
   total_sale: number;
   total_invoices: number;
   cash_received: number;
+  card_received: number;
+  bank_received: number;
+  tax_collected: number;
+  avg_ticket: number;
   fbr_pending: number;
+  fbr_submitted: number;
   total_returns: number;
+  branch_breakdown: DashboardBranchBreakdown[];
+  sales_trend: DashboardTrendPoint[];
+  low_stock_items: LowStockAlertItem[];
   recent_invoices: InvoiceRecord[];
 }
 

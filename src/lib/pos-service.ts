@@ -319,6 +319,10 @@ export function getDashboardSummary(
          COALESCE(SUM(CASE WHEN i.invoice_type = 'SALE' THEN i.total_amount ELSE -i.total_amount END), 0) AS total_sale,
          COUNT(CASE WHEN i.invoice_type = 'SALE' THEN 1 END) AS total_invoices,
          COALESCE(SUM(CASE WHEN i.invoice_type = 'SALE' THEN i.cash_amount ELSE -i.cash_amount END), 0) AS cash_received,
+         COALESCE(SUM(CASE WHEN i.invoice_type = 'SALE' THEN i.card_amount ELSE -i.card_amount END), 0) AS card_received,
+         COALESCE(SUM(CASE WHEN i.invoice_type = 'SALE' THEN i.bank_amount ELSE -i.bank_amount END), 0) AS bank_received,
+         COALESCE(SUM(CASE WHEN i.invoice_type = 'SALE' THEN i.tax_total ELSE -i.tax_total END), 0) AS tax_collected,
+         COUNT(CASE WHEN i.fbr_status = 'SUBMITTED' THEN 1 END) AS fbr_submitted,
          COALESCE(SUM(CASE WHEN i.invoice_type = 'RETURN' THEN i.total_amount ELSE 0 END), 0) AS total_returns
        FROM invoices i
        WHERE ${whereClause}`
@@ -327,6 +331,10 @@ export function getDashboardSummary(
       total_sale: number;
       total_invoices: number;
       cash_received: number;
+      card_received: number;
+      bank_received: number;
+      tax_collected: number;
+      fbr_submitted: number;
       total_returns: number;
     };
 
@@ -336,6 +344,96 @@ export function getDashboardSummary(
   const pendingRow = (
     branchId ? db.prepare(pendingSql).get(branchId) : db.prepare(pendingSql).get()
   ) as { cnt: number };
+
+  const branchBreakdown = db
+    .prepare(
+      `SELECT
+         b.id AS branch_id,
+         b.name AS branch_name,
+         b.display_name,
+         COALESCE(SUM(CASE WHEN i.invoice_date >= ? AND i.invoice_date <= ?
+           THEN (CASE WHEN i.invoice_type = 'SALE' THEN i.total_amount ELSE -i.total_amount END)
+           ELSE 0 END), 0) AS total_sale,
+         COUNT(CASE WHEN i.invoice_date >= ? AND i.invoice_date <= ? AND i.invoice_type = 'SALE' THEN 1 END) AS invoice_count,
+         COUNT(CASE WHEN i.fbr_status IN ('PENDING', 'FAILED') THEN 1 END) AS fbr_pending
+       FROM branches b
+       LEFT JOIN invoices i ON i.branch_id = b.id
+       WHERE b.is_active = 1 ${branchId ? 'AND b.id = ?' : ''}
+       GROUP BY b.id, b.name, b.display_name
+       ORDER BY total_sale DESC, b.id ASC`
+    )
+    .all(...(branchId ? [fromDate, toDate, fromDate, toDate, branchId] : [fromDate, toDate, fromDate, toDate])) as Array<{
+      branch_id: number;
+      branch_name: string;
+      display_name: string;
+      total_sale: number;
+      invoice_count: number;
+      fbr_pending: number;
+    }>;
+
+  const trendRows = db
+    .prepare(
+      `SELECT i.invoice_date, i.created_at, i.invoice_type, i.total_amount
+       FROM invoices i
+       WHERE ${whereClause}
+       ORDER BY i.created_at ASC`
+    )
+    .all(...params) as Array<{
+      invoice_date: string;
+      created_at: string;
+      invoice_type: string;
+      total_amount: number;
+    }>;
+
+  const singleDay = fromDate === toDate;
+  const trendMap = new Map<string, { sale_amount: number; invoice_count: number }>();
+  for (const row of trendRows) {
+    const label = singleDay
+      ? `${row.created_at.slice(11, 13) || '00'}:00`
+      : row.invoice_date;
+    const prev = trendMap.get(label) ?? { sale_amount: 0, invoice_count: 0 };
+    const delta = row.invoice_type === 'SALE' ? row.total_amount : -row.total_amount;
+    trendMap.set(label, {
+      sale_amount: roundMoney(prev.sale_amount + delta),
+      invoice_count: prev.invoice_count + (row.invoice_type === 'SALE' ? 1 : 0),
+    });
+  }
+  const salesTrend = Array.from(trendMap.entries()).map(([label, v]) => ({
+    label,
+    sale_amount: v.sale_amount,
+    invoice_count: v.invoice_count,
+  }));
+
+  const lowStockItems = (
+    branchId
+      ? db
+          .prepare(
+            `SELECT p.id AS product_id, p.sku, p.name, p.unit, COALESCE(bi.stock_qty, 0) AS stock_qty
+             FROM products p
+             LEFT JOIN branch_inventory bi ON bi.product_id = p.id AND bi.branch_id = ?
+             WHERE p.is_active = 1
+             ORDER BY stock_qty ASC, p.name ASC
+             LIMIT 5`
+          )
+          .all(branchId)
+      : db
+          .prepare(
+            `SELECT p.id AS product_id, p.sku, p.name, p.unit, COALESCE(SUM(bi.stock_qty), 0) AS stock_qty
+             FROM products p
+             LEFT JOIN branch_inventory bi ON bi.product_id = p.id
+             WHERE p.is_active = 1
+             GROUP BY p.id, p.sku, p.name, p.unit
+             ORDER BY stock_qty ASC, p.name ASC
+             LIMIT 5`
+          )
+          .all()
+  ) as Array<{
+    product_id: number;
+    sku: string;
+    name: string;
+    unit: string;
+    stock_qty: number;
+  }>;
 
   const recentInvoices = db
     .prepare(
@@ -350,12 +448,26 @@ export function getDashboardSummary(
     )
     .all(...params, limit) as unknown as InvoiceRecord[];
 
+  const totalSale = roundMoney(agg.total_sale);
+  const avgTicket = agg.total_invoices > 0 ? roundMoney(totalSale / agg.total_invoices) : 0;
+
   return {
-    total_sale: roundMoney(agg.total_sale),
+    total_sale: totalSale,
     total_invoices: agg.total_invoices,
     cash_received: roundMoney(agg.cash_received),
+    card_received: roundMoney(agg.card_received),
+    bank_received: roundMoney(agg.bank_received),
+    tax_collected: roundMoney(agg.tax_collected),
+    avg_ticket: avgTicket,
     fbr_pending: pendingRow.cnt,
+    fbr_submitted: agg.fbr_submitted,
     total_returns: roundMoney(agg.total_returns),
+    branch_breakdown: branchBreakdown.map((b) => ({
+      ...b,
+      total_sale: roundMoney(b.total_sale),
+    })),
+    sales_trend: salesTrend,
+    low_stock_items: lowStockItems,
     recent_invoices: recentInvoices,
   };
 }

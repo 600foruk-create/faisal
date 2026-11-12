@@ -399,6 +399,10 @@ function mysql_get_dashboard_summary(PDO $pdo, ?int $branchId, string $fromDate,
            COALESCE(SUM(CASE WHEN i.invoice_type = 'SALE' THEN i.total_amount ELSE -i.total_amount END), 0) AS total_sale,
            COUNT(CASE WHEN i.invoice_type = 'SALE' THEN 1 END) AS total_invoices,
            COALESCE(SUM(CASE WHEN i.invoice_type = 'SALE' THEN i.cash_amount ELSE -i.cash_amount END), 0) AS cash_received,
+           COALESCE(SUM(CASE WHEN i.invoice_type = 'SALE' THEN i.card_amount ELSE -i.card_amount END), 0) AS card_received,
+           COALESCE(SUM(CASE WHEN i.invoice_type = 'SALE' THEN i.bank_amount ELSE -i.bank_amount END), 0) AS bank_received,
+           COALESCE(SUM(CASE WHEN i.invoice_type = 'SALE' THEN i.tax_total ELSE -i.tax_total END), 0) AS tax_collected,
+           COUNT(CASE WHEN i.fbr_status = 'SUBMITTED' THEN 1 END) AS fbr_submitted,
            COALESCE(SUM(CASE WHEN i.invoice_type = 'RETURN' THEN i.total_amount ELSE 0 END), 0) AS total_returns
          FROM invoices i
          WHERE {$whereSql}"
@@ -414,6 +418,89 @@ function mysql_get_dashboard_summary(PDO $pdo, ?int $branchId, string $fromDate,
     }
     $pendingCount = (int)$pendStmt->fetchColumn();
 
+    $bFilter = $branchId ? 'AND b.id = ?' : '';
+    $bParams = $branchId ? [$fromDate, $toDate, $fromDate, $toDate, $branchId] : [$fromDate, $toDate, $fromDate, $toDate];
+    $bStmt = $pdo->prepare(
+        "SELECT
+           b.id AS branch_id,
+           b.name AS branch_name,
+           b.display_name,
+           COALESCE(SUM(CASE WHEN i.invoice_date >= ? AND i.invoice_date <= ?
+             THEN (CASE WHEN i.invoice_type = 'SALE' THEN i.total_amount ELSE -i.total_amount END)
+             ELSE 0 END), 0) AS total_sale,
+           COUNT(CASE WHEN i.invoice_date >= ? AND i.invoice_date <= ? AND i.invoice_type = 'SALE' THEN 1 END) AS invoice_count,
+           COUNT(CASE WHEN i.fbr_status IN ('PENDING', 'FAILED') THEN 1 END) AS fbr_pending
+         FROM branches b
+         LEFT JOIN invoices i ON i.branch_id = b.id
+         WHERE b.is_active = 1 {$bFilter}
+         GROUP BY b.id, b.name, b.display_name
+         ORDER BY total_sale DESC, b.id ASC"
+    );
+    $bStmt->execute($bParams);
+    $branchBreakdown = array_map(function (array $r): array {
+        return [
+            'branch_id' => (int)$r['branch_id'],
+            'branch_name' => (string)$r['branch_name'],
+            'display_name' => (string)$r['display_name'],
+            'total_sale' => round_money((float)$r['total_sale']),
+            'invoice_count' => (int)$r['invoice_count'],
+            'fbr_pending' => (int)$r['fbr_pending'],
+        ];
+    }, $bStmt->fetchAll());
+
+    $trendStmt = $pdo->prepare(
+        "SELECT i.invoice_date, i.created_at, i.invoice_type, i.total_amount
+         FROM invoices i
+         WHERE {$whereSql}
+         ORDER BY i.created_at ASC"
+    );
+    $trendStmt->execute($params);
+    $singleDay = ($fromDate === $toDate);
+    $trendMap = [];
+    foreach ($trendStmt->fetchAll() as $row) {
+        $label = $singleDay ? (substr((string)$row['created_at'], 11, 2) ?: '00') . ':00' : (string)$row['invoice_date'];
+        if (!isset($trendMap[$label])) {
+            $trendMap[$label] = ['label' => $label, 'sale_amount' => 0.0, 'invoice_count' => 0];
+        }
+        $delta = $row['invoice_type'] === 'SALE' ? (float)$row['total_amount'] : -(float)$row['total_amount'];
+        $trendMap[$label]['sale_amount'] = round_money($trendMap[$label]['sale_amount'] + $delta);
+        if ($row['invoice_type'] === 'SALE') {
+            $trendMap[$label]['invoice_count'] += 1;
+        }
+    }
+    $salesTrend = array_values($trendMap);
+
+    if ($branchId) {
+        $lowStmt = $pdo->prepare(
+            'SELECT p.id AS product_id, p.sku, p.name, p.unit, COALESCE(bi.stock_qty, 0) AS stock_qty
+             FROM products p
+             LEFT JOIN branch_inventory bi ON bi.product_id = p.id AND bi.branch_id = ?
+             WHERE p.is_active = 1
+             ORDER BY stock_qty ASC, p.name ASC
+             LIMIT 5'
+        );
+        $lowStmt->execute([$branchId]);
+    } else {
+        $lowStmt = $pdo->query(
+            'SELECT p.id AS product_id, p.sku, p.name, p.unit, COALESCE(SUM(bi.stock_qty), 0) AS stock_qty
+             FROM products p
+             LEFT JOIN branch_inventory bi ON bi.product_id = p.id
+             WHERE p.is_active = 1
+             GROUP BY p.id, p.sku, p.name, p.unit
+             ORDER BY stock_qty ASC, p.name ASC
+             LIMIT 5'
+        );
+    }
+    $lowStockItems = array_map(function (array $r): array {
+        return [
+            'product_id' => (int)$r['product_id'],
+            'sku' => (string)$r['sku'],
+            'name' => (string)$r['name'],
+            'unit' => (string)$r['unit'],
+            'stock_qty' => (float)$r['stock_qty'],
+        ];
+    }, $lowStmt->fetchAll());
+
     $safeLimit = max(1, (int)$limit);
     $recStmt = $pdo->prepare(
         "SELECT i.*, b.name AS branch_name, b.display_name AS branch_display_name,
@@ -428,12 +515,24 @@ function mysql_get_dashboard_summary(PDO $pdo, ?int $branchId, string $fromDate,
     $recStmt->execute($params);
     $recent = array_map('cast_invoice', $recStmt->fetchAll());
 
+    $totalSale = round_money((float)$agg['total_sale']);
+    $totalInv = (int)$agg['total_invoices'];
+    $avgTicket = $totalInv > 0 ? round_money($totalSale / $totalInv) : 0.0;
+
     return [
-        'total_sale' => round_money((float)$agg['total_sale']),
-        'total_invoices' => (int)$agg['total_invoices'],
+        'total_sale' => $totalSale,
+        'total_invoices' => $totalInv,
         'cash_received' => round_money((float)$agg['cash_received']),
+        'card_received' => round_money((float)$agg['card_received']),
+        'bank_received' => round_money((float)$agg['bank_received']),
+        'tax_collected' => round_money((float)$agg['tax_collected']),
+        'avg_ticket' => $avgTicket,
         'fbr_pending' => $pendingCount,
+        'fbr_submitted' => (int)$agg['fbr_submitted'],
         'total_returns' => round_money((float)$agg['total_returns']),
+        'branch_breakdown' => $branchBreakdown,
+        'sales_trend' => $salesTrend,
+        'low_stock_items' => $lowStockItems,
         'recent_invoices' => $recent,
     ];
 }

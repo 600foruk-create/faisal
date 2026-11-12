@@ -17,7 +17,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="min-h-screen antialiased">
         <PosProvider>
-          <div className="mx-auto max-w-[1400px] space-y-4 px-3 py-4 sm:px-5">
+          <div className="mx-auto max-w-[1440px] space-y-5 px-3 py-4 sm:px-6">
             <PosHeader />
             <main>{children}</main>
           </div>
@@ -26,4 +26,3 @@ export default function RootLayout({
     </html>
   );
 }
-
