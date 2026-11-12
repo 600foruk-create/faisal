@@ -130,10 +130,14 @@ function mysql_get_business_settings(PDO $pdo): array
         $map[$r['setting_key']] = $r['setting_value'];
     }
     return [
-        'business_name' => $map['business_name'] ?? 'SEASTONE RETAIL OUTLET',
+        'software_brand' => $map['software_brand'] ?? 'Softifyx',
+        'business_name' => $map['business_name'] ?? 'M/S SEASTONE PVC PIPE INDUSTRY',
+        'logo_data_url' => $map['logo_data_url'] ?? '',
+        'footer_text' => $map['footer_text'] ?? 'Designed & Developed by Softifyx Technologies',
         'ntn' => $map['ntn'] ?? '',
         'strn' => $map['strn'] ?? '',
         'default_tax_rate' => (float)($map['default_tax_rate'] ?? 18),
+        'default_opening_cash' => (float)($map['default_opening_cash'] ?? 5000),
         'receipt_footer' => $map['receipt_footer'] ?? '',
         'currency_symbol' => $map['currency_symbol'] ?? 'Rs.',
     ];
@@ -141,7 +145,18 @@ function mysql_get_business_settings(PDO $pdo): array
 
 function mysql_update_business_settings(PDO $pdo, array $updates): array
 {
-    $allowed = ['business_name', 'ntn', 'strn', 'default_tax_rate', 'receipt_footer', 'currency_symbol'];
+    $allowed = [
+        'software_brand',
+        'business_name',
+        'logo_data_url',
+        'footer_text',
+        'ntn',
+        'strn',
+        'default_tax_rate',
+        'default_opening_cash',
+        'receipt_footer',
+        'currency_symbol',
+    ];
     $sql = is_sqlite_pdo($pdo)
         ? 'INSERT INTO business_settings (setting_key, setting_value) VALUES (?, ?)
            ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value'
@@ -197,6 +212,52 @@ function mysql_create_user(PDO $pdo, array $input): array
         if ($u['id'] === $newId) return $u;
     }
     throw new RuntimeException('Failed to load created user');
+}
+
+function mysql_update_user(PDO $pdo, array $input): array
+{
+    $id = (int)($input['id'] ?? 0);
+    if ($id <= 0) {
+        throw new RuntimeException('Valid user ID is required');
+    }
+    $fullName = trim((string)($input['full_name'] ?? ''));
+    $role = (string)($input['role'] ?? 'CASHIER');
+    $branchId = !empty($input['branch_id']) ? (int)$input['branch_id'] : null;
+    $isActive = !empty($input['is_active']) ? 1 : 0;
+    $password = trim((string)($input['password'] ?? ''));
+
+    if ($password !== '') {
+        $hash = password_hash($password, PASSWORD_BCRYPT);
+        $pdo->prepare(
+            'UPDATE users SET full_name = ?, role = ?, branch_id = ?, is_active = ?, password_hash = ? WHERE id = ?'
+        )->execute([$fullName, $role, $branchId, $isActive, $hash, $id]);
+    } else {
+        $pdo->prepare(
+            'UPDATE users SET full_name = ?, role = ?, branch_id = ?, is_active = ? WHERE id = ?'
+        )->execute([$fullName, $role, $branchId, $isActive, $id]);
+    }
+
+    foreach (mysql_get_users($pdo) as $u) {
+        if ($u['id'] === $id) return $u;
+    }
+    throw new RuntimeException('User not found');
+}
+
+function mysql_export_system_backup(PDO $pdo): array
+{
+    $bt = mysql_get_branches_with_terminals($pdo);
+    $reg = mysql_get_sales_register($pdo, ['limit' => 1000]);
+    return [
+        'exported_at' => date('Y-m-d H:i:s'),
+        'settings' => mysql_get_business_settings($pdo),
+        'branches' => $bt['branches'],
+        'terminals' => $bt['terminals'],
+        'users' => mysql_get_users($pdo),
+        'products' => mysql_get_products($pdo, ['includeInactive' => true]),
+        'customers' => mysql_get_customers($pdo),
+        'invoices' => $reg['invoices'],
+        'day_closings' => mysql_list_day_closings($pdo),
+    ];
 }
 
 function mysql_authenticate_user(PDO $pdo, string $username, string $password): ?array
@@ -519,6 +580,31 @@ function mysql_get_dashboard_summary(PDO $pdo, ?int $branchId, string $fromDate,
     $totalInv = (int)$agg['total_invoices'];
     $avgTicket = $totalInv > 0 ? round_money($totalSale / $totalInv) : 0.0;
 
+    $settings = mysql_get_business_settings($pdo);
+    $openingCash = 0.0;
+    $prevStmt = $pdo->prepare(
+        'SELECT counted_cash FROM day_closings WHERE branch_id = ? AND closing_date < ? ORDER BY closing_date DESC LIMIT 1'
+    );
+    if ($branchId) {
+        $prevStmt->execute([$branchId, $fromDate]);
+        $prevRow = $prevStmt->fetch();
+        $openingCash = $prevRow ? round_money((float)$prevRow['counted_cash']) : round_money((float)$settings['default_opening_cash']);
+    } else {
+        foreach ($branchBreakdown as $br) {
+            $prevStmt->execute([(int)$br['branch_id'], $fromDate]);
+            $prevRow = $prevStmt->fetch();
+            $openingCash = round_money($openingCash + ($prevRow ? (float)$prevRow['counted_cash'] : (float)$settings['default_opening_cash']));
+        }
+    }
+
+    if ($branchId) {
+        $hStmt = $pdo->prepare('SELECT COUNT(*) FROM held_carts WHERE branch_id = ?');
+        $hStmt->execute([$branchId]);
+    } else {
+        $hStmt = $pdo->query('SELECT COUNT(*) FROM held_carts');
+    }
+    $heldCount = (int)$hStmt->fetchColumn();
+
     return [
         'total_sale' => $totalSale,
         'total_invoices' => $totalInv,
@@ -530,6 +616,8 @@ function mysql_get_dashboard_summary(PDO $pdo, ?int $branchId, string $fromDate,
         'fbr_pending' => $pendingCount,
         'fbr_submitted' => (int)$agg['fbr_submitted'],
         'total_returns' => round_money((float)$agg['total_returns']),
+        'opening_cash' => $openingCash,
+        'held_carts_count' => $heldCount,
         'branch_breakdown' => $branchBreakdown,
         'sales_trend' => $salesTrend,
         'low_stock_items' => $lowStockItems,

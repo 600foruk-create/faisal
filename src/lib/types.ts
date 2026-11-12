@@ -156,6 +156,8 @@ export interface DashboardSummary {
   fbr_pending: number;
   fbr_submitted: number;
   total_returns: number;
+  opening_cash: number;
+  held_carts_count: number;
   branch_breakdown: DashboardBranchBreakdown[];
   sales_trend: DashboardTrendPoint[];
   low_stock_items: LowStockAlertItem[];
@@ -163,10 +165,14 @@ export interface DashboardSummary {
 }
 
 export interface BusinessSettings {
+  software_brand: string;
   business_name: string;
+  logo_data_url: string;
+  footer_text: string;
   ntn: string;
   strn: string;
   default_tax_rate: number;
+  default_opening_cash: number;
   receipt_footer: string;
   currency_symbol: string;
 }

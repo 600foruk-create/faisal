@@ -6,15 +6,20 @@ import {
   authenticateUser,
   createSale,
   createSalesReturn,
+  exportSystemBackup,
   getBranchesWithTerminals,
+  getBusinessSettings,
   getDashboardSummary,
   getDayClosingPreview,
   getInvoiceDetail,
   getProducts,
+  getUsers,
   holdCart,
   listHeldCarts,
   submitDayClosing,
   syncPendingFbrInvoices,
+  updateBusinessSettings,
+  updateUser,
 } from '../src/lib/pos-service.ts';
 
 describe('Multi-Branch POS & FBR Integration Service', () => {
@@ -206,6 +211,45 @@ describe('Multi-Branch POS & FBR Integration Service', () => {
 
     const bad = authenticateUser(db, 'admin', 'wrongpass');
     assert.equal(bad, null);
+  });
+
+  it('updates branding settings, user roles/passwords, and exports backup without hashes', () => {
+    const db = createInMemoryDb(true);
+    const updatedSettings = updateBusinessSettings(db, {
+      software_brand: 'Softifyx Pro',
+      business_name: 'M/S SEASTONE PVC PIPE INDUSTRY',
+      logo_data_url: 'data:image/png;base64,AAAA',
+      footer_text: 'Powered by Softifyx',
+      default_opening_cash: 7500,
+    });
+    assert.equal(updatedSettings.software_brand, 'Softifyx Pro');
+    assert.equal(updatedSettings.logo_data_url, 'data:image/png;base64,AAAA');
+    assert.equal(getBusinessSettings(db).default_opening_cash, 7500);
+
+    const users = getUsers(db);
+    const cashier = users.find((u) => u.username === 'cashier.timergara')!;
+    const promoted = updateUser(db, {
+      id: cashier.id,
+      full_name: 'Bilal Khan (Manager)',
+      role: 'MANAGER',
+      branch_id: cashier.branch_id,
+      is_active: 1,
+      password: 'newpass99',
+    });
+    assert.equal(promoted.role, 'MANAGER');
+    assert.ok(authenticateUser(db, 'cashier.timergara', 'newpass99'));
+
+    const today = getLocalIsoDate();
+    const dash = getDashboardSummary(db, { branchId: 1, fromDate: today, toDate: today });
+    assert.equal(dash.opening_cash, 7500);
+    assert.equal(dash.held_carts_count, 0);
+
+    const backup = exportSystemBackup(db);
+    assert.equal(backup.settings.software_brand, 'Softifyx Pro');
+    assert.equal(backup.branches.length, 2);
+    for (const u of backup.users as unknown as Array<Record<string, unknown>>) {
+      assert.equal('password_hash' in u, false);
+    }
   });
 });
 

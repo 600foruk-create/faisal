@@ -44,10 +44,14 @@ export function getBusinessSettings(db: DatabaseSync): BusinessSettings {
   }>;
   const map = new Map(rows.map((r) => [r.key, r.value]));
   return {
-    business_name: map.get('business_name') ?? 'SEASTONE RETAIL OUTLET',
+    software_brand: map.get('software_brand') ?? 'Softifyx',
+    business_name: map.get('business_name') ?? 'M/S SEASTONE PVC PIPE INDUSTRY',
+    logo_data_url: map.get('logo_data_url') ?? '',
+    footer_text: map.get('footer_text') ?? 'Designed & Developed by Softifyx Technologies',
     ntn: map.get('ntn') ?? '',
     strn: map.get('strn') ?? '',
     default_tax_rate: Number(map.get('default_tax_rate') ?? '18') || 18,
+    default_opening_cash: Number(map.get('default_opening_cash') ?? '5000') || 0,
     receipt_footer: map.get('receipt_footer') ?? '',
     currency_symbol: map.get('currency_symbol') ?? 'Rs.',
   };
@@ -271,6 +275,45 @@ export function createUser(
   return getUsers(db).find((u) => u.id === Number(res.lastInsertRowid))!;
 }
 
+export function updateUser(
+  db: DatabaseSync,
+  input: {
+    id: number;
+    full_name: string;
+    role: UserRole;
+    branch_id: number | null;
+    is_active: number;
+    password?: string;
+  }
+): UserSummary {
+  if (input.password && input.password.trim()) {
+    const hash = hashPassword(input.password.trim());
+    db.prepare(
+      `UPDATE users SET full_name = ?, role = ?, branch_id = ?, is_active = ?, password_hash = ? WHERE id = ?`
+    ).run(input.full_name.trim(), input.role, input.branch_id, input.is_active ? 1 : 0, hash, input.id);
+  } else {
+    db.prepare(
+      `UPDATE users SET full_name = ?, role = ?, branch_id = ?, is_active = ? WHERE id = ?`
+    ).run(input.full_name.trim(), input.role, input.branch_id, input.is_active ? 1 : 0, input.id);
+  }
+  const updated = getUsers(db).find((u) => u.id === input.id);
+  if (!updated) throw new Error('User not found');
+  return updated;
+}
+
+export function exportSystemBackup(db: DatabaseSync) {
+  return {
+    exported_at: getLocalIsoDateTime(),
+    settings: getBusinessSettings(db),
+    ...getBranchesWithTerminals(db),
+    users: getUsers(db),
+    products: getProducts(db, { includeInactive: true }),
+    customers: getCustomers(db),
+    invoices: getSalesRegister(db, { limit: 1000 }).invoices,
+    day_closings: listDayClosings(db),
+  };
+}
+
 export function authenticateUser(
   db: DatabaseSync,
   username: string,
@@ -451,6 +494,38 @@ export function getDashboardSummary(
   const totalSale = roundMoney(agg.total_sale);
   const avgTicket = agg.total_invoices > 0 ? roundMoney(totalSale / agg.total_invoices) : 0;
 
+  const settings = getBusinessSettings(db);
+  let openingCash = 0;
+  if (branchId) {
+    const prevClose = db
+      .prepare(
+        `SELECT counted_cash FROM day_closings
+         WHERE branch_id = ? AND closing_date < ?
+         ORDER BY closing_date DESC LIMIT 1`
+      )
+      .get(branchId, fromDate) as { counted_cash: number } | undefined;
+    openingCash = prevClose ? roundMoney(prevClose.counted_cash) : roundMoney(settings.default_opening_cash);
+  } else {
+    for (const br of branchBreakdown) {
+      const prevClose = db
+        .prepare(
+          `SELECT counted_cash FROM day_closings
+           WHERE branch_id = ? AND closing_date < ?
+           ORDER BY closing_date DESC LIMIT 1`
+        )
+        .get(br.branch_id, fromDate) as { counted_cash: number } | undefined;
+      openingCash = roundMoney(
+        openingCash + (prevClose ? prevClose.counted_cash : settings.default_opening_cash)
+      );
+    }
+  }
+
+  const heldRow = (
+    branchId
+      ? db.prepare('SELECT COUNT(*) AS cnt FROM held_carts WHERE branch_id = ?').get(branchId)
+      : db.prepare('SELECT COUNT(*) AS cnt FROM held_carts').get()
+  ) as { cnt: number };
+
   return {
     total_sale: totalSale,
     total_invoices: agg.total_invoices,
@@ -462,6 +537,8 @@ export function getDashboardSummary(
     fbr_pending: pendingRow.cnt,
     fbr_submitted: agg.fbr_submitted,
     total_returns: roundMoney(agg.total_returns),
+    opening_cash: openingCash,
+    held_carts_count: heldRow.cnt,
     branch_breakdown: branchBreakdown.map((b) => ({
       ...b,
       total_sale: roundMoney(b.total_sale),

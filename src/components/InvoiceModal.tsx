@@ -125,6 +125,13 @@ export function InvoiceModal({ invoiceId, onClose, onSynced }: InvoiceModalProps
           {invoice && (
             <div className="printable-receipt mx-auto rounded-xl border border-slate-200 bg-white p-5 text-sm">
               <div className="border-b border-dashed border-slate-300 pb-3 text-center">
+                {settings.logo_data_url && (
+                  <img
+                    src={settings.logo_data_url}
+                    alt={settings.business_name}
+                    className="mx-auto mb-1.5 h-12 w-auto object-contain"
+                  />
+                )}
                 <h4 className="text-base font-bold tracking-wide text-slate-900">
                   {settings.business_name}
                 </h4>

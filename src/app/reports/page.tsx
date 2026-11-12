@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { BarChart3, CheckCircle2, CloudUpload, Package, ReceiptText, XCircle } from 'lucide-react';
 import { usePosContext } from '@/components/PosContext';
 import { formatCurrency, getDateRangeForPreset } from '@/lib/format';
@@ -34,7 +35,10 @@ interface ReportsPayload {
   fbrLogs: FbrSyncLogRecord[];
 }
 
-export default function ReportsPage() {
+function ReportsContent() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
+
   const { branches, activeBranchId, settings, refreshNonce } = usePosContext();
   const range = getDateRangeForPreset('month');
 
@@ -44,6 +48,12 @@ export default function ReportsPage() {
   const [tab, setTab] = useState<'branches' | 'products' | 'tax' | 'fbr'>('branches');
   const [report, setReport] = useState<ReportsPayload | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (tabParam && ['branches', 'products', 'tax', 'fbr'].includes(tabParam)) {
+      setTab(tabParam as 'branches' | 'products' | 'tax' | 'fbr');
+    }
+  }, [tabParam]);
 
   useEffect(() => {
     setBranchId(activeBranchId ? String(activeBranchId) : 'ALL');
@@ -281,6 +291,14 @@ export default function ReportsPage() {
         )}
       </section>
     </div>
+  );
+}
+
+export default function ReportsPage() {
+  return (
+    <Suspense fallback={<div className="rounded-xl bg-white p-6 text-sm">Loading reports...</div>}>
+      <ReportsContent />
+    </Suspense>
   );
 }
 

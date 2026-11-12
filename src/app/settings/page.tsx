@@ -1,24 +1,83 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { Building2, Package, Plus, Settings, Shield, Users } from 'lucide-react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import {
+  Building2,
+  DatabaseBackup,
+  ImagePlus,
+  Lock,
+  Package,
+  Plus,
+  RotateCcw,
+  Settings,
+  Shield,
+  Users,
+} from 'lucide-react';
 import { usePosContext } from '@/components/PosContext';
 import { formatCurrency } from '@/lib/format';
-import type { Customer, FbrMode, ProductWithStock, UserRole } from '@/lib/types';
+import type { Customer, FbrMode, ProductWithStock, UserRole, UserSummary } from '@/lib/types';
 
-export default function SettingsPage() {
-  const { branches, terminals, users, settings, reloadContext, refreshNonce } = usePosContext();
+type SettingsTab = 'business' | 'branches' | 'products' | 'customers' | 'users';
 
-  const [tab, setTab] = useState<'business' | 'branches' | 'products' | 'customers' | 'users'>(
-    'branches'
-  );
+function resizeLogoFileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Failed to read image file'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Invalid image file'));
+      img.onload = () => {
+        const maxSize = 200;
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const width = Math.max(1, Math.round(img.width * scale));
+        const height = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(String(reader.result));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function SettingsContent() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab') as SettingsTab | null;
+
+  const { branches, terminals, users, settings, activeUser, reloadContext, refreshNonce } =
+    usePosContext();
+
+  const [tab, setTab] = useState<SettingsTab>('business');
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
 
-  // Business form
+  useEffect(() => {
+    if (
+      tabParam &&
+      ['business', 'branches', 'products', 'customers', 'users'].includes(tabParam)
+    ) {
+      setTab(tabParam);
+    }
+  }, [tabParam]);
+
+  // Company & Branding form
+  const [softBrand, setSoftBrand] = useState(settings.software_brand);
   const [bizName, setBizName] = useState(settings.business_name);
+  const [bizLogo, setBizLogo] = useState(settings.logo_data_url);
+  const [bizFooterCredit, setBizFooterCredit] = useState(settings.footer_text);
   const [bizNtn, setBizNtn] = useState(settings.ntn);
   const [bizStrn, setBizStrn] = useState(settings.strn);
   const [bizTax, setBizTax] = useState(String(settings.default_tax_rate));
+  const [bizOpeningCash, setBizOpeningCash] = useState(String(settings.default_opening_cash));
+  const [bizCurrency, setBizCurrency] = useState(settings.currency_symbol);
   const [bizFooter, setBizFooter] = useState(settings.receipt_footer);
 
   // Branch & Terminal form
@@ -41,8 +100,8 @@ export default function SettingsPage() {
   const [pSku, setPSku] = useState('');
   const [pBarcode, setPBarcode] = useState('');
   const [pName, setPName] = useState('');
-  const [pCategory, setPCategory] = useState('Porcelain Tiles');
-  const [pUnit, setPUnit] = useState('Box');
+  const [pCategory, setPCategory] = useState('PVC Pipes & Fittings');
+  const [pUnit, setPUnit] = useState('Pcs');
   const [pSalePrice, setPSalePrice] = useState('');
   const [pCostPrice, setPCostPrice] = useState('');
   const [pTaxRate, setPTaxRate] = useState('18');
@@ -55,17 +114,24 @@ export default function SettingsPage() {
   const [cCnic, setCCnic] = useState('');
   const [cNtn, setCNtn] = useState('');
 
+  const [editUserId, setEditUserId] = useState<number | null>(null);
   const [uUsername, setUUsername] = useState('');
   const [uFullName, setUFullName] = useState('');
   const [uPassword, setUPassword] = useState('');
   const [uRole, setURole] = useState<UserRole>('CASHIER');
   const [uBranchId, setUBranchId] = useState<string>('');
+  const [uActive, setUActive] = useState<number>(1);
 
   useEffect(() => {
+    setSoftBrand(settings.software_brand);
     setBizName(settings.business_name);
+    setBizLogo(settings.logo_data_url);
+    setBizFooterCredit(settings.footer_text);
     setBizNtn(settings.ntn);
     setBizStrn(settings.strn);
     setBizTax(String(settings.default_tax_rate));
+    setBizOpeningCash(String(settings.default_opening_cash));
+    setBizCurrency(settings.currency_symbol);
     setBizFooter(settings.receipt_footer);
   }, [settings]);
 
@@ -94,6 +160,47 @@ export default function SettingsPage() {
     void loadProductsAndCustomers();
   }, [loadProductsAndCustomers, refreshNonce]);
 
+  if (activeUser?.role === 'CASHIER') {
+    return (
+      <section className="mx-auto max-w-lg rounded-2xl border border-amber-200 bg-white p-8 text-center shadow-sm">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+          <Lock className="h-6 w-6" />
+        </div>
+        <h1 className="mt-3 text-lg font-bold text-slate-900">Administrator Access Required</h1>
+        <p className="mt-1 text-xs text-slate-600">
+          Company Name, Logo, FBR Terminals, and User Roles can only be changed by an{' '}
+          <strong>ADMIN</strong> or <strong>MANAGER</strong>. Switch user via the green{' '}
+          <strong>Login to Branch</strong> menu above.
+        </p>
+      </section>
+    );
+  }
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const dataUrl = await resizeLogoFileToDataUrl(file);
+      setBizLogo(dataUrl);
+      setMessage({ type: 'success', text: 'Logo preview loaded. Click Save Branding & Settings to apply.' });
+    } catch {
+      setMessage({ type: 'error', text: 'Could not process selected image file.' });
+    }
+  };
+
+  const handleDownloadBackup = async () => {
+    const res = await fetch('/api/settings?backup=1');
+    if (!res.ok) return;
+    const data = await res.json();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `softifyx-pos-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const saveBusiness = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = await fetch('/api/settings', {
@@ -102,17 +209,24 @@ export default function SettingsPage() {
       body: JSON.stringify({
         action: 'business',
         data: {
-          business_name: bizName,
+          software_brand: softBrand.trim() || 'Softifyx',
+          business_name: bizName.trim(),
+          logo_data_url: bizLogo,
+          footer_text: bizFooterCredit.trim(),
           ntn: bizNtn,
           strn: bizStrn,
           default_tax_rate: Number(bizTax) || 18,
+          default_opening_cash: Number(bizOpeningCash) || 0,
+          currency_symbol: bizCurrency.trim() || 'Rs.',
           receipt_footer: bizFooter,
         },
       }),
     });
     if (res.ok) {
       await reloadContext();
-      setMessage({ type: 'success', text: 'Business settings saved.' });
+      setMessage({ type: 'success', text: 'Company branding & settings updated across the app!' });
+    } else {
+      setMessage({ type: 'error', text: 'Failed to save branding settings.' });
     }
   };
 
@@ -239,49 +353,85 @@ export default function SettingsPage() {
     }
   };
 
+  const startEditUser = (u: UserSummary) => {
+    setEditUserId(u.id);
+    setUUsername(u.username);
+    setUFullName(u.full_name);
+    setUPassword('');
+    setURole(u.role);
+    setUBranchId(u.branch_id ? String(u.branch_id) : '');
+    setUActive(u.is_active);
+  };
+
+  const resetUserForm = () => {
+    setEditUserId(null);
+    setUUsername('');
+    setUFullName('');
+    setUPassword('');
+    setURole('CASHIER');
+    setUBranchId('');
+    setUActive(1);
+  };
+
   const saveUserForm = async (e: React.FormEvent) => {
     e.preventDefault();
+    setMessage(null);
     const res = await fetch('/api/settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'user',
-        data: {
-          username: uUsername,
-          full_name: uFullName,
-          password: uPassword,
-          role: uRole,
-          branch_id: uBranchId ? Number(uBranchId) : null,
-        },
-      }),
+      body: JSON.stringify(
+        editUserId
+          ? {
+              action: 'user_update',
+              data: {
+                id: editUserId,
+                full_name: uFullName,
+                role: uRole,
+                branch_id: uBranchId ? Number(uBranchId) : null,
+                is_active: uActive,
+                password: uPassword || undefined,
+              },
+            }
+          : {
+              action: 'user',
+              data: {
+                username: uUsername,
+                full_name: uFullName,
+                password: uPassword,
+                role: uRole,
+                branch_id: uBranchId ? Number(uBranchId) : null,
+              },
+            }
+      ),
     });
     const data = (await res.json()) as { error?: string };
     if (res.ok) {
-      setUUsername('');
-      setUFullName('');
-      setUPassword('');
+      resetUserForm();
       await reloadContext();
-      setMessage({ type: 'success', text: 'User created successfully.' });
+      setMessage({
+        type: 'success',
+        text: editUserId ? 'User updated successfully.' : 'User created successfully.',
+      });
     } else {
-      setMessage({ type: 'error', text: data.error || 'Failed to create user' });
+      setMessage({ type: 'error', text: data.error || 'Failed to save user' });
     }
   };
 
   return (
     <div className="space-y-4">
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Settings className="h-5 w-5 text-amber-600" />
-            <h1 className="text-lg font-bold text-slate-900">System & FBR Settings</h1>
+            <h1 className="text-lg font-bold text-slate-900">Administrator &amp; System Settings</h1>
           </div>
 
           <div className="flex flex-wrap gap-2">
             {(
               [
-                { key: 'branches', label: 'Branches & FBR Terminals', icon: Building2 },
+                { key: 'business', label: 'Company & Logo', icon: Building2 },
+                { key: 'branches', label: 'Branches & FBR POSIDs', icon: Settings },
                 { key: 'products', label: 'Products & Stock', icon: Package },
-                { key: 'business', label: 'Business & Receipt', icon: Settings },
                 { key: 'customers', label: 'Customers', icon: Users },
                 { key: 'users', label: 'Users & Roles', icon: Shield },
               ] as const
@@ -316,10 +466,186 @@ export default function SettingsPage() {
         </div>
       )}
 
+      {tab === 'business' && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <form
+            onSubmit={saveBusiness}
+            className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-8"
+          >
+            <h2 className="border-b border-slate-100 pb-2 text-sm font-bold text-slate-900">
+              Company Branding, Tax &amp; Receipt Identity
+            </h2>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-slate-600">
+                  Software Brand Title (Top-Left)
+                </label>
+                <input
+                  type="text"
+                  value={softBrand}
+                  onChange={(e) => setSoftBrand(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-slate-600">
+                  Company / Business Name (Header &amp; Receipts)
+                </label>
+                <input
+                  type="text"
+                  value={bizName}
+                  onChange={(e) => setBizName(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5">
+              <label className="mb-2 block text-xs font-semibold text-slate-700">
+                Company Logo (Shown on Top Header &amp; Printed Receipts)
+              </label>
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex h-16 w-20 items-center justify-center overflow-hidden rounded-lg border border-slate-300 bg-white p-1">
+                  {bizLogo ? (
+                    <img src={bizLogo} alt="Preview" className="h-full w-full object-contain" />
+                  ) : (
+                    <span className="text-[11px] font-semibold text-slate-400">Default SVG</span>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-900">
+                    <ImagePlus className="h-3.5 w-3.5" />
+                    <span>Upload Logo Image</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                    />
+                  </label>
+                  {bizLogo && (
+                    <button
+                      type="button"
+                      onClick={() => setBizLogo('')}
+                      className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Reset Default
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-slate-600">NTN</label>
+                <input
+                  type="text"
+                  value={bizNtn}
+                  onChange={(e) => setBizNtn(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-slate-600">STRN</label>
+                <input
+                  type="text"
+                  value={bizStrn}
+                  onChange={(e) => setBizStrn(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-slate-600">Default GST %</label>
+                <input
+                  type="number"
+                  value={bizTax}
+                  onChange={(e) => setBizTax(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-slate-600">Currency</label>
+                <input
+                  type="text"
+                  value={bizCurrency}
+                  onChange={(e) => setBizCurrency(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-slate-600">
+                  Opening Cash
+                </label>
+                <input
+                  type="number"
+                  value={bizOpeningCash}
+                  onChange={(e) => setBizOpeningCash(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-slate-600">
+                Thermal Receipt Footer Message
+              </label>
+              <textarea
+                rows={2}
+                value={bizFooter}
+                onChange={(e) => setBizFooter(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-slate-600">
+                Application Footer Credit
+              </label>
+              <input
+                type="text"
+                value={bizFooterCredit}
+                onChange={(e) => setBizFooterCredit(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="cursor-pointer rounded-lg bg-[#0fa968] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#0d945b]"
+            >
+              Save Branding &amp; Settings
+            </button>
+          </form>
+
+          <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-4">
+            <h2 className="border-b border-slate-100 pb-2 text-sm font-bold text-slate-900">
+              System Maintenance &amp; Backup
+            </h2>
+            <p className="text-xs text-slate-600">
+              Download a full JSON snapshot of your company settings, branches, products, customers,
+              invoices, and day closings.
+            </p>
+            <button
+              type="button"
+              onClick={handleDownloadBackup}
+              className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#49210a] py-2.5 text-xs font-bold text-white hover:bg-[#5e2b0d]"
+            >
+              <DatabaseBackup className="h-4 w-4" />
+              Download System Backup (JSON)
+            </button>
+          </section>
+        </div>
+      )}
+
       {tab === 'branches' && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-          <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-7">
-            <h2 className="mb-3 text-sm font-bold text-slate-900">Configured Branches & FBR POSIDs</h2>
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-7">
+            <h2 className="mb-3 text-sm font-bold text-slate-900">Configured Branches &amp; FBR POSIDs</h2>
             <div className="space-y-2.5">
               {branches.map((b) => {
                 const t = terminals.find((term) => term.branch_id === b.id);
@@ -335,7 +661,7 @@ export default function SettingsPage() {
                       </div>
                       {t && (
                         <div className="mt-1 flex flex-wrap gap-2 font-mono text-[11px]">
-                          <span className="rounded bg-white px-2 py-0.5 border border-slate-200">
+                          <span className="rounded border border-slate-200 bg-white px-2 py-0.5">
                             Prefix: {t.invoice_prefix}
                           </span>
                           <span className="rounded bg-sky-50 px-2 py-0.5 text-sky-800">
@@ -362,7 +688,7 @@ export default function SettingsPage() {
 
           <form
             onSubmit={saveBranch}
-            className="space-y-2.5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-5"
+            className="space-y-2.5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-5"
           >
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold text-slate-900">
@@ -458,7 +784,7 @@ export default function SettingsPage() {
               type="submit"
               className="w-full cursor-pointer rounded-lg bg-[#0fa968] py-2 text-xs font-bold text-white hover:bg-[#0d945b]"
             >
-              Save Branch & FBR Terminal
+              Save Branch &amp; FBR Terminal
             </button>
           </form>
         </div>
@@ -466,9 +792,9 @@ export default function SettingsPage() {
 
       {tab === 'products' && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-          <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-8">
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-8">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-sm font-bold text-slate-900">Product Catalog & Branch Stock</h2>
+              <h2 className="text-sm font-bold text-slate-900">Product Catalog &amp; Branch Stock</h2>
               <select
                 value={stockBranchId}
                 onChange={(e) => setStockBranchId(Number(e.target.value))}
@@ -535,7 +861,7 @@ export default function SettingsPage() {
 
           <form
             onSubmit={saveProductForm}
-            className="space-y-2.5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-4"
+            className="space-y-2.5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-4"
           >
             <h2 className="text-sm font-bold text-slate-900">
               {pEditId ? 'Edit Product & Stock' : 'Add Product'}
@@ -625,72 +951,9 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {tab === 'business' && (
-        <form
-          onSubmit={saveBusiness}
-          className="max-w-xl space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
-        >
-          <h2 className="text-sm font-bold text-slate-900">Business Identity & Receipt Footer</h2>
-          <div>
-            <label className="mb-1 block text-xs font-semibold text-slate-600">Business Name</label>
-            <input
-              type="text"
-              value={bizName}
-              onChange={(e) => setBizName(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              required
-            />
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-slate-600">NTN</label>
-              <input
-                type="text"
-                value={bizNtn}
-                onChange={(e) => setBizNtn(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-slate-600">STRN</label>
-              <input
-                type="text"
-                value={bizStrn}
-                onChange={(e) => setBizStrn(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-slate-600">Default Tax %</label>
-              <input
-                type="number"
-                value={bizTax}
-                onChange={(e) => setBizTax(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-semibold text-slate-600">Receipt Footer</label>
-            <textarea
-              rows={2}
-              value={bizFooter}
-              onChange={(e) => setBizFooter(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <button
-            type="submit"
-            className="cursor-pointer rounded-lg bg-[#49210a] px-5 py-2 text-sm font-semibold text-white hover:bg-[#5e2b0d]"
-          >
-            Save Business Settings
-          </button>
-        </form>
-      )}
-
       {tab === 'customers' && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-          <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-8">
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-8">
             <h2 className="mb-3 text-sm font-bold text-slate-900">Registered Customers</h2>
             <table className="w-full border-collapse text-left text-xs">
               <thead>
@@ -716,7 +979,7 @@ export default function SettingsPage() {
 
           <form
             onSubmit={saveCustomerForm}
-            className="space-y-2.5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-4"
+            className="space-y-2.5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-4"
           >
             <h2 className="text-sm font-bold text-slate-900">Add Customer</h2>
             <input
@@ -760,8 +1023,8 @@ export default function SettingsPage() {
 
       {tab === 'users' && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-          <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-8">
-            <h2 className="mb-3 text-sm font-bold text-slate-900">POS Users & Roles</h2>
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-8">
+            <h2 className="mb-3 text-sm font-bold text-slate-900">POS Users &amp; Role Permissions</h2>
             <table className="w-full border-collapse text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">
@@ -769,6 +1032,8 @@ export default function SettingsPage() {
                   <th className="px-3 py-2">Full Name</th>
                   <th className="px-3 py-2">Role</th>
                   <th className="px-3 py-2">Assigned Branch</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2 text-center">Edit</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -778,6 +1043,26 @@ export default function SettingsPage() {
                     <td className="px-3 py-2">{u.full_name}</td>
                     <td className="px-3 py-2 font-semibold">{u.role}</td>
                     <td className="px-3 py-2">{u.branch_name ?? 'All Branches'}</td>
+                    <td className="px-3 py-2">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          u.is_active
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-slate-200 text-slate-600'
+                        }`}
+                      >
+                        {u.is_active ? 'Active' : 'Disabled'}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() => startEditUser(u)}
+                        className="cursor-pointer rounded border border-slate-300 px-2 py-0.5 hover:bg-slate-50"
+                      >
+                        Edit
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -786,15 +1071,29 @@ export default function SettingsPage() {
 
           <form
             onSubmit={saveUserForm}
-            className="space-y-2.5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-4"
+            className="space-y-2.5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-4"
           >
-            <h2 className="text-sm font-bold text-slate-900">Create User</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold text-slate-900">
+                {editUserId ? 'Edit User & Reset Password' : 'Create User'}
+              </h2>
+              {editUserId && (
+                <button
+                  type="button"
+                  onClick={resetUserForm}
+                  className="cursor-pointer text-xs font-semibold text-slate-500 hover:underline"
+                >
+                  + Create New
+                </button>
+              )}
+            </div>
             <input
               type="text"
               placeholder="Username *"
               value={uUsername}
+              disabled={Boolean(editUserId)}
               onChange={(e) => setUUsername(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
+              className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs disabled:bg-slate-100"
               required
             />
             <input
@@ -807,20 +1106,20 @@ export default function SettingsPage() {
             />
             <input
               type="password"
-              placeholder="Password / PIN *"
+              placeholder={editUserId ? 'New Password (optional)' : 'Password / PIN *'}
               value={uPassword}
               onChange={(e) => setUPassword(e.target.value)}
               className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
-              required
+              required={!editUserId}
             />
             <select
               value={uRole}
               onChange={(e) => setURole(e.target.value as UserRole)}
               className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
             >
-              <option value="CASHIER">CASHIER</option>
+              <option value="CASHIER">CASHIER (Counter Only)</option>
               <option value="MANAGER">MANAGER</option>
-              <option value="ADMIN">ADMIN</option>
+              <option value="ADMIN">ADMIN (Full Access)</option>
             </select>
             <select
               value={uBranchId}
@@ -834,11 +1133,21 @@ export default function SettingsPage() {
                 </option>
               ))}
             </select>
+            {editUserId && (
+              <label className="flex items-center gap-2 text-xs font-medium text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={uActive === 1}
+                  onChange={(e) => setUActive(e.target.checked ? 1 : 0)}
+                />
+                User Account Active
+              </label>
+            )}
             <button
               type="submit"
               className="w-full cursor-pointer rounded-lg bg-[#0fa968] py-2 text-xs font-bold text-white hover:bg-[#0d945b]"
             >
-              Create User
+              {editUserId ? 'Update User' : 'Create User'}
             </button>
           </form>
         </div>
@@ -847,3 +1156,10 @@ export default function SettingsPage() {
   );
 }
 
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div className="rounded-xl bg-white p-6 text-sm">Loading settings...</div>}>
+      <SettingsContent />
+    </Suspense>
+  );
+}

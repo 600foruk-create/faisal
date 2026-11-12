@@ -47,11 +47,15 @@ function seed_initial_mysql_data(PDO $pdo): void
                    ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)'
         );
         $settings = [
-            ['business_name', 'SEASTONE RETAIL OUTLET'],
+            ['software_brand', 'Softifyx'],
+            ['business_name', 'M/S SEASTONE PVC PIPE INDUSTRY'],
+            ['logo_data_url', ''],
+            ['footer_text', 'Designed & Developed by Softifyx Technologies'],
             ['ntn', '4125890-7'],
             ['strn', '3277876124891'],
             ['default_tax_rate', '18'],
-            ['receipt_footer', 'Thank you for shopping with Seastone Retail Outlet! Verify FBR invoice via Tax Asaan App or SMS to 9966.'],
+            ['default_opening_cash', '5000'],
+            ['receipt_footer', 'Thank you for shopping with M/S Seastone PVC Pipe Industry! Verify FBR invoice via Tax Asaan App or SMS to 9966.'],
             ['currency_symbol', 'Rs.'],
         ];
         foreach ($settings as $s) {

@@ -21,10 +21,14 @@ interface PosContextValue {
 }
 
 const DEFAULT_SETTINGS: BusinessSettings = {
-  business_name: 'SEASTONE RETAIL OUTLET',
+  software_brand: 'Softifyx',
+  business_name: 'M/S SEASTONE PVC PIPE INDUSTRY',
+  logo_data_url: '',
+  footer_text: 'Designed & Developed by Softifyx Technologies',
   ntn: '',
   strn: '',
   default_tax_rate: 18,
+  default_opening_cash: 5000,
   receipt_footer: '',
   currency_symbol: 'Rs.',
 };

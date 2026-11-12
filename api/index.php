@@ -233,6 +233,9 @@ try {
 
     if ($route === 'settings') {
         if ($method === 'GET') {
+            if (($_GET['backup'] ?? '') === '1') {
+                json_out(mysql_export_system_backup($pdo));
+            }
             $bt = mysql_get_branches_with_terminals($pdo);
             json_out([
                 'settings' => mysql_get_business_settings($pdo),
@@ -253,6 +256,9 @@ try {
             }
             if ($action === 'user') {
                 json_out(['user' => mysql_create_user($pdo, $data)], 201);
+            }
+            if ($action === 'user_update') {
+                json_out(['user' => mysql_update_user($pdo, $data)]);
             }
             json_out(['error' => 'Unknown settings action'], 400);
         }

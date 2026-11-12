@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   CloudUpload,
   Download,
@@ -18,7 +19,10 @@ import { usePosContext } from '@/components/PosContext';
 import { formatCurrency, getDateRangeForPreset } from '@/lib/format';
 import type { FbrStatus, InvoiceRecord, PaymentMode } from '@/lib/types';
 
-export default function SalesRegisterPage() {
+function SalesRegisterContent() {
+  const searchParams = useSearchParams();
+  const fbrParam = searchParams.get('fbrStatus');
+
   const { branches, activeBranchId, settings, refreshNonce } = usePosContext();
 
   const defaultRange = getDateRangeForPreset('month');
@@ -26,6 +30,12 @@ export default function SalesRegisterPage() {
   const [fromDate, setFromDate] = useState(defaultRange.from);
   const [toDate, setToDate] = useState(defaultRange.to);
   const [fbrStatus, setFbrStatus] = useState<FbrStatus | 'ALL'>('ALL');
+
+  useEffect(() => {
+    if (fbrParam && ['ALL', 'SUBMITTED', 'PENDING', 'FAILED'].includes(fbrParam)) {
+      setFbrStatus(fbrParam as FbrStatus | 'ALL');
+    }
+  }, [fbrParam]);
   const [paymentMode, setPaymentMode] = useState<PaymentMode | 'ALL'>('ALL');
   const [invoiceType, setInvoiceType] = useState<'SALE' | 'RETURN' | 'ALL'>('ALL');
   const [search, setSearch] = useState('');
@@ -402,6 +412,14 @@ export default function SalesRegisterPage() {
         onSynced={() => void loadRegister()}
       />
     </div>
+  );
+}
+
+export default function SalesRegisterPage() {
+  return (
+    <Suspense fallback={<div className="rounded-xl bg-white p-6 text-sm">Loading register...</div>}>
+      <SalesRegisterContent />
+    </Suspense>
   );
 }
 

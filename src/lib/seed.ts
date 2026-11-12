@@ -154,11 +154,15 @@ export function seedInitialData(db: DatabaseSync): void {
 
   // 1. Business Settings
   const insertSetting = db.prepare('INSERT INTO business_settings (key, value) VALUES (?, ?)');
-  insertSetting.run('business_name', 'SEASTONE RETAIL OUTLET');
+  insertSetting.run('software_brand', 'Softifyx');
+  insertSetting.run('business_name', 'M/S SEASTONE PVC PIPE INDUSTRY');
+  insertSetting.run('logo_data_url', '');
+  insertSetting.run('footer_text', 'Designed & Developed by Softifyx Technologies');
   insertSetting.run('ntn', '4125890-7');
   insertSetting.run('strn', '3277876124891');
   insertSetting.run('default_tax_rate', '18');
-  insertSetting.run('receipt_footer', 'Thank you for shopping with Seastone Retail Outlet! Verify FBR invoice via Tax Asaan App or SMS to 9966.');
+  insertSetting.run('default_opening_cash', '5000');
+  insertSetting.run('receipt_footer', 'Thank you for shopping with M/S Seastone PVC Pipe Industry! Verify FBR invoice via Tax Asaan App or SMS to 9966.');
   insertSetting.run('currency_symbol', 'Rs.');
 
   // 2. Branches
