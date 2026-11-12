@@ -3,103 +3,14 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import {
-  Building2,
   Check,
   ChevronDown,
-  CloudUpload,
-  DatabaseBackup,
-  DoorOpen,
-  FileText,
-  Info,
   KeyRound,
   LogOut,
-  Package,
-  PauseCircle,
-  Shield,
-  ShoppingCart,
   Store,
-  Undo2,
   UserCheck,
-  Users,
 } from 'lucide-react';
 import { usePosContext } from './PosContext';
-
-interface MenuItem {
-  label: string;
-  href?: string;
-  action?: 'backup' | 'about';
-  icon: React.ComponentType<{ className?: string }>;
-  adminOnly?: boolean;
-}
-
-interface MenuGroup {
-  key: string;
-  label: string;
-  adminOnly?: boolean;
-  items: MenuItem[];
-}
-
-const MENU_GROUPS: MenuGroup[] = [
-  {
-    key: 'administrator',
-    label: 'Administrator',
-    adminOnly: true,
-    items: [
-      { label: 'Company Name, Logo & Branding', href: '/settings?tab=business', icon: Building2 },
-      { label: 'Branches & FBR POSIDs', href: '/settings?tab=branches', icon: Store },
-      { label: 'Users, Roles & Passwords', href: '/settings?tab=users', icon: Shield },
-      { label: 'Products & Inventory Setup', href: '/settings?tab=products', icon: Package },
-      { label: 'Customer Directory', href: '/settings?tab=customers', icon: Users },
-      { label: 'Download System Backup (JSON)', action: 'backup', icon: DatabaseBackup },
-    ],
-  },
-  {
-    key: 'maintain',
-    label: 'Maintain',
-    adminOnly: true,
-    items: [
-      { label: 'Products & Pricing', href: '/settings?tab=products', icon: Package },
-      { label: 'Inventory Balance', href: '/settings?tab=products', icon: Package },
-      { label: 'Registered Customers', href: '/settings?tab=customers', icon: Users },
-      { label: 'Branches & Terminals', href: '/settings?tab=branches', icon: Store },
-    ],
-  },
-  {
-    key: 'sales',
-    label: 'POS & Sales',
-    items: [
-      { label: 'POS Sale (New Bill)', href: '/sale', icon: ShoppingCart },
-      { label: 'Sales Register', href: '/register', icon: FileText },
-      { label: 'Sales Return / Credit Note', href: '/returns', icon: Undo2 },
-      { label: 'Hold / Recall Bills', href: '/hold', icon: PauseCircle },
-      { label: 'Day Closing (Z-Report)', href: '/closing', icon: DoorOpen },
-    ],
-  },
-  {
-    key: 'fbr',
-    label: 'FBR Digital',
-    items: [
-      { label: 'Pending FBR Invoices', href: '/register?fbrStatus=PENDING', icon: CloudUpload },
-      { label: 'FBR Sync & Audit Logs', href: '/reports?tab=fbr', icon: FileText },
-      { label: 'FBR Terminal Config', href: '/settings?tab=branches', icon: Store, adminOnly: true },
-    ],
-  },
-  {
-    key: 'reports',
-    label: 'Reports',
-    items: [
-      { label: 'Branch Sale Summary', href: '/reports?tab=branches', icon: FileText },
-      { label: 'Top Selling Products', href: '/reports?tab=products', icon: Package },
-      { label: 'GST / Tax Summary', href: '/reports?tab=tax', icon: FileText },
-      { label: 'FBR Digital Invoice Logs', href: '/reports?tab=fbr', icon: CloudUpload },
-    ],
-  },
-  {
-    key: 'about',
-    label: 'About',
-    items: [{ label: 'Software & License Info', action: 'about', icon: Info }],
-  },
-];
 
 export function TopBrandBar() {
   const {
@@ -112,42 +23,24 @@ export function TopBrandBar() {
     setActiveUser,
   } = usePosContext();
 
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [branchMenuOpen, setBranchMenuOpen] = useState(false);
   const [loginMode, setLoginMode] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
-  const [showAbout, setShowAbout] = useState(false);
 
-  const navRef = useRef<HTMLDivElement | null>(null);
-  const isCashier = activeUser?.role === 'CASHIER';
+  const barRef = useRef<HTMLDivElement | null>(null);
   const activeBranch = branches.find((b) => b.id === activeBranchId) ?? null;
 
   useEffect(() => {
     const handleOutside = (e: MouseEvent) => {
-      if (navRef.current && !navRef.current.contains(e.target as Node)) {
-        setOpenMenu(null);
+      if (barRef.current && !barRef.current.contains(e.target as Node)) {
         setBranchMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleOutside);
     return () => document.removeEventListener('mousedown', handleOutside);
   }, []);
-
-  const handleDownloadBackup = async () => {
-    setOpenMenu(null);
-    const res = await fetch('/api/settings?backup=1');
-    if (!res.ok) return;
-    const data = await res.json();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `softifyx-pos-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   const handleCredentialLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,8 +76,8 @@ export function TopBrandBar() {
   };
 
   return (
-    <div ref={navRef} className="no-print relative z-40 w-full bg-[#0b1324] text-white shadow-sm">
-      <div className="mx-auto flex min-h-14 max-w-[1440px] flex-wrap items-center justify-between gap-3 px-4 py-2 sm:px-6">
+    <div ref={barRef} className="no-print relative z-40 w-full bg-[#0b1324] text-white shadow-sm">
+      <div className="mx-auto flex min-h-13 max-w-[1440px] flex-wrap items-center justify-between gap-3 px-4 py-2 sm:px-6">
         {/* Left: Logo + Software Brand + Company Name */}
         <Link href="/" className="flex min-w-0 items-center gap-2.5">
           <div
@@ -241,7 +134,7 @@ export function TopBrandBar() {
             )}
           </div>
           <div className="min-w-0 leading-tight">
-            <div className="flex items-center gap-1.5 text-sm">
+            <div className="flex items-center gap-1.5 text-sm sm:text-base">
               <span className="font-extrabold tracking-tight text-white">
                 {settings.software_brand || 'Softifyx'}
               </span>
@@ -255,98 +148,12 @@ export function TopBrandBar() {
           </div>
         </Link>
 
-        {/* Center: Clean ERP Dropdowns (Administrator, Maintain, POS & Sales, FBR Digital, Reports, About) */}
-        <nav className="flex flex-wrap items-center gap-0.5">
-          {MENU_GROUPS.map((group) => {
-            if (group.adminOnly && isCashier) return null;
-            const visibleItems = group.items.filter((it) => !(it.adminOnly && isCashier));
-            if (visibleItems.length === 0) return null;
-
-            const isOpen = openMenu === group.key;
-            return (
-              <div key={group.key} className="relative">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBranchMenuOpen(false);
-                    setOpenMenu(isOpen ? null : group.key);
-                  }}
-                  className={`inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
-                    group.key === 'administrator'
-                      ? isOpen
-                        ? 'bg-amber-500 text-slate-950'
-                        : 'bg-white/10 text-amber-300 hover:bg-white/15 hover:text-amber-200'
-                      : isOpen
-                        ? 'bg-white/15 text-white'
-                        : 'text-slate-300 hover:bg-white/10 hover:text-white'
-                  }`}
-                >
-                  {group.key === 'administrator' && <Shield className="h-3.5 w-3.5" />}
-                  <span>{group.label}</span>
-                  <ChevronDown className="h-3 w-3 opacity-75" />
-                </button>
-
-                {isOpen && (
-                  <div className="absolute left-0 z-50 mt-2 w-64 rounded-xl border border-slate-200 bg-white py-1.5 text-slate-800 shadow-2xl">
-                    {visibleItems.map((item) => {
-                      const Icon = item.icon;
-                      if (item.action === 'backup') {
-                        return (
-                          <button
-                            key={item.label}
-                            type="button"
-                            onClick={() => void handleDownloadBackup()}
-                            className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700"
-                          >
-                            <Icon className="h-3.5 w-3.5 text-emerald-600" />
-                            <span>{item.label}</span>
-                          </button>
-                        );
-                      }
-                      if (item.action === 'about') {
-                        return (
-                          <button
-                            key={item.label}
-                            type="button"
-                            onClick={() => {
-                              setOpenMenu(null);
-                              setShowAbout(true);
-                            }}
-                            className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-sky-700"
-                          >
-                            <Icon className="h-3.5 w-3.5 text-sky-600" />
-                            <span>{item.label}</span>
-                          </button>
-                        );
-                      }
-                      return (
-                        <Link
-                          key={item.label}
-                          href={item.href || '/'}
-                          onClick={() => setOpenMenu(null)}
-                          className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700"
-                        >
-                          <Icon className="h-3.5 w-3.5 text-slate-500" />
-                          <span>{item.label}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </nav>
-
-        {/* Right: Branch Context Switcher + User Pill */}
+        {/* Right: Branch Switcher + Active User + Switch Button */}
         <div className="flex items-center gap-2">
           <div className="relative">
             <button
               type="button"
-              onClick={() => {
-                setOpenMenu(null);
-                setBranchMenuOpen((o) => !o);
-              }}
+              onClick={() => setBranchMenuOpen((o) => !o)}
               className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-500"
             >
               <Store className="h-3.5 w-3.5" />
@@ -497,31 +304,6 @@ export function TopBrandBar() {
           </button>
         </div>
       </div>
-
-      {showAbout && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 text-slate-800 shadow-2xl">
-            <h3 className="text-base font-bold text-slate-900">
-              {settings.software_brand} — Retail POS &amp; FBR ERP
-            </h3>
-            <p className="mt-1 text-xs font-semibold text-emerald-700">{settings.business_name}</p>
-            <div className="mt-3 space-y-1.5 rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
-              <p>NTN: {settings.ntn || '-'} | STRN: {settings.strn || '-'}</p>
-              <p>Default GST Rate: {settings.default_tax_rate}%</p>
-              <p>{settings.footer_text}</p>
-            </div>
-            <div className="mt-4 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowAbout(false)}
-                className="cursor-pointer rounded-lg bg-slate-900 px-4 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
