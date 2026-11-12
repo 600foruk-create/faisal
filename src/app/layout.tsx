@@ -22,7 +22,7 @@ export default function RootLayout({
         <PosProvider>
           <TopBrandBar />
           <PosHeader />
-          <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-5 px-4 py-5 sm:px-6 lg:flex-row lg:items-start">
+          <div className="mx-auto flex w-full max-w-[1520px] flex-1 flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-start">
             <PosSidebar />
             <main className="min-w-0 flex-1">{children}</main>
           </div>

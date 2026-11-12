@@ -37,10 +37,10 @@ export function PosSidebar() {
   return (
     <aside
       className={`no-print w-full shrink-0 transition-all duration-200 ${
-        collapsed ? 'lg:w-[70px]' : 'lg:w-[232px]'
+        collapsed ? 'lg:w-[70px]' : 'lg:w-[216px]'
       } lg:sticky lg:top-4`}
     >
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-2.5 shadow-xs">
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-2.5 shadow-sm">
         {/* Sidebar Header */}
         <div
           className={`mb-2 flex items-center ${
@@ -66,7 +66,7 @@ export function PosSidebar() {
           </button>
         </div>
 
-        {/* Navigation Links (horizontal wrap on mobile, clean vertical stack on desktop) */}
+        {/* Navigation Links */}
         <nav
           aria-label="POS Sidebar Navigation"
           className="flex flex-wrap gap-1 lg:flex-col lg:gap-1"
@@ -83,11 +83,11 @@ export function PosSidebar() {
                 key={item.href}
                 href={item.href}
                 title={collapsed ? item.label : undefined}
-                className={`group flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-xs font-semibold transition ${
+                className={`group flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-semibold transition ${
                   collapsed ? 'lg:justify-center lg:px-2' : ''
                 } ${
                   isActive
-                    ? 'bg-emerald-600 text-white shadow-xs'
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm'
                     : 'text-slate-700 hover:bg-slate-100/80 hover:text-slate-900'
                 }`}
               >
@@ -102,7 +102,7 @@ export function PosSidebar() {
                     className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
                       collapsed ? 'lg:hidden' : ''
                     } ${
-                      isActive ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'
+                      isActive ? 'bg-white/25 text-white' : 'bg-amber-100 text-amber-800'
                     }`}
                   >
                     {heldCount}
@@ -113,11 +113,11 @@ export function PosSidebar() {
           })}
         </nav>
 
-        {/* Active Branch Pill */}
+        {/* Active Branch Scope */}
         {!collapsed && (
           <div className="mt-3 hidden border-t border-slate-100 pt-3 lg:block">
-            <div className="rounded-xl bg-slate-50 px-3 py-2.5">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 px-3 py-2.5">
+              <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-emerald-700 uppercase">
                 <Store className="h-3 w-3 text-emerald-600" />
                 <span>Active Scope</span>
               </div>
@@ -131,4 +131,3 @@ export function PosSidebar() {
     </aside>
   );
 }
-

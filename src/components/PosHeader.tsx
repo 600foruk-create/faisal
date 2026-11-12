@@ -98,8 +98,8 @@ export function PosHeader() {
   };
 
   return (
-    <div ref={barRef} className="no-print relative z-30 w-full border-b border-slate-200/90 bg-white/95 backdrop-blur-xs">
-      <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-2 px-4 py-1.5 sm:px-6">
+    <div ref={barRef} className="no-print relative z-30 w-full border-b border-slate-200/90 bg-white/95 shadow-2xs backdrop-blur-xs">
+      <div className="mx-auto flex max-w-[1520px] flex-wrap items-center justify-between gap-2 px-4 py-1.5 sm:px-6">
         {/* LEFT SIDE: Administrator, Maintain, About */}
         <div className="flex flex-wrap items-center gap-1.5">
           {ADMIN_SUBHEADER_MENUS.map((group) => {

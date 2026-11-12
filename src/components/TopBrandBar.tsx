@@ -76,8 +76,11 @@ export function TopBrandBar() {
   };
 
   return (
-    <div ref={barRef} className="no-print relative z-40 w-full bg-[#0b1324] text-white shadow-sm">
-      <div className="mx-auto flex min-h-13 max-w-[1440px] flex-wrap items-center justify-between gap-3 px-4 py-2 sm:px-6">
+    <div
+      ref={barRef}
+      className="no-print relative z-40 w-full bg-gradient-to-r from-[#09111e] via-[#0e1930] to-[#132340] text-white shadow-sm"
+    >
+      <div className="mx-auto flex min-h-13 max-w-[1520px] flex-wrap items-center justify-between gap-3 px-4 py-2 sm:px-6">
         {/* Left: Logo + Software Brand + Company Name */}
         <Link href="/" className="flex min-w-0 items-center gap-2.5">
           <div

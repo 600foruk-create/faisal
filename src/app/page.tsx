@@ -8,6 +8,7 @@ import {
   Banknote,
   BarChart3,
   Calendar,
+  Coins,
   DoorOpen,
   ExternalLink,
   Eye,
@@ -15,6 +16,7 @@ import {
   Layers,
   PackageCheck,
   PauseCircle,
+  Receipt,
   Search,
   ShoppingCart,
   Store,
@@ -24,19 +26,27 @@ import {
 import { InvoiceModal } from '@/components/InvoiceModal';
 import { PaymentModeBadge } from '@/components/PaymentModeBadge';
 import { usePosContext } from '@/components/PosContext';
-import { formatCurrency, getDateRangeForPreset, roundMoney } from '@/lib/format';
+import {
+  formatCurrency,
+  formatDisplayDate,
+  getDateRangeForPreset,
+  getLocalIsoDate,
+  roundMoney,
+} from '@/lib/format';
 import type { DashboardSummary, PeriodPreset } from '@/lib/types';
 
 export default function MainDashboardPage() {
   const { branches, activeBranchId, activeUser, settings, refreshNonce } = usePosContext();
 
   const initialRange = getDateRangeForPreset('month');
+  const todayIso = getLocalIsoDate();
   const [selectedBranchId, setSelectedBranchId] = useState<string>('ALL');
   const [period, setPeriod] = useState<PeriodPreset>('month');
   const [fromDate, setFromDate] = useState<string>(initialRange.from);
   const [toDate, setToDate] = useState<string>(initialRange.to);
   const [tableSearch, setTableSearch] = useState('');
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [todaySummary, setTodaySummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewInvoiceId, setViewInvoiceId] = useState<number | null>(null);
 
@@ -58,21 +68,43 @@ export default function MainDashboardPage() {
   const loadDashboard = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({
+      const isTodaySelected = fromDate === todayIso && toDate === todayIso;
+      const periodParams = new URLSearchParams({
         branchId: selectedBranchId,
         fromDate,
         toDate,
         limit: '15',
       });
-      const res = await fetch(`/api/dashboard?${params.toString()}`);
-      if (res.ok) {
-        const data = (await res.json()) as DashboardSummary;
-        setSummary(data);
+
+      if (isTodaySelected) {
+        const res = await fetch(`/api/dashboard?${periodParams.toString()}`);
+        if (res.ok) {
+          const data = (await res.json()) as DashboardSummary;
+          setSummary(data);
+          setTodaySummary(data);
+        }
+      } else {
+        const todayParams = new URLSearchParams({
+          branchId: selectedBranchId,
+          fromDate: todayIso,
+          toDate: todayIso,
+          limit: '5',
+        });
+        const [periodRes, todayRes] = await Promise.all([
+          fetch(`/api/dashboard?${periodParams.toString()}`),
+          fetch(`/api/dashboard?${todayParams.toString()}`),
+        ]);
+        if (periodRes.ok) {
+          setSummary((await periodRes.json()) as DashboardSummary);
+        }
+        if (todayRes.ok) {
+          setTodaySummary((await todayRes.json()) as DashboardSummary);
+        }
       }
     } finally {
       setLoading(false);
     }
-  }, [selectedBranchId, fromDate, toDate]);
+  }, [selectedBranchId, fromDate, toDate, todayIso]);
 
   useEffect(() => {
     void loadDashboard();
@@ -93,9 +125,9 @@ export default function MainDashboardPage() {
 
   const saleCardTitle =
     period === 'today'
-      ? "Today's Net Sales"
+      ? "Today's Sale"
       : period === 'yesterday'
-        ? "Yesterday's Net Sales"
+        ? "Yesterday's Sale"
         : `${periodLabelMap[period]} Net Sales`;
 
   const filteredInvoices = useMemo(() => {
@@ -147,353 +179,342 @@ export default function MainDashboardPage() {
     ? roundMoney(summary.opening_cash + summary.cash_received)
     : 0;
 
-  return (
-    <div className="space-y-5">
-      {/* Executive Header & Single-Line Filter Toolbar */}
-      <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white px-5 py-4 shadow-xs">
-        <div>
-          <h1 className="text-lg font-extrabold tracking-tight text-slate-900 sm:text-xl">
-            Executive POS Dashboard
-          </h1>
-          <p className="mt-0.5 text-xs font-medium text-slate-500">
-            Live metrics for{' '}
-            <span className="font-semibold text-slate-700">{selectedBranchLabel}</span> •{' '}
-            <span>{periodLabelMap[period]}</span>
-          </p>
-        </div>
+  const rightSummary = todaySummary ?? summary;
+  const todayNetCash = rightSummary
+    ? roundMoney(rightSummary.opening_cash + rightSummary.cash_received)
+    : 0;
+  const todayCardAndBank = rightSummary
+    ? roundMoney(rightSummary.card_received + rightSummary.bank_received)
+    : 0;
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5">
-            <Store className="h-3.5 w-3.5 text-emerald-600" />
-            <select
-              aria-label="Filter Branch"
-              value={selectedBranchId}
-              onChange={(e) => setSelectedBranchId(e.target.value)}
-              className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none"
-            >
-              <option value="ALL">All Branches (Consolidated)</option>
-              {branches.map((b) => (
-                <option key={b.id} value={String(b.id)}>
-                  {b.display_name}
-                </option>
-              ))}
-            </select>
+  return (
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-12 xl:items-start">
+      {/* CENTER WORKSPACE (9 cols on xl) */}
+      <div className="min-w-0 space-y-4 xl:col-span-9">
+        {/* Filter Toolbar */}
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white px-5 py-3.5 shadow-sm">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-500/15" />
+              <h1 className="text-lg font-bold text-slate-900">Executive POS Dashboard</h1>
+            </div>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Showing <span className="font-semibold text-slate-700">{periodLabelMap[period]}</span>{' '}
+              • <span className="font-medium text-slate-600">{selectedBranchLabel}</span>
+            </p>
           </div>
 
-          <div className="flex items-center rounded-xl bg-slate-100 p-1">
-            {(
-              [
-                { key: 'today', label: 'Today' },
-                { key: 'yesterday', label: 'Yesterday' },
-                { key: 'week', label: 'Week' },
-                { key: 'month', label: 'Month' },
-              ] as const
-            ).map((preset) => (
-              <button
-                key={preset.key}
-                type="button"
-                onClick={() => handlePeriodChange(preset.key)}
-                className={`cursor-pointer rounded-lg px-3 py-1 text-xs font-semibold transition ${
-                  period === preset.key
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5">
+              <Store className="h-3.5 w-3.5 text-emerald-600" />
+              <select
+                aria-label="Filter Branch"
+                value={selectedBranchId}
+                onChange={(e) => setSelectedBranchId(e.target.value)}
+                className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none"
+              >
+                <option value="ALL">All Branches (Consolidated)</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={String(b.id)}>
+                    {b.display_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center rounded-xl bg-slate-100 p-1">
+              {(
+                [
+                  { key: 'today', label: 'Today' },
+                  { key: 'yesterday', label: 'Yesterday' },
+                  { key: 'week', label: 'Week' },
+                  { key: 'month', label: 'Month' },
+                ] as const
+              ).map((preset) => (
+                <button
+                  key={preset.key}
+                  type="button"
+                  onClick={() => handlePeriodChange(preset.key)}
+                  className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                    period === preset.key
+                      ? 'bg-white text-emerald-700 shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1">
+              <Calendar className="h-3.5 w-3.5 text-slate-400" />
+              <input
+                aria-label="From date"
+                type="date"
+                value={fromDate}
+                onChange={(e) => {
+                  setPeriod('custom');
+                  setFromDate(e.target.value);
+                }}
+                className="bg-transparent text-xs font-medium text-slate-700 focus:outline-none"
+              />
+              <span className="text-xs text-slate-400">–</span>
+              <input
+                aria-label="To date"
+                type="date"
+                value={toDate}
+                onChange={(e) => {
+                  setPeriod('custom');
+                  setToDate(e.target.value);
+                }}
+                className="bg-transparent text-xs font-medium text-slate-700 focus:outline-none"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* 4 Hero KPI Cards */}
+        <section className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400" />
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-semibold text-slate-600">{saleCardTitle}</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200/60">
+                <TrendingUp className="h-4 w-4" />
+              </span>
+            </div>
+            <div className="tabular-nums mt-2.5 text-xl font-bold text-slate-900 sm:text-[22px]">
+              {summary ? formatCurrency(summary.total_sale, settings.currency_symbol) : 'Loading...'}
+            </div>
+            <div className="mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2 text-[11px] text-slate-500">
+              <span>
+                Avg Bill:{' '}
+                <strong className="tabular-nums text-slate-800">
+                  {summary ? formatCurrency(summary.avg_ticket, settings.currency_symbol) : '-'}
+                </strong>
+              </span>
+              <span>
+                Tax:{' '}
+                <strong className="tabular-nums text-slate-800">
+                  {summary ? formatCurrency(summary.tax_collected, settings.currency_symbol) : '-'}
+                </strong>
+              </span>
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-600 to-sky-400" />
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-semibold text-slate-600">Total Invoices</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-50 text-sky-600 ring-1 ring-sky-200/60">
+                <FileText className="h-4 w-4" />
+              </span>
+            </div>
+            <div className="tabular-nums mt-2.5 text-xl font-bold text-slate-900 sm:text-[22px]">
+              {summary ? summary.total_invoices : '-'}
+            </div>
+            <div className="mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2 text-[11px] text-slate-500">
+              <span>
+                Returns:{' '}
+                <strong className="tabular-nums text-rose-600">
+                  {summary ? formatCurrency(summary.total_returns, settings.currency_symbol) : '-'}
+                </strong>
+              </span>
+              <Link
+                href="/register"
+                className="font-semibold text-sky-700 hover:underline"
+              >
+                Register →
+              </Link>
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-500 to-orange-400" />
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-semibold text-slate-600">Cash Received</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600 ring-1 ring-amber-200/60">
+                <Banknote className="h-4 w-4" />
+              </span>
+            </div>
+            <div className="tabular-nums mt-2.5 text-xl font-bold text-slate-900 sm:text-[22px]">
+              {summary
+                ? formatCurrency(summary.cash_received, settings.currency_symbol)
+                : 'Loading...'}
+            </div>
+            <div className="mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2 text-[11px] text-slate-500">
+              <span>
+                Card+Bank:{' '}
+                <strong className="tabular-nums text-slate-800">
+                  {summary
+                    ? formatCurrency(
+                        summary.card_received + summary.bank_received,
+                        settings.currency_symbol
+                      )
+                    : '-'}
+                </strong>
+              </span>
+              <span>
+                Drawer:{' '}
+                <strong className="tabular-nums text-emerald-700">
+                  {summary ? formatCurrency(netCashPosition, settings.currency_symbol) : '-'}
+                </strong>
+              </span>
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+            <div
+              className={`absolute inset-x-0 top-0 h-1 ${
+                lowStockCount > 0
+                  ? 'bg-gradient-to-r from-amber-500 to-rose-500'
+                  : 'bg-gradient-to-r from-violet-600 to-purple-400'
+              }`}
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-semibold text-slate-600">Held Bills &amp; Alerts</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-50 text-violet-600 ring-1 ring-violet-200/60">
+                <PauseCircle className="h-4 w-4" />
+              </span>
+            </div>
+            <div className="mt-2.5 flex items-baseline gap-2">
+              <span className="tabular-nums text-xl font-bold text-slate-900 sm:text-[22px]">
+                {summary ? summary.held_carts_count : '-'}
+              </span>
+              <span className="text-xs text-slate-500">parked bills</span>
+            </div>
+            <div className="mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2 text-[11px]">
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold ${
+                  lowStockCount > 0
+                    ? 'bg-amber-100 text-amber-800'
+                    : 'bg-emerald-50 text-emerald-700'
                 }`}
               >
-                {preset.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1">
-            <Calendar className="h-3.5 w-3.5 text-slate-400" />
-            <input
-              aria-label="From date"
-              type="date"
-              value={fromDate}
-              onChange={(e) => {
-                setPeriod('custom');
-                setFromDate(e.target.value);
-              }}
-              className="bg-transparent text-xs font-medium text-slate-700 focus:outline-none"
-            />
-            <span className="text-xs text-slate-400">–</span>
-            <input
-              aria-label="To date"
-              type="date"
-              value={toDate}
-              onChange={(e) => {
-                setPeriod('custom');
-                setToDate(e.target.value);
-              }}
-              className="bg-transparent text-xs font-medium text-slate-700 focus:outline-none"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* 4 Spacious Hero KPI Cards */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition hover:-translate-y-0.5 hover:shadow-md">
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400" />
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold tracking-wider text-slate-500 uppercase">
-              {saleCardTitle}
-            </span>
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-              <TrendingUp className="h-4 w-4" />
-            </span>
-          </div>
-          <div className="tabular-nums mt-3 text-2xl font-extrabold tracking-tight text-slate-900">
-            {summary ? formatCurrency(summary.total_sale, settings.currency_symbol) : 'Loading...'}
-          </div>
-          <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 text-xs text-slate-500">
-            <span>
-              Avg Bill:{' '}
-              <strong className="tabular-nums text-slate-800">
-                {summary ? formatCurrency(summary.avg_ticket, settings.currency_symbol) : '-'}
-              </strong>
-            </span>
-            <span>
-              Tax:{' '}
-              <strong className="tabular-nums text-slate-800">
-                {summary ? formatCurrency(summary.tax_collected, settings.currency_symbol) : '-'}
-              </strong>
-            </span>
-          </div>
-        </div>
-
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition hover:-translate-y-0.5 hover:shadow-md">
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-500 to-sky-400" />
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold tracking-wider text-slate-500 uppercase">
-              Completed Bills
-            </span>
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
-              <FileText className="h-4 w-4" />
-            </span>
-          </div>
-          <div className="tabular-nums mt-3 text-2xl font-extrabold tracking-tight text-slate-900">
-            {summary ? summary.total_invoices : '-'}
-          </div>
-          <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 text-xs text-slate-500">
-            <span>
-              Net Cash Drawer:{' '}
-              <strong className="tabular-nums text-emerald-700">
-                {summary ? formatCurrency(netCashPosition, settings.currency_symbol) : '-'}
-              </strong>
-            </span>
-            <span>
-              Returns:{' '}
-              <strong className="tabular-nums text-rose-600">
-                {summary ? formatCurrency(summary.total_returns, settings.currency_symbol) : '-'}
-              </strong>
-            </span>
-          </div>
-        </div>
-
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition hover:-translate-y-0.5 hover:shadow-md">
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-500 to-orange-400" />
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold tracking-wider text-slate-500 uppercase">
-              Cash &amp; Collections
-            </span>
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-              <Banknote className="h-4 w-4" />
-            </span>
-          </div>
-          <div className="tabular-nums mt-3 text-2xl font-extrabold tracking-tight text-slate-900">
-            {summary
-              ? formatCurrency(summary.cash_received, settings.currency_symbol)
-              : 'Loading...'}
-          </div>
-          <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 text-xs text-slate-500">
-            <span>
-              Opening:{' '}
-              <strong className="tabular-nums text-slate-800">
-                {summary ? formatCurrency(summary.opening_cash, settings.currency_symbol) : '-'}
-              </strong>
-            </span>
-            <span>
-              Card+Bank:{' '}
-              <strong className="tabular-nums text-slate-800">
-                {summary
-                  ? formatCurrency(
-                      summary.card_received + summary.bank_received,
-                      settings.currency_symbol
-                    )
-                  : '-'}
-              </strong>
-            </span>
-          </div>
-        </div>
-
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition hover:-translate-y-0.5 hover:shadow-md">
-          <div
-            className={`absolute inset-x-0 top-0 h-1 ${
-              lowStockCount > 0
-                ? 'bg-gradient-to-r from-amber-500 to-rose-500'
-                : 'bg-gradient-to-r from-violet-500 to-fuchsia-400'
-            }`}
-          />
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold tracking-wider text-slate-500 uppercase">
-              Held Bills &amp; Alerts
-            </span>
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
-              <PauseCircle className="h-4 w-4" />
-            </span>
-          </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="tabular-nums text-2xl font-extrabold tracking-tight text-slate-900">
-              {summary ? summary.held_carts_count : '-'}
-            </span>
-            <span className="text-xs font-medium text-slate-500">parked bills</span>
-          </div>
-          <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 text-xs">
-            <span
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold ${
-                lowStockCount > 0
-                  ? 'bg-amber-100 text-amber-800'
-                  : 'bg-emerald-50 text-emerald-700'
-              }`}
-            >
-              {lowStockCount > 0 ? `${lowStockCount} low stock SKUs` : 'Stock Healthy'}
-            </span>
-            <Link
-              href="/hold"
-              className="inline-flex items-center gap-0.5 font-semibold text-slate-600 hover:text-emerald-700"
-            >
-              Recall <ArrowUpRight className="h-3 w-3" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Analytics Row: Revenue Trend (8 cols) + Branch & Cash Summary (4 cols) */}
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs lg:col-span-8">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-emerald-600" />
-              <h2 className="text-sm font-bold text-slate-900">
-                {fromDate === toDate ? 'Hourly Sales Velocity' : 'Daily Revenue Trend'}
-              </h2>
+                {lowStockCount > 0 ? `${lowStockCount} low stock` : 'Stock Healthy'}
+              </span>
+              <Link
+                href="/hold"
+                className="inline-flex items-center gap-0.5 font-semibold text-violet-700 hover:underline"
+              >
+                Recall <ArrowUpRight className="h-3 w-3" />
+              </Link>
             </div>
-            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
-              {summary?.sales_trend.length ?? 0} active intervals
-            </span>
           </div>
+        </section>
 
-          {!summary || summary.sales_trend.length === 0 ? (
-            <div className="flex h-52 flex-col items-center justify-center gap-2 text-xs text-slate-400">
-              <p>No sales recorded for {periodLabelMap[period]}.</p>
-              {period === 'today' && (
-                <button
-                  type="button"
-                  onClick={() => handlePeriodChange('month')}
-                  className="cursor-pointer rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-100"
-                >
-                  View This Month&apos;s Activity
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="relative mt-5 flex h-52 items-end gap-3 border-b border-slate-100 pb-1">
-              {summary.sales_trend.map((pt) => {
-                const heightPct = Math.max(
-                  10,
-                  Math.round((Math.max(0, pt.sale_amount) / maxTrendSale) * 100)
-                );
-                return (
-                  <div
-                    key={pt.label}
-                    className="group relative flex h-full flex-1 flex-col items-center justify-end"
-                  >
-                    <div className="pointer-events-none absolute -top-9 z-10 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap text-white shadow-lg group-hover:block">
-                      {formatCurrency(pt.sale_amount, settings.currency_symbol)} • {pt.invoice_count} bills
-                    </div>
-                    <span className="tabular-nums mb-1 text-[11px] font-semibold text-slate-500">
-                      {formatCurrency(pt.sale_amount, '')}
-                    </span>
-                    <div className="flex w-full flex-1 items-end justify-center">
-                      <div
-                        style={{ height: `${heightPct}%` }}
-                        className="w-full max-w-16 rounded-t-xl bg-gradient-to-t from-slate-800 via-emerald-600 to-teal-400 transition-all duration-300 group-hover:from-emerald-700 group-hover:to-teal-300"
-                      />
-                    </div>
-                    <span className="mt-2 text-xs font-semibold text-slate-600">{pt.label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-col justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs lg:col-span-4">
-          <div>
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        {/* Analytics Row: Revenue Trend + Branch Share */}
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-7">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <Layers className="h-4 w-4 text-sky-600" />
-                <h2 className="text-sm font-bold text-slate-900">Branch Revenue &amp; Drawer</h2>
+                <BarChart3 className="h-4 w-4 text-emerald-600" />
+                <h2 className="text-sm font-bold text-slate-900">
+                  {fromDate === toDate ? 'Hourly Sales Velocity' : 'Daily Revenue Trend'}
+                </h2>
               </div>
-              <span className="text-xs font-medium text-slate-400">
-                {summary?.branch_breakdown.length ?? 0} outlets
+              <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                {summary?.sales_trend.length ?? 0} active intervals
               </span>
             </div>
 
-            <div className="mt-3.5 space-y-3">
-              {summary?.branch_breakdown.map((b) => {
-                const pct = Math.min(
-                  100,
-                  Math.round((Math.max(0, b.total_sale) / totalBranchSale) * 100)
-                );
-                return (
-                  <div key={b.branch_id} className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-800">{b.branch_name}</span>
-                      <span className="tabular-nums font-bold text-slate-900">
-                        {formatCurrency(b.total_sale, settings.currency_symbol)}{' '}
-                        <span className="font-medium text-slate-400">({pct}%)</span>
+            {!summary || summary.sales_trend.length === 0 ? (
+              <div className="flex h-48 flex-col items-center justify-center gap-2 text-xs text-slate-400">
+                <p>No sales recorded for {periodLabelMap[period]}.</p>
+                {period === 'today' && (
+                  <button
+                    type="button"
+                    onClick={() => handlePeriodChange('month')}
+                    className="cursor-pointer rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-100"
+                  >
+                    View This Month&apos;s Activity
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="relative mt-5 flex h-48 items-end gap-3 border-b border-slate-100 pb-1">
+                {summary.sales_trend.map((pt) => {
+                  const heightPct = Math.max(
+                    12,
+                    Math.round((Math.max(0, pt.sale_amount) / maxTrendSale) * 100)
+                  );
+                  return (
+                    <div
+                      key={pt.label}
+                      className="group relative flex h-full flex-1 flex-col items-center justify-end"
+                    >
+                      <div className="pointer-events-none absolute -top-9 z-10 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap text-white shadow-lg group-hover:block">
+                        {formatCurrency(pt.sale_amount, settings.currency_symbol)} • {pt.invoice_count} bills
+                      </div>
+                      <span className="tabular-nums mb-1 text-[11px] font-semibold text-slate-500">
+                        {formatCurrency(pt.sale_amount, '')}
                       </span>
+                      <div className="flex w-full flex-1 items-end justify-center">
+                        <div
+                          style={{ height: `${heightPct}%` }}
+                          className="w-full max-w-14 rounded-t-xl bg-gradient-to-t from-emerald-700 via-emerald-500 to-teal-300 shadow-xs transition-all duration-300 group-hover:from-blue-600 group-hover:to-cyan-400"
+                        />
+                      </div>
+                      <span className="mt-2 text-xs font-semibold text-slate-600">{pt.label}</span>
                     </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                      <div
-                        style={{ width: `${pct}%` }}
-                        className="h-full rounded-full bg-gradient-to-r from-sky-600 to-emerald-500"
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          <div className="space-y-2 rounded-xl border border-slate-100 bg-slate-50/80 p-3.5 text-xs">
-            <div className="flex justify-between text-slate-600">
-              <span>Net Cash in Drawer:</span>
-              <strong className="tabular-nums text-slate-900">
-                {summary ? formatCurrency(netCashPosition, settings.currency_symbol) : '-'}
-              </strong>
+          <div className="flex flex-col justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-5">
+            <div>
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-blue-600" />
+                  <h2 className="text-sm font-bold text-slate-900">Branch Revenue Share</h2>
+                </div>
+                <span className="text-xs font-medium text-slate-400">
+                  {summary?.branch_breakdown.length ?? 0} outlets
+                </span>
+              </div>
+
+              <div className="mt-3.5 space-y-3">
+                {summary?.branch_breakdown.map((b) => {
+                  const pct = Math.min(
+                    100,
+                    Math.round((Math.max(0, b.total_sale) / totalBranchSale) * 100)
+                  );
+                  return (
+                    <div key={b.branch_id} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-slate-800">{b.branch_name}</span>
+                        <span className="tabular-nums font-bold text-slate-900">
+                          {formatCurrency(b.total_sale, settings.currency_symbol)}{' '}
+                          <span className="font-medium text-slate-400">({pct}%)</span>
+                        </span>
+                      </div>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                        <div
+                          style={{ width: `${pct}%` }}
+                          className="h-full rounded-full bg-gradient-to-r from-blue-600 to-emerald-500"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <div className="flex justify-between text-slate-600">
-              <span>Held / Parked Bills:</span>
-              <strong className="tabular-nums text-amber-700">
-                {summary ? summary.held_carts_count : '-'}
-              </strong>
-            </div>
-            <div className="pt-1">
-              <div className="mb-1 flex justify-between text-[11px] text-slate-500">
+
+            <div className="rounded-xl border border-slate-100 bg-slate-50/90 p-3.5 text-xs">
+              <div className="mb-1.5 flex justify-between text-[11px] font-semibold text-slate-600">
                 <span>Payment Mix</span>
                 <span>
                   Cash {paymentMix.cashPct}% • Card {paymentMix.cardPct}% • Bank {paymentMix.bankPct}%
                 </span>
               </div>
-              <div className="flex h-2 w-full overflow-hidden rounded-full bg-slate-200">
+              <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
                 {paymentMix.cashPct > 0 && (
                   <div style={{ width: `${paymentMix.cashPct}%` }} className="bg-emerald-500" />
                 )}
                 {paymentMix.cardPct > 0 && (
-                  <div style={{ width: `${paymentMix.cardPct}%` }} className="bg-sky-500" />
+                  <div style={{ width: `${paymentMix.cardPct}%` }} className="bg-blue-500" />
                 )}
                 {paymentMix.bankPct > 0 && (
                   <div style={{ width: `${paymentMix.bankPct}%` }} className="bg-amber-500" />
@@ -501,17 +522,16 @@ export default function MainDashboardPage() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Bottom Workspace: Recent Invoices (8 cols) + Inventory Watch & Quick Actions (4 cols) */}
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs lg:col-span-8">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+        {/* Recent Invoices Table */}
+        <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-3.5">
             <div className="flex items-center gap-2.5">
-              <h2 className="text-base font-bold text-slate-900">Recent POS Bills</h2>
+              <Receipt className="h-4 w-4 text-amber-600" />
+              <h2 className="text-base font-bold text-slate-900">Recent Invoices</h2>
               <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
-                {filteredInvoices.length} shown
+                Showing {periodLabelMap[period]}
               </span>
             </div>
 
@@ -523,16 +543,16 @@ export default function MainDashboardPage() {
                   value={tableSearch}
                   onChange={(e) => setTableSearch(e.target.value)}
                   placeholder="Search bill or customer..."
-                  className="w-48 rounded-lg border border-slate-200 bg-slate-50 py-1.5 pr-2.5 pl-8 text-xs focus:border-emerald-500 focus:bg-white focus:outline-none"
+                  className="w-44 rounded-lg border border-slate-200 bg-slate-50 py-1.5 pr-2.5 pl-8 text-xs focus:border-emerald-500 focus:bg-white focus:outline-none sm:w-48"
                 />
               </div>
 
               <Link
                 href="/register"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-900"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
-                <span>Full Register</span>
+                <span>View Full Register</span>
               </Link>
             </div>
           </div>
@@ -540,13 +560,13 @@ export default function MainDashboardPage() {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold tracking-wider text-slate-500 uppercase">
-                  <th className="px-5 py-3">Receipt No</th>
+                <tr className="border-b border-slate-200 bg-slate-50/90 text-xs font-semibold text-slate-600">
+                  <th className="px-5 py-3">Invoice No</th>
                   <th className="px-4 py-3">Branch</th>
                   <th className="px-4 py-3">Date</th>
-                  <th className="px-4 py-3">Customer</th>
+                  <th className="px-4 py-3">Customer Name</th>
                   <th className="px-4 py-3">Payment</th>
-                  <th className="px-4 py-3 text-right">Amount</th>
+                  <th className="px-4 py-3 text-right">Total Amount</th>
                   <th className="px-4 py-3 text-center">Action</th>
                 </tr>
               </thead>
@@ -554,7 +574,7 @@ export default function MainDashboardPage() {
                 {loading && !summary && (
                   <tr>
                     <td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-500">
-                      Loading recent receipts...
+                      Loading recent invoices...
                     </td>
                   </tr>
                 )}
@@ -562,14 +582,14 @@ export default function MainDashboardPage() {
                 {!loading && filteredInvoices.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-500">
-                      No receipts found for {periodLabelMap[period]} ({selectedBranchLabel}).
+                      No invoices found for {periodLabelMap[period]} ({selectedBranchLabel}).
                     </td>
                   </tr>
                 )}
 
                 {filteredInvoices.map((inv) => (
                   <tr key={inv.id} className="transition hover:bg-slate-50/80">
-                    <td className="px-5 py-3.5 font-mono text-xs font-bold text-slate-900">
+                    <td className="px-5 py-3 text-xs font-bold text-slate-900">
                       <div className="flex items-center gap-1.5">
                         <span>{inv.invoice_no}</span>
                         {inv.invoice_type === 'RETURN' && (
@@ -579,32 +599,32 @@ export default function MainDashboardPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3">
                       <span className="inline-flex items-center gap-1.5 rounded-md border border-sky-200/80 bg-sky-50/70 px-2 py-0.5 text-xs font-semibold text-slate-700">
                         <Store className="h-3 w-3 text-sky-600" />
                         <span>{inv.branch_name}</span>
                       </span>
                     </td>
-                    <td className="px-4 py-3.5 text-xs whitespace-nowrap text-slate-500">
+                    <td className="px-4 py-3 text-xs whitespace-nowrap text-slate-500">
                       {inv.invoice_date}
                     </td>
-                    <td className="px-4 py-3.5 text-xs font-medium text-slate-700">
+                    <td className="px-4 py-3 text-xs font-medium text-slate-700">
                       {inv.customer_name}
                     </td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3">
                       <PaymentModeBadge mode={inv.payment_mode} />
                     </td>
-                    <td className="tabular-nums px-4 py-3.5 text-right text-xs font-bold text-slate-900">
+                    <td className="tabular-nums px-4 py-3 text-right text-xs font-bold text-slate-900">
                       {inv.invoice_type === 'RETURN' ? '-' : ''}
                       {formatCurrency(inv.total_amount, settings.currency_symbol)}
                     </td>
-                    <td className="px-4 py-3.5 text-center">
+                    <td className="px-4 py-3 text-center">
                       <button
                         type="button"
                         onClick={() => setViewInvoiceId(inv.id)}
                         className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800"
                       >
-                        <Eye className="h-3.5 w-3.5 text-emerald-600" />
+                        <Eye className="h-3.5 w-3.5 text-sky-600" />
                         <span>View</span>
                       </button>
                     </td>
@@ -613,91 +633,189 @@ export default function MainDashboardPage() {
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
+      </div>
 
-        <div className="space-y-4 lg:col-span-4">
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <PackageCheck className="h-4 w-4 text-amber-600" />
-                <h2 className="text-sm font-bold text-slate-900">Inventory Watch</h2>
+      {/* RIGHT SIDEBAR PANEL: Today's Summary (3 cols on xl) */}
+      <aside className="space-y-3.5 xl:sticky xl:top-4 xl:col-span-3">
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h2 className="text-base font-bold text-slate-900">Today&apos;s Summary</h2>
+              <p className="text-[11px] font-medium text-slate-400">
+                {formatDisplayDate(todayIso)} • {selectedBranchId === 'ALL' ? 'All Branches' : selectedBranchLabel}
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Live
+            </span>
+          </div>
+
+          <div className="mt-3.5 space-y-3">
+            {/* Cash Position Card */}
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5">
+              <div className="flex items-center gap-2 border-b border-slate-200/70 pb-2">
+                <Coins className="h-4 w-4 text-amber-500" />
+                <h3 className="text-xs font-bold text-slate-800">Cash Position</h3>
               </div>
-              {!isCashier && (
-                <Link
-                  href="/settings?tab=products"
-                  className="text-xs font-semibold text-emerald-700 hover:underline"
-                >
-                  Manage
-                </Link>
-              )}
+              <div className="mt-2.5 space-y-1.5 text-xs">
+                <div className="flex justify-between text-slate-600">
+                  <span>Opening:</span>
+                  <strong className="tabular-nums font-semibold text-slate-900">
+                    {rightSummary
+                      ? formatCurrency(rightSummary.opening_cash, settings.currency_symbol)
+                      : '-'}
+                  </strong>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Cash Receipts:</span>
+                  <strong className="tabular-nums font-semibold text-emerald-700">
+                    {rightSummary
+                      ? formatCurrency(rightSummary.cash_received, settings.currency_symbol)
+                      : '-'}
+                  </strong>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Returns:</span>
+                  <strong className="tabular-nums font-semibold text-rose-600">
+                    {rightSummary
+                      ? formatCurrency(rightSummary.total_returns, settings.currency_symbol)
+                      : '-'}
+                  </strong>
+                </div>
+                <div className="flex justify-between border-t border-slate-200 pt-1.5 text-slate-900">
+                  <span className="font-bold">Net Cash:</span>
+                  <strong className="tabular-nums font-bold text-slate-900">
+                    {rightSummary ? formatCurrency(todayNetCash, settings.currency_symbol) : '-'}
+                  </strong>
+                </div>
+              </div>
             </div>
 
-            <div className="mt-3 space-y-2">
-              {summary?.low_stock_items.map((item) => {
-                const isLow = item.stock_qty <= 25;
-                return (
-                  <div
-                    key={item.product_id}
-                    className="flex items-center justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs"
+            {/* POS Activity Card */}
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5">
+              <div className="flex items-center gap-2 border-b border-slate-200/70 pb-2">
+                <ShoppingCart className="h-4 w-4 text-blue-600" />
+                <h3 className="text-xs font-bold text-slate-800">POS Activity</h3>
+              </div>
+              <div className="mt-2.5 space-y-1.5 text-xs">
+                <div className="flex justify-between text-slate-600">
+                  <span>Today&apos;s Counter Bills:</span>
+                  <strong className="tabular-nums font-bold text-slate-900">
+                    {rightSummary ? rightSummary.total_invoices : '-'}
+                  </strong>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Today&apos;s Sales:</span>
+                  <strong className="tabular-nums font-semibold text-emerald-700">
+                    {rightSummary
+                      ? formatCurrency(rightSummary.total_sale, settings.currency_symbol)
+                      : '-'}
+                  </strong>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Card &amp; Bank:</span>
+                  <strong className="tabular-nums font-semibold text-sky-700">
+                    {rightSummary
+                      ? formatCurrency(todayCardAndBank, settings.currency_symbol)
+                      : '-'}
+                  </strong>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Held / Parked Bills:</span>
+                  <Link
+                    href="/hold"
+                    className="tabular-nums font-bold text-amber-700 hover:underline"
                   >
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-slate-800">{item.name}</p>
-                      <p className="font-mono text-[10px] text-slate-400">{item.sku}</p>
-                    </div>
-                    <span
-                      className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                        isLow
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-emerald-100 text-emerald-800'
-                      }`}
-                    >
-                      {isLow && <AlertTriangle className="h-3 w-3" />}
-                      {item.stock_qty} {item.unit}
-                    </span>
-                  </div>
-                );
-              })}
+                    {rightSummary ? rightSummary.held_carts_count : '-'}
+                  </Link>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="rounded-2xl bg-gradient-to-br from-slate-900 via-[#0b1324] to-slate-800 p-5 text-white shadow-xs">
-            <h2 className="text-sm font-bold">Quick Counter Actions</h2>
-            <p className="mt-0.5 text-xs text-slate-400">
-              Jump directly to daily store &amp; cashier tasks.
-            </p>
-            <div className="mt-4 grid grid-cols-2 gap-2.5">
-              <Link
-                href="/sale"
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500 px-3 py-2.5 text-xs font-bold text-slate-950 transition hover:bg-emerald-400"
-              >
-                <ShoppingCart className="h-3.5 w-3.5" />
-                POS Sale
-              </Link>
-              <Link
-                href="/returns"
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-800 px-3 py-2.5 text-xs font-bold text-white transition hover:bg-slate-700"
-              >
-                <Undo2 className="h-3.5 w-3.5 text-amber-400" />
-                Returns
-              </Link>
-              <Link
-                href="/closing"
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-800 px-3 py-2.5 text-xs font-bold text-white transition hover:bg-slate-700"
-              >
-                <DoorOpen className="h-3.5 w-3.5 text-sky-400" />
-                Day Closing
-              </Link>
-              <Link
-                href="/reports"
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-800 px-3 py-2.5 text-xs font-bold text-white transition hover:bg-slate-700"
-              >
-                <BarChart3 className="h-3.5 w-3.5 text-emerald-400" />
-                Reports
-              </Link>
+            {/* Inventory Watch Card */}
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5">
+              <div className="flex items-center justify-between border-b border-slate-200/70 pb-2">
+                <div className="flex items-center gap-2">
+                  <PackageCheck className="h-4 w-4 text-emerald-600" />
+                  <h3 className="text-xs font-bold text-slate-800">Inventory Watch</h3>
+                </div>
+                {!isCashier && (
+                  <Link
+                    href="/settings?tab=products"
+                    className="text-[11px] font-semibold text-emerald-700 hover:underline"
+                  >
+                    Manage
+                  </Link>
+                )}
+              </div>
+
+              <div className="mt-2.5 space-y-1.5">
+                {summary?.low_stock_items.slice(0, 4).map((item) => {
+                  const isLow = item.stock_qty <= 25;
+                  return (
+                    <div
+                      key={item.product_id}
+                      className="flex items-center justify-between gap-2 rounded-lg bg-white px-2.5 py-1.5 text-xs ring-1 ring-slate-200/70"
+                    >
+                      <span className="truncate font-medium text-slate-700">{item.name}</span>
+                      <span
+                        className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          isLow
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-emerald-100 text-emerald-800'
+                        }`}
+                      >
+                        {isLow && <AlertTriangle className="h-2.5 w-2.5" />}
+                        {item.stock_qty} {item.unit}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
-      </section>
+
+        {/* Quick Counter Actions Card */}
+        <div className="rounded-2xl bg-gradient-to-br from-[#09111e] via-[#0f1d36] to-[#15294a] p-4 text-white shadow-sm">
+          <h3 className="text-sm font-bold">Quick Counter Actions</h3>
+          <p className="mt-0.5 text-[11px] text-slate-300">
+            Jump directly to daily cashier &amp; store operations.
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Link
+              href="/sale"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500 px-3 py-2 text-xs font-bold text-slate-950 shadow-xs transition hover:bg-emerald-400"
+            >
+              <ShoppingCart className="h-3.5 w-3.5" />
+              POS Sale
+            </Link>
+            <Link
+              href="/returns"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/20"
+            >
+              <Undo2 className="h-3.5 w-3.5 text-amber-400" />
+              Returns
+            </Link>
+            <Link
+              href="/closing"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/20"
+            >
+              <DoorOpen className="h-3.5 w-3.5 text-sky-400" />
+              Day Closing
+            </Link>
+            <Link
+              href="/reports"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/20"
+            >
+              <BarChart3 className="h-3.5 w-3.5 text-emerald-400" />
+              Reports
+            </Link>
+          </div>
+        </div>
+      </aside>
 
       <InvoiceModal invoiceId={viewInvoiceId} onClose={() => setViewInvoiceId(null)} />
     </div>
