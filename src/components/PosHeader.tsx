@@ -5,9 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Building2,
   ChevronDown,
-  CloudUpload,
   DatabaseBackup,
-  FileText,
   Info,
   Package,
   RefreshCw,
@@ -22,7 +20,6 @@ interface DropdownItem {
   href?: string;
   action?: 'backup' | 'about';
   icon: React.ComponentType<{ className?: string }>;
-  adminOnly?: boolean;
 }
 
 interface DropdownGroup {
@@ -40,7 +37,7 @@ const ADMIN_SUBHEADER_MENUS: DropdownGroup[] = [
     adminOnly: true,
     items: [
       { label: 'Company Name, Logo & Branding', href: '/settings?tab=business', icon: Building2 },
-      { label: 'Branches & FBR POSIDs', href: '/settings?tab=branches', icon: Store },
+      { label: 'Branches & POS Counters', href: '/settings?tab=branches', icon: Store },
       { label: 'Users, Roles & Passwords', href: '/settings?tab=users', icon: Shield },
       { label: 'Download System Backup (JSON)', action: 'backup', icon: DatabaseBackup },
     ],
@@ -52,14 +49,6 @@ const ADMIN_SUBHEADER_MENUS: DropdownGroup[] = [
     items: [
       { label: 'Products & Pricing', href: '/settings?tab=products', icon: Package },
       { label: 'Registered Customers', href: '/settings?tab=customers', icon: Users },
-    ],
-  },
-  {
-    key: 'fbr',
-    label: 'FBR Digital',
-    items: [
-      { label: 'Pending FBR Invoices', href: '/register?fbrStatus=PENDING', icon: CloudUpload },
-      { label: 'FBR Sync & Audit Logs', href: '/reports?tab=fbr', icon: FileText },
     ],
   },
   {
@@ -109,16 +98,14 @@ export function PosHeader() {
   };
 
   return (
-    <div ref={barRef} className="no-print relative z-30 w-full border-b border-slate-200/90 bg-white">
+    <div ref={barRef} className="no-print relative z-30 w-full border-b border-slate-200/90 bg-white/95 backdrop-blur-xs">
       <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-2 px-4 py-1.5 sm:px-6">
-        {/* LEFT SIDE: Administrator, Maintain, FBR Digital, About */}
+        {/* LEFT SIDE: Administrator, Maintain, About */}
         <div className="flex flex-wrap items-center gap-1.5">
           {ADMIN_SUBHEADER_MENUS.map((group) => {
             if (group.adminOnly && isCashier) return null;
-            const visibleItems = group.items.filter((it) => !(it.adminOnly && isCashier));
-            if (visibleItems.length === 0) return null;
-
             const isOpen = openMenu === group.key;
+
             return (
               <div key={group.key} className="relative">
                 <button
@@ -143,7 +130,7 @@ export function PosHeader() {
 
                 {isOpen && (
                   <div className="absolute left-0 z-50 mt-1.5 w-64 rounded-xl border border-slate-200 bg-white py-1.5 text-slate-800 shadow-2xl">
-                    {visibleItems.map((item) => {
+                    {group.items.map((item) => {
                       const Icon = item.icon;
                       if (item.action === 'backup') {
                         return (
@@ -193,7 +180,7 @@ export function PosHeader() {
           })}
         </div>
 
-        {/* RIGHT SIDE: Sync/Refresh Action */}
+        {/* RIGHT SIDE: Refresh Action */}
         <div className="ml-auto flex items-center gap-2">
           <button
             type="button"
@@ -207,15 +194,20 @@ export function PosHeader() {
       </div>
 
       {showAbout && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
           <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 text-slate-800 shadow-2xl">
             <h3 className="text-base font-bold text-slate-900">
-              {settings.software_brand} — Retail POS &amp; FBR ERP
+              {settings.software_brand} — Multi-Branch Retail POS
             </h3>
             <p className="mt-1 text-xs font-semibold text-emerald-700">{settings.business_name}</p>
             <div className="mt-3 space-y-1.5 rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
-              <p>NTN: {settings.ntn || '-'} | STRN: {settings.strn || '-'}</p>
-              <p>Default GST Rate: {settings.default_tax_rate}%</p>
+              {(settings.ntn || settings.strn) && (
+                <p>
+                  {settings.ntn ? `NTN: ${settings.ntn}` : ''}{' '}
+                  {settings.strn ? `| STRN: ${settings.strn}` : ''}
+                </p>
+              )}
+              <p>Default Tax Rate: {settings.default_tax_rate}%</p>
               <p>{settings.footer_text}</p>
             </div>
             <div className="mt-4 flex justify-end">

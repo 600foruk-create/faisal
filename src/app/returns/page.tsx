@@ -2,9 +2,9 @@
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Eye, Search, Undo2, WifiOff } from 'lucide-react';
-import { FbrStatusBadge } from '@/components/FbrStatusBadge';
+import { Eye, Search, Undo2 } from 'lucide-react';
 import { InvoiceModal } from '@/components/InvoiceModal';
+import { PaymentModeBadge } from '@/components/PaymentModeBadge';
 import { usePosContext } from '@/components/PosContext';
 import { formatCurrency } from '@/lib/format';
 import type { InvoiceDetail, InvoiceRecord, PaymentMode } from '@/lib/types';
@@ -20,7 +20,6 @@ function SalesReturnContent() {
   const [returnQuantities, setReturnQuantities] = useState<Record<number, number>>({});
   const [refundMode, setRefundMode] = useState<PaymentMode>('CASH');
   const [reason, setReason] = useState('Customer Return');
-  const [simulateOffline, setSimulateOffline] = useState(false);
   const [recentReturns, setRecentReturns] = useState<InvoiceRecord[]>([]);
   const [loadingLookup, setLoadingLookup] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -46,12 +45,12 @@ function SalesReturnContent() {
       const data = (await res.json()) as { invoice?: InvoiceDetail; error?: string };
       if (!res.ok || !data.invoice) {
         setOriginalInvoice(null);
-        setMessage({ type: 'error', text: data.error || 'Invoice not found' });
+        setMessage({ type: 'error', text: data.error || 'Receipt not found' });
         return;
       }
       if (data.invoice.invoice_type !== 'SALE') {
         setOriginalInvoice(null);
-        setMessage({ type: 'error', text: 'Select an original SALE invoice (not a return).' });
+        setMessage({ type: 'error', text: 'Select an original SALE receipt (not a return).' });
         return;
       }
       setOriginalInvoice(data.invoice);
@@ -100,7 +99,6 @@ function SalesReturnContent() {
           cashierName: activeUser?.full_name ?? 'POS Cashier',
           refundMode,
           reason,
-          simulateFbrOffline: simulateOffline,
           items: selectedItems,
         }),
       });
@@ -111,7 +109,7 @@ function SalesReturnContent() {
       }
       setMessage({
         type: 'success',
-        text: `Return ${data.invoice.invoice_no} processed & stock restored (${data.invoice.fbr_status}).`,
+        text: `Return ${data.invoice.invoice_no} processed & inventory stock restored.`,
       });
       setViewInvoiceId(data.invoice.id);
       await Promise.all([lookupInvoice(originalInvoice.invoice_no), loadRecentReturns()]);
@@ -122,22 +120,19 @@ function SalesReturnContent() {
 
   return (
     <div className="space-y-4">
-      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Undo2 className="h-5 w-5 text-amber-600" />
-            <h1 className="text-lg font-bold text-slate-900">Sales Return / Credit Note</h1>
+      <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs">
+        <div className="mb-4 flex flex-wrap items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+            <Undo2 className="h-5 w-5" />
+          </span>
+          <div>
+            <h1 className="text-lg font-extrabold tracking-tight text-slate-900">
+              Sales Return / Refund
+            </h1>
+            <p className="text-xs text-slate-500">
+              Look up a receipt to refund items and automatically restore branch stock
+            </p>
           </div>
-
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-900">
-            <input
-              type="checkbox"
-              checked={simulateOffline}
-              onChange={(e) => setSimulateOffline(e.target.checked)}
-            />
-            <WifiOff className="h-3.5 w-3.5" />
-            Simulate FBR Offline
-          </label>
         </div>
 
         <form
@@ -147,28 +142,28 @@ function SalesReturnContent() {
           }}
           className="flex flex-wrap gap-2"
         >
-          <div className="relative flex-1 min-w-[240px]">
+          <div className="relative min-w-[240px] flex-1">
             <Search className="pointer-events-none absolute top-2.5 left-3 h-4 w-4 text-slate-400" />
             <input
               type="text"
               value={invoiceQuery}
               onChange={(e) => setInvoiceQuery(e.target.value)}
-              placeholder="Enter Original Invoice No (e.g. SWT-A-POS-63)..."
-              className="w-full rounded-lg border border-slate-300 py-2 pr-3 pl-9 text-sm"
+              placeholder="Enter Original Receipt No (e.g. SWT-A-POS-63)..."
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pr-3 pl-9 text-sm focus:border-emerald-500 focus:bg-white focus:outline-none"
             />
           </div>
           <button
             type="submit"
             disabled={loadingLookup}
-            className="cursor-pointer rounded-lg bg-[#49210a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5e2b0d] disabled:opacity-60"
+            className="cursor-pointer rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
           >
-            {loadingLookup ? 'Searching...' : 'Load Invoice'}
+            {loadingLookup ? 'Searching...' : 'Load Receipt'}
           </button>
         </form>
 
         {message && (
           <div
-            className={`mt-3 rounded-lg border px-3 py-2 text-xs font-medium ${
+            className={`mt-3 rounded-xl border px-3 py-2 text-xs font-medium ${
               message.type === 'error'
                 ? 'border-red-200 bg-red-50 text-red-700'
                 : 'border-emerald-200 bg-emerald-50 text-emerald-800'
@@ -180,14 +175,15 @@ function SalesReturnContent() {
 
         {originalInvoice && (
           <form onSubmit={handleSubmitReturn} className="mt-5 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs">
               <div>
                 <strong>{originalInvoice.invoice_no}</strong> •{' '}
                 <span>{originalInvoice.branch_display_name}</span> •{' '}
                 <span>{originalInvoice.customer_name}</span>
               </div>
               <div className="font-bold text-slate-900">
-                Original Total: {formatCurrency(originalInvoice.total_amount, settings.currency_symbol)}
+                Original Total:{' '}
+                {formatCurrency(originalInvoice.total_amount, settings.currency_symbol)}
               </div>
             </div>
 
@@ -255,7 +251,7 @@ function SalesReturnContent() {
                 <select
                   value={refundMode}
                   onChange={(e) => setRefundMode(e.target.value as PaymentMode)}
-                  className="w-full rounded-lg border border-slate-300 px-2.5 py-2 text-sm"
+                  className="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-sm"
                 >
                   <option value="CASH">Cash Refund</option>
                   <option value="CARD">Card Refund</option>
@@ -270,7 +266,7 @@ function SalesReturnContent() {
                   type="text"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
                 />
               </div>
             </div>
@@ -279,7 +275,7 @@ function SalesReturnContent() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="cursor-pointer rounded-lg bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+                className="cursor-pointer rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
               >
                 {submitting ? 'Processing Return...' : 'Confirm Return & Restore Stock'}
               </button>
@@ -288,20 +284,20 @@ function SalesReturnContent() {
         )}
       </section>
 
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-5 py-3.5">
+      <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+        <div className="border-b border-slate-100 px-5 py-3.5">
           <h2 className="text-base font-bold text-slate-900">Recent Sales Returns</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600">
+              <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold tracking-wider text-slate-500 uppercase">
                 <th className="px-4 py-3">Return No</th>
                 <th className="px-4 py-3">Original Bill</th>
                 <th className="px-4 py-3">Branch</th>
                 <th className="px-4 py-3">Date</th>
+                <th className="px-4 py-3">Refund Mode</th>
                 <th className="px-4 py-3 text-right">Refund Amount</th>
-                <th className="px-4 py-3">FBR Status</th>
                 <th className="px-4 py-3 text-center">Action</th>
               </tr>
             </thead>
@@ -314,26 +310,28 @@ function SalesReturnContent() {
                 </tr>
               ) : (
                 recentReturns.map((r) => (
-                  <tr key={r.id}>
-                    <td className="px-4 py-3 font-bold text-rose-700">{r.invoice_no}</td>
+                  <tr key={r.id} className="hover:bg-slate-50/70">
+                    <td className="px-4 py-3 font-mono text-xs font-bold text-rose-700">
+                      {r.invoice_no}
+                    </td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-600">
                       {r.original_invoice_no ?? '-'}
                     </td>
                     <td className="px-4 py-3 text-xs">{r.branch_display_name}</td>
                     <td className="px-4 py-3 text-xs text-slate-600">{r.created_at}</td>
-                    <td className="px-4 py-3 text-right font-bold text-rose-700">
-                      -{formatCurrency(r.total_amount, settings.currency_symbol)}
-                    </td>
                     <td className="px-4 py-3">
-                      <FbrStatusBadge status={r.fbr_status} />
+                      <PaymentModeBadge mode={r.payment_mode} />
+                    </td>
+                    <td className="tabular-nums px-4 py-3 text-right font-bold text-rose-700">
+                      -{formatCurrency(r.total_amount, settings.currency_symbol)}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <button
                         type="button"
                         onClick={() => setViewInvoiceId(r.id)}
-                        className="inline-flex cursor-pointer items-center gap-1 rounded border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                        className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:bg-emerald-50"
                       >
-                        <Eye className="h-3.5 w-3.5 text-sky-600" />
+                        <Eye className="h-3.5 w-3.5 text-emerald-600" />
                         View
                       </button>
                     </td>
@@ -345,20 +343,17 @@ function SalesReturnContent() {
         </div>
       </section>
 
-      <InvoiceModal
-        invoiceId={viewInvoiceId}
-        onClose={() => setViewInvoiceId(null)}
-        onSynced={() => void loadRecentReturns()}
-      />
+      <InvoiceModal invoiceId={viewInvoiceId} onClose={() => setViewInvoiceId(null)} />
     </div>
   );
 }
 
 export default function SalesReturnPage() {
   return (
-    <Suspense fallback={<div className="rounded-xl bg-white p-6 text-sm">Loading returns...</div>}>
+    <Suspense
+      fallback={<div className="rounded-2xl bg-white p-6 text-sm">Loading returns...</div>}
+    >
       <SalesReturnContent />
     </Suspense>
   );
 }
-

@@ -168,9 +168,9 @@ function SettingsContent() {
         </div>
         <h1 className="mt-3 text-lg font-bold text-slate-900">Administrator Access Required</h1>
         <p className="mt-1 text-xs text-slate-600">
-          Company Name, Logo, FBR Terminals, and User Roles can only be changed by an{' '}
-          <strong>ADMIN</strong> or <strong>MANAGER</strong>. Switch user via the green{' '}
-          <strong>Login to Branch</strong> menu above.
+          Company Name, Logo, Branches &amp; Counters, and User Roles can only be changed by an{' '}
+          <strong>ADMIN</strong> or <strong>MANAGER</strong>. Switch user via the top bar{' '}
+          <strong>Switch</strong> button above.
         </p>
       </section>
     );
@@ -280,9 +280,9 @@ function SettingsContent() {
           terminalId: editTerminalId,
           terminalCode: tCode,
           invoicePrefix: tPrefix,
-          fbrPosId: tPosId,
-          fbrToken: tToken,
-          fbrMode: tMode,
+          fbrPosId: tPosId || '100001',
+          fbrToken: tToken || '',
+          fbrMode: tMode || 'MOCK',
         },
       }),
     });
@@ -290,7 +290,7 @@ function SettingsContent() {
     if (res.ok) {
       await reloadContext();
       resetBranchForm();
-      setMessage({ type: 'success', text: 'Branch & FBR terminal configuration saved.' });
+      setMessage({ type: 'success', text: 'Branch & POS counter configuration saved.' });
     } else {
       setMessage({ type: 'error', text: data.error || 'Failed to save branch' });
     }
@@ -430,7 +430,7 @@ function SettingsContent() {
             {(
               [
                 { key: 'business', label: 'Company & Logo', icon: Building2 },
-                { key: 'branches', label: 'Branches & FBR POSIDs', icon: Settings },
+                { key: 'branches', label: 'Branches & Counters', icon: Settings },
                 { key: 'products', label: 'Products & Stock', icon: Package },
                 { key: 'customers', label: 'Customers', icon: Users },
                 { key: 'users', label: 'Users & Roles', icon: Shield },
@@ -440,9 +440,9 @@ function SettingsContent() {
                 key={key}
                 type="button"
                 onClick={() => setTab(key)}
-                className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                className={`inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition ${
                   tab === key
-                    ? 'bg-[#49210a] text-white'
+                    ? 'bg-emerald-600 text-white shadow-xs'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
@@ -633,7 +633,7 @@ function SettingsContent() {
             <button
               type="button"
               onClick={handleDownloadBackup}
-              className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#49210a] py-2.5 text-xs font-bold text-white hover:bg-[#5e2b0d]"
+              className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-xs font-bold text-white hover:bg-slate-800"
             >
               <DatabaseBackup className="h-4 w-4" />
               Download System Backup (JSON)
@@ -645,7 +645,7 @@ function SettingsContent() {
       {tab === 'branches' && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-7">
-            <h2 className="mb-3 text-sm font-bold text-slate-900">Configured Branches &amp; FBR POSIDs</h2>
+            <h2 className="mb-3 text-sm font-bold text-slate-900">Configured Branches &amp; POS Counters</h2>
             <div className="space-y-2.5">
               {branches.map((b) => {
                 const t = terminals.find((term) => term.branch_id === b.id);
@@ -662,13 +662,10 @@ function SettingsContent() {
                       {t && (
                         <div className="mt-1 flex flex-wrap gap-2 font-mono text-[11px]">
                           <span className="rounded border border-slate-200 bg-white px-2 py-0.5">
-                            Prefix: {t.invoice_prefix}
-                          </span>
-                          <span className="rounded bg-sky-50 px-2 py-0.5 text-sky-800">
-                            POSID: {t.fbr_pos_id}
+                            Counter: {t.terminal_code}
                           </span>
                           <span className="rounded bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-800">
-                            Mode: {t.fbr_mode}
+                            Prefix: {t.invoice_prefix}
                           </span>
                         </div>
                       )}
@@ -739,7 +736,7 @@ function SettingsContent() {
             <div className="grid grid-cols-2 gap-2 pt-1">
               <input
                 type="text"
-                placeholder="Terminal Code (TERM-C1)"
+                placeholder="Counter Code (TERM-C1)"
                 value={tCode}
                 onChange={(e) => setTCode(e.target.value)}
                 className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
@@ -747,44 +744,18 @@ function SettingsContent() {
               />
               <input
                 type="text"
-                placeholder="Invoice Prefix (SWT-C-POS)"
+                placeholder="Receipt Prefix (SWT-C-POS)"
                 value={tPrefix}
                 onChange={(e) => setTPrefix(e.target.value)}
                 className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
                 required
               />
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                type="text"
-                placeholder="FBR POSID"
-                value={tPosId}
-                onChange={(e) => setTPosId(e.target.value)}
-                className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
-                required
-              />
-              <select
-                value={tMode}
-                onChange={(e) => setTMode(e.target.value as FbrMode)}
-                className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
-              >
-                <option value="MOCK">MOCK (Offline Demo)</option>
-                <option value="SANDBOX">SANDBOX (FBR Test)</option>
-                <option value="PRODUCTION">PRODUCTION (Live FBR)</option>
-              </select>
-            </div>
-            <input
-              type="text"
-              placeholder="FBR IRIS Bearer Token"
-              value={tToken}
-              onChange={(e) => setTToken(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
-            />
             <button
               type="submit"
-              className="w-full cursor-pointer rounded-lg bg-[#0fa968] py-2 text-xs font-bold text-white hover:bg-[#0d945b]"
+              className="w-full cursor-pointer rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white hover:bg-emerald-700"
             >
-              Save Branch &amp; FBR Terminal
+              Save Branch &amp; POS Counter
             </button>
           </form>
         </div>

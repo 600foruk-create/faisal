@@ -8,23 +8,21 @@ import {
   Banknote,
   BarChart3,
   Calendar,
-  CheckCircle2,
-  CloudUpload,
   DoorOpen,
   ExternalLink,
   Eye,
   FileText,
   Layers,
   PackageCheck,
-  RefreshCw,
+  PauseCircle,
   Search,
   ShoppingCart,
   Store,
   TrendingUp,
   Undo2,
 } from 'lucide-react';
-import { FbrStatusBadge } from '@/components/FbrStatusBadge';
 import { InvoiceModal } from '@/components/InvoiceModal';
+import { PaymentModeBadge } from '@/components/PaymentModeBadge';
 import { usePosContext } from '@/components/PosContext';
 import { formatCurrency, getDateRangeForPreset, roundMoney } from '@/lib/format';
 import type { DashboardSummary, PeriodPreset } from '@/lib/types';
@@ -40,8 +38,6 @@ export default function MainDashboardPage() {
   const [tableSearch, setTableSearch] = useState('');
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
-  const [syncingFbr, setSyncingFbr] = useState(false);
-  const [syncMessage, setSyncMessage] = useState('');
   const [viewInvoiceId, setViewInvoiceId] = useState<number | null>(null);
 
   const isCashier = activeUser?.role === 'CASHIER';
@@ -82,35 +78,6 @@ export default function MainDashboardPage() {
     void loadDashboard();
   }, [loadDashboard, refreshNonce]);
 
-  const handleSyncAllPending = async () => {
-    setSyncingFbr(true);
-    setSyncMessage('');
-    try {
-      const res = await fetch('/api/fbr/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          branchId: selectedBranchId === 'ALL' ? null : Number(selectedBranchId),
-        }),
-      });
-      const data = (await res.json()) as {
-        attempted: number;
-        succeeded: number;
-        failed: number;
-      };
-      setSyncMessage(
-        data.attempted === 0
-          ? 'No pending FBR invoices found.'
-          : `FBR Sync: ${data.succeeded}/${data.attempted} submitted${
-              data.failed > 0 ? `, ${data.failed} failed` : ''
-            }.`
-      );
-      await loadDashboard();
-    } finally {
-      setSyncingFbr(false);
-    }
-  };
-
   const selectedBranchLabel =
     selectedBranchId === 'ALL'
       ? 'All Branches (Consolidated)'
@@ -140,7 +107,7 @@ export default function MainDashboardPage() {
         inv.invoice_no.toLowerCase().includes(q) ||
         inv.customer_name.toLowerCase().includes(q) ||
         inv.branch_name.toLowerCase().includes(q) ||
-        (inv.fbr_invoice_no ?? '').toLowerCase().includes(q)
+        inv.payment_mode.toLowerCase().includes(q)
     );
   }, [summary, tableSearch]);
 
@@ -171,6 +138,11 @@ export default function MainDashboardPage() {
     return list.reduce((sum, b) => sum + Math.max(0, b.total_sale), 0) || 1;
   }, [summary]);
 
+  const lowStockCount = useMemo(
+    () => (summary?.low_stock_items ?? []).filter((item) => item.stock_qty <= 25).length,
+    [summary]
+  );
+
   const netCashPosition = summary
     ? roundMoney(summary.opening_cash + summary.cash_received)
     : 0;
@@ -181,10 +153,11 @@ export default function MainDashboardPage() {
       <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white px-5 py-4 shadow-xs">
         <div>
           <h1 className="text-lg font-extrabold tracking-tight text-slate-900 sm:text-xl">
-            Sales &amp; FBR Command Center
+            Executive POS Dashboard
           </h1>
           <p className="mt-0.5 text-xs font-medium text-slate-500">
-            Live metrics for <span className="font-semibold text-slate-700">{selectedBranchLabel}</span> •{' '}
+            Live metrics for{' '}
+            <span className="font-semibold text-slate-700">{selectedBranchLabel}</span> •{' '}
             <span>{periodLabelMap[period]}</span>
           </p>
         </div>
@@ -258,18 +231,12 @@ export default function MainDashboardPage() {
         </div>
       </section>
 
-      {syncMessage && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-semibold text-amber-900">
-          {syncMessage}
-        </div>
-      )}
-
       {/* 4 Spacious Hero KPI Cards */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition hover:shadow-md">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition hover:-translate-y-0.5 hover:shadow-md">
           <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400" />
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-bold tracking-wider text-slate-500 uppercase">
               {saleCardTitle}
             </span>
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
@@ -287,7 +254,7 @@ export default function MainDashboardPage() {
               </strong>
             </span>
             <span>
-              GST:{' '}
+              Tax:{' '}
               <strong className="tabular-nums text-slate-800">
                 {summary ? formatCurrency(summary.tax_collected, settings.currency_symbol) : '-'}
               </strong>
@@ -295,11 +262,11 @@ export default function MainDashboardPage() {
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition hover:shadow-md">
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition hover:-translate-y-0.5 hover:shadow-md">
           <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-500 to-sky-400" />
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Completed Invoices
+            <span className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+              Completed Bills
             </span>
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
               <FileText className="h-4 w-4" />
@@ -310,9 +277,9 @@ export default function MainDashboardPage() {
           </div>
           <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 text-xs text-slate-500">
             <span>
-              FBR Verified:{' '}
+              Net Cash Drawer:{' '}
               <strong className="tabular-nums text-emerald-700">
-                {summary ? summary.fbr_submitted : '-'}
+                {summary ? formatCurrency(netCashPosition, settings.currency_symbol) : '-'}
               </strong>
             </span>
             <span>
@@ -324,10 +291,10 @@ export default function MainDashboardPage() {
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition hover:shadow-md">
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition hover:-translate-y-0.5 hover:shadow-md">
           <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-500 to-orange-400" />
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-bold tracking-wider text-slate-500 uppercase">
               Cash &amp; Collections
             </span>
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
@@ -360,56 +327,43 @@ export default function MainDashboardPage() {
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition hover:shadow-md">
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition hover:-translate-y-0.5 hover:shadow-md">
           <div
             className={`absolute inset-x-0 top-0 h-1 ${
-              summary && summary.fbr_pending > 0
-                ? 'bg-gradient-to-r from-red-600 to-rose-500'
-                : 'bg-gradient-to-r from-emerald-500 to-green-400'
+              lowStockCount > 0
+                ? 'bg-gradient-to-r from-amber-500 to-rose-500'
+                : 'bg-gradient-to-r from-violet-500 to-fuchsia-400'
             }`}
           />
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              FBR Digital Sync
+            <span className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+              Held Bills &amp; Alerts
             </span>
-            <span
-              className={`flex h-9 w-9 items-center justify-center rounded-xl ${
-                summary && summary.fbr_pending > 0
-                  ? 'bg-red-50 text-red-600'
-                  : 'bg-emerald-50 text-emerald-600'
-              }`}
-            >
-              <CloudUpload className="h-4 w-4" />
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+              <PauseCircle className="h-4 w-4" />
             </span>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="tabular-nums text-2xl font-extrabold tracking-tight text-slate-900">
-              {summary ? summary.fbr_pending : '-'}
+              {summary ? summary.held_carts_count : '-'}
             </span>
-            <span className="text-xs font-medium text-slate-500">pending invoices</span>
+            <span className="text-xs font-medium text-slate-500">parked bills</span>
           </div>
-          <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5">
-            {summary && summary.fbr_pending > 0 ? (
-              <button
-                type="button"
-                disabled={syncingFbr}
-                onClick={handleSyncAllPending}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-red-600 px-3 py-0.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-60"
-              >
-                <RefreshCw className={`h-3 w-3 ${syncingFbr ? 'animate-spin' : ''}`} />
-                {syncingFbr ? 'Syncing...' : 'Sync Now'}
-              </button>
-            ) : (
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                Connected &amp; Synced
-              </span>
-            )}
-            <Link
-              href="/reports?tab=fbr"
-              className="inline-flex items-center gap-0.5 text-xs font-semibold text-slate-500 hover:text-slate-900"
+          <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 text-xs">
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold ${
+                lowStockCount > 0
+                  ? 'bg-amber-100 text-amber-800'
+                  : 'bg-emerald-50 text-emerald-700'
+              }`}
             >
-              Logs <ArrowUpRight className="h-3 w-3" />
+              {lowStockCount > 0 ? `${lowStockCount} low stock SKUs` : 'Stock Healthy'}
+            </span>
+            <Link
+              href="/hold"
+              className="inline-flex items-center gap-0.5 font-semibold text-slate-600 hover:text-emerald-700"
+            >
+              Recall <ArrowUpRight className="h-3 w-3" />
             </Link>
           </div>
         </div>
@@ -455,7 +409,7 @@ export default function MainDashboardPage() {
                     key={pt.label}
                     className="group relative flex h-full flex-1 flex-col items-center justify-end"
                   >
-                    <div className="pointer-events-none absolute -top-9 z-10 hidden whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:block">
+                    <div className="pointer-events-none absolute -top-9 z-10 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap text-white shadow-lg group-hover:block">
                       {formatCurrency(pt.sale_amount, settings.currency_symbol)} • {pt.invoice_count} bills
                     </div>
                     <span className="tabular-nums mb-1 text-[11px] font-semibold text-slate-500">
@@ -555,7 +509,7 @@ export default function MainDashboardPage() {
         <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs lg:col-span-8">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
             <div className="flex items-center gap-2.5">
-              <h2 className="text-base font-bold text-slate-900">Recent Invoices</h2>
+              <h2 className="text-base font-bold text-slate-900">Recent POS Bills</h2>
               <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
                 {filteredInvoices.length} shown
               </span>
@@ -568,7 +522,7 @@ export default function MainDashboardPage() {
                   type="text"
                   value={tableSearch}
                   onChange={(e) => setTableSearch(e.target.value)}
-                  placeholder="Search invoice or customer..."
+                  placeholder="Search bill or customer..."
                   className="w-48 rounded-lg border border-slate-200 bg-slate-50 py-1.5 pr-2.5 pl-8 text-xs focus:border-emerald-500 focus:bg-white focus:outline-none"
                 />
               </div>
@@ -586,13 +540,13 @@ export default function MainDashboardPage() {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                  <th className="px-5 py-3">Invoice No</th>
+                <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+                  <th className="px-5 py-3">Receipt No</th>
                   <th className="px-4 py-3">Branch</th>
                   <th className="px-4 py-3">Date</th>
                   <th className="px-4 py-3">Customer</th>
+                  <th className="px-4 py-3">Payment</th>
                   <th className="px-4 py-3 text-right">Amount</th>
-                  <th className="px-4 py-3">FBR Status</th>
                   <th className="px-4 py-3 text-center">Action</th>
                 </tr>
               </thead>
@@ -600,7 +554,7 @@ export default function MainDashboardPage() {
                 {loading && !summary && (
                   <tr>
                     <td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-500">
-                      Loading recent invoices...
+                      Loading recent receipts...
                     </td>
                   </tr>
                 )}
@@ -608,7 +562,7 @@ export default function MainDashboardPage() {
                 {!loading && filteredInvoices.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-500">
-                      No invoices found for {periodLabelMap[period]} ({selectedBranchLabel}).
+                      No receipts found for {periodLabelMap[period]} ({selectedBranchLabel}).
                     </td>
                   </tr>
                 )}
@@ -631,18 +585,18 @@ export default function MainDashboardPage() {
                         <span>{inv.branch_name}</span>
                       </span>
                     </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-500">
+                    <td className="px-4 py-3.5 text-xs whitespace-nowrap text-slate-500">
                       {inv.invoice_date}
                     </td>
                     <td className="px-4 py-3.5 text-xs font-medium text-slate-700">
                       {inv.customer_name}
                     </td>
+                    <td className="px-4 py-3.5">
+                      <PaymentModeBadge mode={inv.payment_mode} />
+                    </td>
                     <td className="tabular-nums px-4 py-3.5 text-right text-xs font-bold text-slate-900">
                       {inv.invoice_type === 'RETURN' ? '-' : ''}
                       {formatCurrency(inv.total_amount, settings.currency_symbol)}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <FbrStatusBadge status={inv.fbr_status} />
                     </td>
                     <td className="px-4 py-3.5 text-center">
                       <button
@@ -706,10 +660,10 @@ export default function MainDashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl bg-slate-900 p-5 text-white shadow-xs">
+          <div className="rounded-2xl bg-gradient-to-br from-slate-900 via-[#0b1324] to-slate-800 p-5 text-white shadow-xs">
             <h2 className="text-sm font-bold">Quick Counter Actions</h2>
             <p className="mt-0.5 text-xs text-slate-400">
-              Jump directly to daily POS &amp; FBR tasks.
+              Jump directly to daily store &amp; cashier tasks.
             </p>
             <div className="mt-4 grid grid-cols-2 gap-2.5">
               <Link
@@ -734,22 +688,18 @@ export default function MainDashboardPage() {
                 Day Closing
               </Link>
               <Link
-                href="/reports?tab=fbr"
+                href="/reports"
                 className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-800 px-3 py-2.5 text-xs font-bold text-white transition hover:bg-slate-700"
               >
-                <CloudUpload className="h-3.5 w-3.5 text-emerald-400" />
-                FBR Logs
+                <BarChart3 className="h-3.5 w-3.5 text-emerald-400" />
+                Reports
               </Link>
             </div>
           </div>
         </div>
       </section>
 
-      <InvoiceModal
-        invoiceId={viewInvoiceId}
-        onClose={() => setViewInvoiceId(null)}
-        onSynced={() => void loadDashboard()}
-      />
+      <InvoiceModal invoiceId={viewInvoiceId} onClose={() => setViewInvoiceId(null)} />
     </div>
   );
 }

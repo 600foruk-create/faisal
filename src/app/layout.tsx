@@ -7,8 +7,8 @@ import { TopBrandBar } from '@/components/TopBrandBar';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Softifyx - M/S Seastone PVC Pipe Industry | POS & FBR',
-  description: 'Multi-Branch Retail POS & Pakistan FBR POS Integration System',
+  title: 'Softifyx - M/S Seastone PVC Pipe Industry | Retail POS',
+  description: 'Multi-Branch Retail POS & Inventory Management System',
 };
 
 export default function RootLayout({

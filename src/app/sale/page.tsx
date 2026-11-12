@@ -13,7 +13,6 @@ import {
   Store,
   Trash2,
   UserPlus,
-  WifiOff,
 } from 'lucide-react';
 import { InvoiceModal } from '@/components/InvoiceModal';
 import { usePosContext } from '@/components/PosContext';
@@ -57,7 +56,6 @@ export default function PosSalePage() {
   const [splitCard, setSplitCard] = useState<string>('0');
   const [splitBank, setSplitBank] = useState<string>('0');
   const [notes, setNotes] = useState('');
-  const [simulateOffline, setSimulateOffline] = useState(false);
   const [heldCartId, setHeldCartId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
@@ -310,7 +308,6 @@ export default function PosSalePage() {
           invoiceDiscount,
           notes,
           heldCartId,
-          simulateFbrOffline: simulateOffline,
           items: cart.map((c) => ({
             productId: c.productId,
             quantity: c.quantity,
@@ -320,7 +317,7 @@ export default function PosSalePage() {
         }),
       });
       const data = (await res.json()) as {
-        invoice?: { id: number; invoice_no: string; fbr_status: string };
+        invoice?: { id: number; invoice_no: string };
         error?: string;
       };
       if (!res.ok || !data.invoice) {
@@ -337,7 +334,7 @@ export default function PosSalePage() {
       await Promise.all([loadCatalog(), refreshHeldCount()]);
       setMessage({
         type: 'success',
-        text: `Invoice ${data.invoice.invoice_no} saved (${data.invoice.fbr_status}).`,
+        text: `Receipt ${data.invoice.invoice_no} completed successfully.`,
       });
     } finally {
       setSubmitting(false);
@@ -346,7 +343,7 @@ export default function PosSalePage() {
 
   return (
     <div className="space-y-4">
-      <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+      <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white px-5 py-3.5 shadow-xs">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <Store className="h-4 w-4 text-emerald-600" />
@@ -358,7 +355,7 @@ export default function PosSalePage() {
                 setBranchId(id);
                 setActiveBranchId(id);
               }}
-              className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm font-semibold text-slate-800"
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-semibold text-slate-800"
             >
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -370,29 +367,19 @@ export default function PosSalePage() {
 
           {activeTerminal && (
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="rounded-md bg-slate-100 px-2.5 py-1 font-mono font-semibold text-slate-700">
-                Prefix: {activeTerminal.invoice_prefix}
+              <span className="rounded-lg bg-slate-100 px-2.5 py-1 font-mono font-semibold text-slate-700">
+                Counter: {activeTerminal.terminal_code}
               </span>
-              <span className="rounded-md bg-sky-50 px-2.5 py-1 font-mono font-semibold text-sky-800">
-                FBR POSID: {activeTerminal.fbr_pos_id}
-              </span>
-              <span className="rounded-md bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-800">
-                FBR Mode: {activeTerminal.fbr_mode}
+              <span className="rounded-lg bg-emerald-50 px-2.5 py-1 font-mono font-semibold text-emerald-800">
+                Series: {activeTerminal.invoice_prefix}
               </span>
             </div>
           )}
         </div>
 
-        <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-900">
-          <input
-            type="checkbox"
-            checked={simulateOffline}
-            onChange={(e) => setSimulateOffline(e.target.checked)}
-            className="rounded"
-          />
-          <WifiOff className="h-3.5 w-3.5 text-amber-700" />
-          <span>Simulate FBR Offline (Queue Test)</span>
-        </label>
+        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+          Cashier: {activeUser?.full_name ?? 'POS Cashier'}
+        </span>
       </section>
 
       {message && (
@@ -408,7 +395,7 @@ export default function PosSalePage() {
       )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-7">
+        <section className="space-y-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs lg:col-span-7">
           <div className="relative">
             <Search className="pointer-events-none absolute top-2.5 left-3 h-4 w-4 text-slate-400" />
             <input
@@ -417,7 +404,7 @@ export default function PosSalePage() {
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={handleBarcodeEnter}
               placeholder="Scan barcode or search product by name / SKU (press Enter to add)..."
-              className="w-full rounded-lg border border-slate-300 py-2 pr-3 pl-9 text-sm focus:border-amber-600 focus:outline-none"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pr-3 pl-9 text-sm focus:border-emerald-600 focus:bg-white focus:outline-none"
             />
           </div>
 
@@ -429,7 +416,7 @@ export default function PosSalePage() {
                 onClick={() => setSelectedCategory(cat)}
                 className={`cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition ${
                   selectedCategory === cat
-                    ? 'bg-[#49210a] text-white'
+                    ? 'bg-emerald-600 text-white shadow-xs'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
@@ -444,7 +431,7 @@ export default function PosSalePage() {
                 key={p.id}
                 type="button"
                 onClick={() => addProductToCart(p)}
-                className="flex cursor-pointer flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-3 text-left transition hover:border-amber-500 hover:bg-amber-50/40"
+                className="flex cursor-pointer flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-3 text-left transition hover:border-emerald-400 hover:bg-emerald-50/40"
               >
                 <div>
                   <div className="flex items-start justify-between gap-2">
@@ -467,7 +454,7 @@ export default function PosSalePage() {
                 </div>
 
                 <div className="mt-3 flex items-center justify-between border-t border-slate-200/70 pt-2">
-                  <span className="text-sm font-bold text-[#49210a]">
+                  <span className="tabular-nums text-sm font-bold text-emerald-700">
                     {formatCurrency(p.sale_price, settings.currency_symbol)}
                   </span>
                   <span className="text-[11px] font-medium text-slate-500">
@@ -479,7 +466,7 @@ export default function PosSalePage() {
           </div>
         </section>
 
-        <section className="flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-5">
+        <section className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs lg:col-span-5">
           <div className="space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
               <div className="flex items-center gap-2">
@@ -808,10 +795,10 @@ export default function PosSalePage() {
                 type="button"
                 disabled={submitting || cart.length === 0}
                 onClick={handleCompleteSale}
-                className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-[#0fa968] py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#0d945b] disabled:opacity-50"
+                className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 disabled:opacity-50"
               >
                 <ShoppingCart className="h-4 w-4" />
-                {submitting ? 'Fiscalizing...' : 'Complete Sale & Print'}
+                {submitting ? 'Saving Sale...' : 'Complete Sale & Print'}
               </button>
             </div>
           </div>

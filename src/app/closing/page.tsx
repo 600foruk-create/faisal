@@ -279,7 +279,7 @@ export default function DayClosingPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full cursor-pointer rounded-lg bg-[#49210a] py-2.5 text-sm font-bold text-white hover:bg-[#5e2b0d] disabled:opacity-50"
+                  className="w-full cursor-pointer rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-emerald-700 disabled:opacity-50"
                 >
                   {submitting ? 'Finalizing...' : 'Finalize Day Closing'}
                 </button>

@@ -86,7 +86,7 @@ export default function HoldRecallPage() {
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold text-[#49210a]">
+                  <span className="font-mono text-xs font-bold text-emerald-700">
                     {cart.hold_code}
                   </span>
                   <span className="text-[11px] text-slate-500">{cart.created_at}</span>

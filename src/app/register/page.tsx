@@ -2,40 +2,20 @@
 
 import Link from 'next/link';
 import { Suspense, useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import {
-  CloudUpload,
-  Download,
-  Eye,
-  List,
-  RefreshCw,
-  Search,
-  Store,
-  Undo2,
-} from 'lucide-react';
-import { FbrStatusBadge } from '@/components/FbrStatusBadge';
+import { Download, Eye, List, Search, Store, Undo2 } from 'lucide-react';
 import { InvoiceModal } from '@/components/InvoiceModal';
+import { PaymentModeBadge } from '@/components/PaymentModeBadge';
 import { usePosContext } from '@/components/PosContext';
 import { formatCurrency, getDateRangeForPreset } from '@/lib/format';
-import type { FbrStatus, InvoiceRecord, PaymentMode } from '@/lib/types';
+import type { InvoiceRecord, PaymentMode } from '@/lib/types';
 
 function SalesRegisterContent() {
-  const searchParams = useSearchParams();
-  const fbrParam = searchParams.get('fbrStatus');
-
   const { branches, activeBranchId, settings, refreshNonce } = usePosContext();
 
   const defaultRange = getDateRangeForPreset('month');
   const [branchId, setBranchId] = useState<string>('ALL');
   const [fromDate, setFromDate] = useState(defaultRange.from);
   const [toDate, setToDate] = useState(defaultRange.to);
-  const [fbrStatus, setFbrStatus] = useState<FbrStatus | 'ALL'>('ALL');
-
-  useEffect(() => {
-    if (fbrParam && ['ALL', 'SUBMITTED', 'PENDING', 'FAILED'].includes(fbrParam)) {
-      setFbrStatus(fbrParam as FbrStatus | 'ALL');
-    }
-  }, [fbrParam]);
   const [paymentMode, setPaymentMode] = useState<PaymentMode | 'ALL'>('ALL');
   const [invoiceType, setInvoiceType] = useState<'SALE' | 'RETURN' | 'ALL'>('ALL');
   const [search, setSearch] = useState('');
@@ -50,8 +30,6 @@ function SalesRegisterContent() {
   });
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [syncingAll, setSyncingAll] = useState(false);
-  const [syncingId, setSyncingId] = useState<number | null>(null);
   const [viewInvoiceId, setViewInvoiceId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -65,7 +43,6 @@ function SalesRegisterContent() {
         branchId,
         fromDate,
         toDate,
-        fbrStatus,
         paymentMode,
         invoiceType,
         search,
@@ -85,39 +62,15 @@ function SalesRegisterContent() {
     } finally {
       setLoading(false);
     }
-  }, [branchId, fromDate, toDate, fbrStatus, paymentMode, invoiceType, search]);
+  }, [branchId, fromDate, toDate, paymentMode, invoiceType, search]);
 
   useEffect(() => {
     void loadRegister();
   }, [loadRegister, refreshNonce]);
 
-  const handleSyncRow = async (id: number) => {
-    setSyncingId(id);
-    try {
-      await fetch(`/api/invoices/${id}`, { method: 'POST' });
-      await loadRegister();
-    } finally {
-      setSyncingId(null);
-    }
-  };
-
-  const handleSyncAll = async () => {
-    setSyncingAll(true);
-    try {
-      await fetch('/api/fbr/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ branchId: branchId === 'ALL' ? null : Number(branchId) }),
-      });
-      await loadRegister();
-    } finally {
-      setSyncingAll(false);
-    }
-  };
-
   const handleExportCsv = () => {
     const header = [
-      'Invoice No',
+      'Receipt No',
       'Type',
       'Branch',
       'Date',
@@ -127,8 +80,6 @@ function SalesRegisterContent() {
       'Discount',
       'Tax',
       'Total Amount',
-      'FBR Status',
-      'FBR Invoice No',
     ];
     const rows = invoices.map((i) => [
       i.invoice_no,
@@ -141,8 +92,6 @@ function SalesRegisterContent() {
       i.discount_total,
       i.tax_total,
       i.invoice_type === 'RETURN' ? -i.total_amount : i.total_amount,
-      i.fbr_status,
-      i.fbr_invoice_no ?? '',
     ]);
     const csv = [header, ...rows]
       .map((r) => r.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(','))
@@ -158,57 +107,53 @@ function SalesRegisterContent() {
 
   return (
     <div className="space-y-4">
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <List className="h-5 w-5 text-amber-600" />
-            <h1 className="text-lg font-bold text-slate-900">Full Sales Register</h1>
-            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
-              {totalCount} Records
+      <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+              <List className="h-5 w-5" />
             </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-extrabold tracking-tight text-slate-900">
+                  Sales Register
+                </h1>
+                <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
+                  {totalCount} Bills
+                </span>
+              </div>
+              <p className="text-xs text-slate-500">
+                Complete history of completed POS bills and customer returns
+              </p>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {totals.pendingCount > 0 && (
-              <button
-                type="button"
-                disabled={syncingAll}
-                onClick={handleSyncAll}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-red-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
-              >
-                <CloudUpload className="h-3.5 w-3.5" />
-                {syncingAll
-                  ? 'Syncing Pending...'
-                  : `Sync All Pending (${totals.pendingCount})`}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={handleExportCsv}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              <Download className="h-3.5 w-3.5" />
-              Export CSV
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export CSV
+          </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <div className="relative lg:col-span-2">
             <Search className="pointer-events-none absolute top-2.5 left-3 h-4 w-4 text-slate-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search Invoice No, FBR No, Customer..."
-              className="w-full rounded-lg border border-slate-300 py-1.5 pr-3 pl-9 text-sm"
+              placeholder="Search Receipt No or Customer..."
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pr-3 pl-9 text-sm focus:border-emerald-500 focus:bg-white focus:outline-none"
             />
           </div>
 
           <select
             value={branchId}
             onChange={(e) => setBranchId(e.target.value)}
-            className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium"
           >
             <option value="ALL">All Branches</option>
             {branches.map((b) => (
@@ -219,20 +164,9 @@ function SalesRegisterContent() {
           </select>
 
           <select
-            value={fbrStatus}
-            onChange={(e) => setFbrStatus(e.target.value as FbrStatus | 'ALL')}
-            className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm"
-          >
-            <option value="ALL">All FBR Status</option>
-            <option value="SUBMITTED">Submitted</option>
-            <option value="PENDING">Pending</option>
-            <option value="FAILED">Failed</option>
-          </select>
-
-          <select
             value={paymentMode}
             onChange={(e) => setPaymentMode(e.target.value as PaymentMode | 'ALL')}
-            className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium"
           >
             <option value="ALL">All Payments</option>
             <option value="CASH">Cash</option>
@@ -244,9 +178,9 @@ function SalesRegisterContent() {
           <select
             value={invoiceType}
             onChange={(e) => setInvoiceType(e.target.value as 'SALE' | 'RETURN' | 'ALL')}
-            className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium"
           >
-            <option value="ALL">Sales & Returns</option>
+            <option value="ALL">Sales &amp; Returns</option>
             <option value="SALE">Sales Only</option>
             <option value="RETURN">Returns Only</option>
           </select>
@@ -259,7 +193,7 @@ function SalesRegisterContent() {
               type="date"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
-              className="rounded border border-slate-300 px-2 py-1"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1"
             />
           </label>
           <label className="flex items-center gap-1.5 text-slate-600">
@@ -268,49 +202,49 @@ function SalesRegisterContent() {
               type="date"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
-              className="rounded border border-slate-300 px-2 py-1"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1"
             />
           </label>
         </div>
       </section>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
           <p className="text-xs font-medium text-slate-500">Net Sales Total</p>
-          <p className="mt-1 text-lg font-bold text-slate-900">
+          <p className="tabular-nums mt-1 text-lg font-extrabold text-slate-900">
             {formatCurrency(totals.netSale, settings.currency_symbol)}
           </p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
           <p className="text-xs font-medium text-slate-500">Net Cash</p>
-          <p className="mt-1 text-lg font-bold text-emerald-700">
+          <p className="tabular-nums mt-1 text-lg font-extrabold text-emerald-700">
             {formatCurrency(totals.cashReceived, settings.currency_symbol)}
           </p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
           <p className="text-xs font-medium text-slate-500">Card + Bank</p>
-          <p className="mt-1 text-lg font-bold text-sky-700">
+          <p className="tabular-nums mt-1 text-lg font-extrabold text-sky-700">
             {formatCurrency(totals.cardReceived + totals.bankReceived, settings.currency_symbol)}
           </p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
-          <p className="text-xs font-medium text-slate-500">FBR Pending / Failed</p>
-          <p className="mt-1 text-lg font-bold text-red-600">{totals.pendingCount}</p>
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
+          <p className="text-xs font-medium text-slate-500">Total Receipts</p>
+          <p className="tabular-nums mt-1 text-lg font-extrabold text-slate-900">{totalCount}</p>
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600">
-                <th className="px-4 py-3">Invoice No</th>
+              <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+                <th className="px-4 py-3">Receipt No</th>
                 <th className="px-4 py-3">Branch</th>
-                <th className="px-4 py-3">Date & Cashier</th>
+                <th className="px-4 py-3">Date &amp; Cashier</th>
                 <th className="px-4 py-3">Customer</th>
-                <th className="px-4 py-3">Mode</th>
+                <th className="px-4 py-3">Payment</th>
+                <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Amount</th>
-                <th className="px-4 py-3">FBR Status & No</th>
                 <th className="px-4 py-3 text-center">Actions</th>
               </tr>
             </thead>
@@ -325,18 +259,18 @@ function SalesRegisterContent() {
               {!loading && invoices.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-4 py-10 text-center text-sm text-slate-500">
-                    No matching invoices found.
+                    No matching receipts found.
                   </td>
                 </tr>
               )}
               {invoices.map((inv) => (
                 <tr key={inv.id} className="hover:bg-slate-50/70">
-                  <td className="px-4 py-3 font-bold text-slate-900">
+                  <td className="px-4 py-3 font-mono text-xs font-bold text-slate-900">
                     <div>{inv.invoice_no}</div>
-                    {inv.invoice_type === 'RETURN' && (
-                      <span className="inline-block rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-700">
-                        RETURN ({inv.original_invoice_no ?? ''})
-                      </span>
+                    {inv.invoice_type === 'RETURN' && inv.original_invoice_no && (
+                      <div className="text-[10px] font-medium text-rose-600">
+                        Ref: {inv.original_invoice_no}
+                      </div>
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -349,49 +283,41 @@ function SalesRegisterContent() {
                     <div>{inv.created_at}</div>
                     <div className="text-[11px] text-slate-400">{inv.cashier_name}</div>
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-700">{inv.customer_name}</td>
-                  <td className="px-4 py-3 text-xs font-semibold text-slate-600">
-                    {inv.payment_mode}
-                  </td>
-                  <td className="px-4 py-3 text-right font-bold text-slate-900">
-                    {inv.invoice_type === 'RETURN' ? '-' : ''}
-                    {formatCurrency(inv.total_amount, settings.currency_symbol)}
+                  <td className="px-4 py-3 text-xs font-medium text-slate-700">
+                    {inv.customer_name}
                   </td>
                   <td className="px-4 py-3">
-                    <FbrStatusBadge status={inv.fbr_status} />
-                    {inv.fbr_invoice_no && (
-                      <div className="mt-1 font-mono text-[11px] text-slate-500">
-                        {inv.fbr_invoice_no}
-                      </div>
-                    )}
+                    <PaymentModeBadge mode={inv.payment_mode} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+                        inv.invoice_type === 'RETURN'
+                          ? 'bg-rose-100 text-rose-700'
+                          : 'bg-emerald-100 text-emerald-700'
+                      }`}
+                    >
+                      {inv.invoice_type === 'RETURN' ? 'Return' : 'Completed'}
+                    </span>
+                  </td>
+                  <td className="tabular-nums px-4 py-3 text-right font-bold text-slate-900">
+                    {inv.invoice_type === 'RETURN' ? '-' : ''}
+                    {formatCurrency(inv.total_amount, settings.currency_symbol)}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => setViewInvoiceId(inv.id)}
-                        className="inline-flex cursor-pointer items-center gap-1 rounded border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-sky-50"
+                        className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800"
                       >
-                        <Eye className="h-3.5 w-3.5 text-sky-600" />
+                        <Eye className="h-3.5 w-3.5 text-emerald-600" />
                         View
                       </button>
-                      {inv.fbr_status !== 'SUBMITTED' && (
-                        <button
-                          type="button"
-                          disabled={syncingId === inv.id}
-                          onClick={() => handleSyncRow(inv.id)}
-                          className="inline-flex cursor-pointer items-center gap-1 rounded bg-amber-600 px-2 py-1 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
-                        >
-                          <RefreshCw
-                            className={`h-3 w-3 ${syncingId === inv.id ? 'animate-spin' : ''}`}
-                          />
-                          Sync
-                        </button>
-                      )}
                       {inv.invoice_type === 'SALE' && (
                         <Link
                           href={`/returns?invoice=${encodeURIComponent(inv.invoice_no)}`}
-                          className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-rose-50 hover:text-rose-700"
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-rose-50 hover:text-rose-700"
                         >
                           <Undo2 className="h-3 w-3" />
                           Return
@@ -406,20 +332,17 @@ function SalesRegisterContent() {
         </div>
       </section>
 
-      <InvoiceModal
-        invoiceId={viewInvoiceId}
-        onClose={() => setViewInvoiceId(null)}
-        onSynced={() => void loadRegister()}
-      />
+      <InvoiceModal invoiceId={viewInvoiceId} onClose={() => setViewInvoiceId(null)} />
     </div>
   );
 }
 
 export default function SalesRegisterPage() {
   return (
-    <Suspense fallback={<div className="rounded-xl bg-white p-6 text-sm">Loading register...</div>}>
+    <Suspense
+      fallback={<div className="rounded-2xl bg-white p-6 text-sm">Loading register...</div>}
+    >
       <SalesRegisterContent />
     </Suspense>
   );
 }
-
