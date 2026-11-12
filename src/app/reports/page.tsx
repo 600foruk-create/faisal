@@ -2,9 +2,10 @@
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { BarChart3, Package, ReceiptText } from 'lucide-react';
+import { AlertTriangle, BarChart3, Boxes, Package, ReceiptText } from 'lucide-react';
 import { usePosContext } from '@/components/PosContext';
 import { formatCurrency, getDateRangeForPreset } from '@/lib/format';
+import type { ProductWithStock } from '@/lib/types';
 
 interface ReportsPayload {
   branchComparison: Array<{
@@ -33,6 +34,8 @@ interface ReportsPayload {
   };
 }
 
+type ReportTab = 'branches' | 'products' | 'tax' | 'inventory';
+
 function ReportsContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
@@ -43,13 +46,14 @@ function ReportsContent() {
   const [branchId, setBranchId] = useState<string>('ALL');
   const [fromDate, setFromDate] = useState(range.from);
   const [toDate, setToDate] = useState(range.to);
-  const [tab, setTab] = useState<'branches' | 'products' | 'tax'>('branches');
+  const [tab, setTab] = useState<ReportTab>('branches');
   const [report, setReport] = useState<ReportsPayload | null>(null);
+  const [inventory, setInventory] = useState<ProductWithStock[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (tabParam && ['branches', 'products', 'tax'].includes(tabParam)) {
-      setTab(tabParam as 'branches' | 'products' | 'tax');
+    if (tabParam && ['branches', 'products', 'tax', 'inventory'].includes(tabParam)) {
+      setTab(tabParam as ReportTab);
     }
   }, [tabParam]);
 
@@ -61,9 +65,18 @@ function ReportsContent() {
     setLoading(true);
     try {
       const params = new URLSearchParams({ branchId, fromDate, toDate });
-      const res = await fetch(`/api/reports?${params.toString()}`);
-      if (res.ok) {
-        setReport((await res.json()) as ReportsPayload);
+      const prodUrl =
+        branchId !== 'ALL' ? `/api/products?branchId=${encodeURIComponent(branchId)}` : '/api/products';
+      const [repRes, prodRes] = await Promise.all([
+        fetch(`/api/reports?${params.toString()}`),
+        fetch(prodUrl),
+      ]);
+      if (repRes.ok) {
+        setReport((await repRes.json()) as ReportsPayload);
+      }
+      if (prodRes.ok) {
+        const prodData = (await prodRes.json()) as { products: ProductWithStock[] };
+        setInventory(prodData.products);
       }
     } finally {
       setLoading(false);
@@ -83,11 +96,11 @@ function ReportsContent() {
               <BarChart3 className="h-5 w-5" />
             </span>
             <div>
-              <h1 className="text-lg font-extrabold tracking-tight text-slate-900">
+              <h1 className="text-lg font-bold tracking-tight text-slate-900">
                 POS Business Reports
               </h1>
               <p className="text-xs text-slate-500">
-                Branch performance, best-selling products &amp; sales tax summary
+                Branch sale summary, top selling products, GST summary &amp; inventory balance
               </p>
             </div>
           </div>
@@ -123,9 +136,10 @@ function ReportsContent() {
         <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
           {(
             [
-              { key: 'branches', label: 'Branch Comparison', icon: BarChart3 },
+              { key: 'branches', label: 'Sale Summary', icon: BarChart3 },
               { key: 'products', label: 'Top Selling Products', icon: Package },
               { key: 'tax', label: 'GST / Tax Summary', icon: ReceiptText },
+              { key: 'inventory', label: 'Inventory Balance', icon: Boxes },
             ] as const
           ).map(({ key, label, icon: Icon }) => (
             <button
@@ -152,7 +166,7 @@ function ReportsContent() {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+                <tr className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600">
                   <th className="px-4 py-3">Branch</th>
                   <th className="px-4 py-3 text-right">Sale Bills</th>
                   <th className="px-4 py-3 text-right">Gross Sales</th>
@@ -189,7 +203,7 @@ function ReportsContent() {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+                <tr className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600">
                   <th className="px-4 py-3">SKU</th>
                   <th className="px-4 py-3">Product Name</th>
                   <th className="px-4 py-3 text-right">Net Sold Qty</th>
@@ -248,6 +262,56 @@ function ReportsContent() {
                 {formatCurrency(report.taxSummary.net_tax_payable, settings.currency_symbol)}
               </p>
             </div>
+          </div>
+        )}
+
+        {!loading && tab === 'inventory' && (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600">
+                  <th className="px-4 py-3">SKU</th>
+                  <th className="px-4 py-3">Product Name</th>
+                  <th className="px-4 py-3">Category</th>
+                  <th className="px-4 py-3 text-right">Sale Price</th>
+                  <th className="px-4 py-3 text-right">Available Stock</th>
+                  <th className="px-4 py-3 text-right">Stock Value</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {inventory.map((item) => {
+                  const isLow = item.stock_qty <= 25;
+                  return (
+                    <tr key={item.id} className="hover:bg-slate-50/70">
+                      <td className="px-4 py-3 font-mono text-xs text-slate-500">{item.sku}</td>
+                      <td className="px-4 py-3 font-semibold text-slate-900">{item.name}</td>
+                      <td className="px-4 py-3 text-xs text-slate-600">{item.category}</td>
+                      <td className="tabular-nums px-4 py-3 text-right">
+                        {formatCurrency(item.sale_price, settings.currency_symbol)}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                            isLow
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-emerald-100 text-emerald-800'
+                          }`}
+                        >
+                          {isLow && <AlertTriangle className="h-3 w-3" />}
+                          {item.stock_qty} {item.unit}
+                        </span>
+                      </td>
+                      <td className="tabular-nums px-4 py-3 text-right font-bold text-slate-900">
+                        {formatCurrency(
+                          item.stock_qty * item.sale_price,
+                          settings.currency_symbol
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </section>
