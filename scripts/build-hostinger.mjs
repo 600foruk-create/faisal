@@ -6,18 +6,26 @@ const rootDir = process.cwd();
 const outDir = path.join(rootDir, 'out');
 const nextDir = path.join(rootDir, '.next');
 
-const staticTargets = [
-  'index.html',
-  '404.html',
-  '_next',
-  'sale',
-  'register',
-  'returns',
-  'hold',
-  'closing',
-  'reports',
-  'settings',
-];
+const PROTECTED_ROOT_NAMES = new Set([
+  'api',
+  'src',
+  'tests',
+  'scripts',
+  'node_modules',
+  '.git',
+  '.next',
+  '.htaccess',
+  '.gitignore',
+  'package.json',
+  'package-lock.json',
+  'tsconfig.json',
+  'next.config.ts',
+  'postcss.config.mjs',
+  'README.md',
+  'next-env.d.ts',
+  'data',
+  'out',
+]);
 
 function rmSafe(target) {
   if (fs.existsSync(target)) {
@@ -35,15 +43,29 @@ try {
     env: { ...process.env, STATIC_EXPORT: '1' },
   });
 
-  for (const name of staticTargets) {
+  // Remove previous exported __next.* or *.txt/*.html files in root before copying fresh out/
+  for (const existing of fs.readdirSync(rootDir)) {
+    if (PROTECTED_ROOT_NAMES.has(existing)) continue;
+    if (
+      existing.startsWith('__next') ||
+      existing.endsWith('.html') ||
+      existing.endsWith('.txt') ||
+      existing === '_next' ||
+      existing === '_not-found'
+    ) {
+      rmSafe(path.join(rootDir, existing));
+    }
+  }
+
+  for (const name of fs.readdirSync(outDir)) {
+    if (PROTECTED_ROOT_NAMES.has(name)) continue;
     const src = path.join(outDir, name);
     const dest = path.join(rootDir, name);
-    if (!fs.existsSync(src)) continue;
     rmSafe(dest);
     fs.cpSync(src, dest, { recursive: true });
   }
 
-  console.log('Static export copied to repository root for Hostinger deployment.');
+  console.log('Full static export (including RSC .txt & __next.* payloads) copied to root.');
 } finally {
   rmSafe(outDir);
 }
