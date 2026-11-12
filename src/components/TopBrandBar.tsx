@@ -7,7 +7,7 @@ export function TopBrandBar() {
   const { settings } = usePosContext();
 
   return (
-    <div className="no-print relative z-40 w-full border-b-2 border-[#f59e0b] bg-gradient-to-r from-[#431803] via-[#572106] to-[#4b1b04] text-white">
+    <div className="no-print relative z-40 w-full border-b-2 border-emerald-500/80 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#0b1830] text-white">
       <div className="mx-auto flex min-h-14 max-w-[1520px] items-center justify-between gap-4 px-4 py-2.5 sm:px-6">
         {/* Left: Software Brand - Company Name */}
         <Link href="/" className="flex min-w-0 items-center">
@@ -16,7 +16,7 @@ export function TopBrandBar() {
               <span className="text-lg font-bold tracking-tight text-white sm:text-[22px]">
                 {settings.software_brand || 'Softifyx'}
               </span>
-              <span className="truncate text-sm font-semibold tracking-wide text-[#fbbf24] sm:text-[19px]">
+              <span className="truncate text-sm font-semibold tracking-wide text-amber-400 sm:text-[19px]">
                 - {settings.business_name || 'M/S SEASTONE PVC PIPE INDUSTRY'}
               </span>
             </div>

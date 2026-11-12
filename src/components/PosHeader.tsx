@@ -163,7 +163,7 @@ export function PosHeader() {
   return (
     <div
       ref={barRef}
-      className="no-print relative z-30 w-full border-b border-[#3a1503] bg-gradient-to-r from-[#5a2206] via-[#6e2b0a] to-[#5d2407] text-white shadow-sm"
+      className="no-print relative z-30 w-full border-b border-slate-800 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#0b1830] text-white shadow-sm"
     >
       <div className="mx-auto flex max-w-[1520px] flex-wrap items-center justify-between gap-2 px-4 py-1.5 sm:px-6">
         {/* LEFT SIDE: Administrator, Maintain, About */}
@@ -183,16 +183,16 @@ export function PosHeader() {
                   className={`inline-flex cursor-pointer items-center gap-1 rounded-lg px-3 py-1.5 text-[13px] font-bold transition ${
                     group.key === 'administrator'
                       ? isOpen
-                        ? 'bg-[#fbbf24] text-[#431803] shadow-xs'
-                        : 'text-[#fde68a] hover:bg-white/10 hover:text-[#fbbf24]'
+                        ? 'bg-amber-400 text-slate-950 shadow-xs'
+                        : 'text-amber-400 hover:bg-white/10 hover:text-amber-300'
                       : isOpen
-                        ? 'bg-white/20 text-white'
-                        : 'text-white hover:bg-white/10 hover:text-[#fbbf24]'
+                        ? 'bg-white/15 text-white'
+                        : 'text-slate-100 hover:bg-white/10 hover:text-emerald-300'
                   }`}
                 >
                   {group.key === 'administrator' && (
                     <Shield
-                      className={`h-3.5 w-3.5 ${isOpen ? 'text-[#431803]' : 'text-[#fbbf24]'}`}
+                      className={`h-3.5 w-3.5 ${isOpen ? 'text-slate-950' : 'text-amber-400'}`}
                     />
                   )}
                   <span>{group.label}</span>
@@ -414,8 +414,8 @@ export function PosHeader() {
             )}
           </div>
 
-          <div className="hidden items-center gap-1.5 rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-bold text-white md:inline-flex">
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#fbbf24] text-[#431803]">
+          <div className="hidden items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold text-white md:inline-flex">
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-slate-950">
               <UserCheck className="h-3 w-3" />
             </span>
             <span>Welcome {activeUser?.full_name ?? 'Administrator'}</span>

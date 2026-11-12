@@ -773,10 +773,10 @@ function SettingsContent() {
             <h2 className="border-b border-slate-100 pb-2 text-sm font-bold text-slate-900">
               Live Header &amp; Receipt Preview
             </h2>
-            <div className="flex items-center justify-between gap-3 rounded-xl border-b-2 border-[#f59e0b] bg-gradient-to-r from-[#431803] via-[#572106] to-[#4b1b04] px-4 py-3 text-white">
+            <div className="flex items-center justify-between gap-3 rounded-xl border-b-2 border-emerald-500/80 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#0b1830] px-4 py-3 text-white">
               <div className="min-w-0 text-xs">
                 <span className="font-bold text-white">{softBrand || 'Softifyx'}</span>{' '}
-                <span className="truncate font-semibold text-[#fbbf24]">- {bizName}</span>
+                <span className="truncate font-semibold text-amber-400">- {bizName}</span>
               </div>
               <div className="flex h-9 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white p-0.5">
                 {bizLogo ? (
