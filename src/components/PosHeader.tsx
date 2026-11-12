@@ -109,7 +109,10 @@ export function PosHeader() {
   };
 
   return (
-    <div ref={barRef} className="no-print relative z-30 w-full border-b border-slate-200/90 bg-white/95 shadow-2xs backdrop-blur-xs">
+    <div
+      ref={barRef}
+      className="no-print relative z-30 w-full border-b border-slate-800 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#0b1830] text-white shadow-sm"
+    >
       <div className="mx-auto flex max-w-[1520px] flex-wrap items-center justify-between gap-2 px-4 py-1.5 sm:px-6">
         {/* LEFT SIDE: Administrator, Maintain, About */}
         <div className="flex flex-wrap items-center gap-1.5">
@@ -122,21 +125,23 @@ export function PosHeader() {
                 <button
                   type="button"
                   onClick={() => setOpenMenu(isOpen ? null : group.key)}
-                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-bold transition ${
                     group.key === 'administrator'
                       ? isOpen
-                        ? 'bg-amber-500 text-slate-950 shadow-xs'
-                        : 'bg-amber-50 text-amber-900 ring-1 ring-amber-200 hover:bg-amber-100'
+                        ? 'bg-amber-400 text-slate-950 shadow-xs'
+                        : 'text-amber-400 hover:bg-white/10 hover:text-amber-300'
                       : isOpen
-                        ? 'bg-slate-100 text-slate-900'
-                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                        ? 'bg-white/15 text-white'
+                        : 'text-slate-100 hover:bg-white/10 hover:text-emerald-300'
                   }`}
                 >
                   {group.key === 'administrator' && (
-                    <Shield className="h-3.5 w-3.5 text-amber-600" />
+                    <Shield
+                      className={`h-3.5 w-3.5 ${isOpen ? 'text-slate-950' : 'text-amber-400'}`}
+                    />
                   )}
                   <span>{group.label}</span>
-                  <ChevronDown className="h-3 w-3 opacity-75" />
+                  <ChevronDown className="h-3.5 w-3.5 opacity-80" />
                 </button>
 
                 {isOpen && (
@@ -206,9 +211,9 @@ export function PosHeader() {
           <button
             type="button"
             onClick={handleRefresh}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/20"
           >
-            <RefreshCw className={`h-3.5 w-3.5 text-slate-500 ${refreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-3.5 w-3.5 text-emerald-400 ${refreshing ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </button>
         </div>

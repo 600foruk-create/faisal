@@ -78,13 +78,13 @@ export function TopBrandBar() {
   return (
     <div
       ref={barRef}
-      className="no-print relative z-40 w-full bg-gradient-to-r from-[#09111e] via-[#0e1930] to-[#132340] text-white shadow-sm"
+      className="no-print relative z-40 w-full border-b-2 border-emerald-500/80 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#0b1830] text-white"
     >
-      <div className="mx-auto flex min-h-13 max-w-[1520px] flex-wrap items-center justify-between gap-3 px-4 py-2 sm:px-6">
+      <div className="mx-auto flex min-h-16 max-w-[1520px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
         {/* Left: Logo + Software Brand + Company Name */}
-        <Link href="/" className="flex min-w-0 items-center gap-2.5">
+        <Link href="/" className="flex min-w-0 items-center gap-3">
           <div
-            className="flex h-9 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white p-0.5 shadow-xs"
+            className="flex h-11 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1 shadow-sm"
             title={settings.business_name}
           >
             {settings.logo_data_url ? (
@@ -137,15 +137,15 @@ export function TopBrandBar() {
             )}
           </div>
           <div className="min-w-0 leading-tight">
-            <div className="flex items-center gap-1.5 text-sm sm:text-base">
+            <div className="flex items-center gap-2 text-base sm:text-xl">
               <span className="font-extrabold tracking-tight text-white">
                 {settings.software_brand || 'Softifyx'}
               </span>
-              <span className="hidden truncate font-semibold text-amber-400 sm:inline">
+              <span className="hidden truncate font-bold tracking-wide text-amber-400 sm:inline">
                 — {settings.business_name || 'M/S SEASTONE PVC PIPE INDUSTRY'}
               </span>
             </div>
-            <p className="truncate text-[11px] font-medium text-slate-400 sm:hidden">
+            <p className="truncate text-xs font-bold text-amber-400 sm:hidden">
               {settings.business_name}
             </p>
           </div>
@@ -157,9 +157,9 @@ export function TopBrandBar() {
             <button
               type="button"
               onClick={() => setBranchMenuOpen((o) => !o)}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-500"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-[13px] font-bold text-white shadow-xs transition hover:bg-emerald-500"
             >
-              <Store className="h-3.5 w-3.5" />
+              <Store className="h-4 w-4" />
               <span>{activeBranch ? activeBranch.name : 'All Branches'}</span>
               <ChevronDown className="h-3.5 w-3.5 opacity-85" />
             </button>
@@ -292,8 +292,8 @@ export function TopBrandBar() {
             )}
           </div>
 
-          <div className="hidden items-center gap-1.5 rounded-lg border border-white/15 bg-white/10 px-2.5 py-1.5 text-xs font-medium text-slate-100 md:inline-flex">
-            <UserCheck className="h-3.5 w-3.5 text-emerald-400" />
+          <div className="hidden items-center gap-1.5 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-[13px] font-bold text-slate-100 md:inline-flex">
+            <UserCheck className="h-4 w-4 text-emerald-400" />
             <span>{activeUser?.full_name ?? 'Administrator'}</span>
           </div>
 
@@ -301,9 +301,9 @@ export function TopBrandBar() {
             type="button"
             onClick={handleQuickSwitchUser}
             title="Switch user session"
-            className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-white/15 bg-white/10 p-1.5 text-slate-300 transition hover:bg-rose-600 hover:text-white"
+            className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-white/15 bg-white/10 p-2 text-slate-200 transition hover:bg-rose-600 hover:text-white"
           >
-            <LogOut className="h-3.5 w-3.5" />
+            <LogOut className="h-4 w-4" />
           </button>
         </div>
       </div>
