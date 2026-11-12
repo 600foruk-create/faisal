@@ -1,26 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import {
-  BarChart3,
   Building2,
   ChevronDown,
   CloudUpload,
   DatabaseBackup,
-  DoorOpen,
   FileText,
-  Home,
   Info,
-  List,
   Package,
-  PauseCircle,
   RefreshCw,
   Shield,
-  ShoppingCart,
   Store,
-  Undo2,
   Users,
 } from 'lucide-react';
 import { usePosContext } from './PosContext';
@@ -40,8 +32,8 @@ interface DropdownGroup {
   items: DropdownItem[];
 }
 
-// Left-side System / Master / FBR Setup menus (no overlap with right-side Daily POS tabs)
-const LEFT_ADMIN_MENUS: DropdownGroup[] = [
+// Horizontal Admin & Setup menu bar (Daily POS navigation lives in PosSidebar)
+const ADMIN_SUBHEADER_MENUS: DropdownGroup[] = [
   {
     key: 'administrator',
     label: 'Administrator',
@@ -59,7 +51,6 @@ const LEFT_ADMIN_MENUS: DropdownGroup[] = [
     adminOnly: true,
     items: [
       { label: 'Products & Pricing', href: '/settings?tab=products', icon: Package },
-      { label: 'Inventory Stock Balance', href: '/settings?tab=products', icon: Package },
       { label: 'Registered Customers', href: '/settings?tab=customers', icon: Users },
     ],
   },
@@ -69,7 +60,6 @@ const LEFT_ADMIN_MENUS: DropdownGroup[] = [
     items: [
       { label: 'Pending FBR Invoices', href: '/register?fbrStatus=PENDING', icon: CloudUpload },
       { label: 'FBR Sync & Audit Logs', href: '/reports?tab=fbr', icon: FileText },
-      { label: 'FBR Terminal Config', href: '/settings?tab=branches', icon: Store, adminOnly: true },
     ],
   },
   {
@@ -79,20 +69,8 @@ const LEFT_ADMIN_MENUS: DropdownGroup[] = [
   },
 ];
 
-// Right-side Daily POS Operation tabs (no overlap with left-side Admin/Maintain menus)
-const RIGHT_POS_TABS = [
-  { href: '/', label: 'Dashboard', icon: Home },
-  { href: '/sale', label: 'POS Sale', icon: ShoppingCart },
-  { href: '/register', label: 'Sales Register', icon: List },
-  { href: '/returns', label: 'Sales Return', icon: Undo2 },
-  { href: '/hold', label: 'Hold / Recall', icon: PauseCircle },
-  { href: '/closing', label: 'Day Closing', icon: DoorOpen },
-  { href: '/reports', label: 'Reports', icon: BarChart3 },
-];
-
 export function PosHeader() {
-  const pathname = usePathname();
-  const { settings, activeUser, heldCount, triggerRefresh } = usePosContext();
+  const { settings, activeUser, triggerRefresh } = usePosContext();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [showAbout, setShowAbout] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -134,8 +112,8 @@ export function PosHeader() {
     <div ref={barRef} className="no-print relative z-30 w-full border-b border-slate-200/90 bg-white">
       <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-2 px-4 py-1.5 sm:px-6">
         {/* LEFT SIDE: Administrator, Maintain, FBR Digital, About */}
-        <div className="flex flex-wrap items-center gap-1">
-          {LEFT_ADMIN_MENUS.map((group) => {
+        <div className="flex flex-wrap items-center gap-1.5">
+          {ADMIN_SUBHEADER_MENUS.map((group) => {
             if (group.adminOnly && isCashier) return null;
             const visibleItems = group.items.filter((it) => !(it.adminOnly && isCashier));
             if (visibleItems.length === 0) return null;
@@ -146,7 +124,7 @@ export function PosHeader() {
                 <button
                   type="button"
                   onClick={() => setOpenMenu(isOpen ? null : group.key)}
-                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold transition ${
+                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                     group.key === 'administrator'
                       ? isOpen
                         ? 'bg-amber-500 text-slate-950 shadow-xs'
@@ -215,49 +193,17 @@ export function PosHeader() {
           })}
         </div>
 
-        {/* RIGHT SIDE: Main Dashboard & Daily POS Tabs */}
-        <nav className="ml-auto flex flex-wrap items-center gap-1">
-          {RIGHT_POS_TABS.map((item) => {
-            const Icon = item.icon;
-            const isActive =
-              item.href === '/'
-                ? pathname === '/'
-                : pathname === item.href || pathname.startsWith(`${item.href}/`);
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold transition ${
-                  isActive
-                    ? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                }`}
-              >
-                <Icon
-                  className={`h-3.5 w-3.5 shrink-0 ${
-                    isActive ? 'text-emerald-600' : 'text-slate-400'
-                  }`}
-                />
-                <span>{item.label}</span>
-                {item.href === '/hold' && heldCount > 0 && (
-                  <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold leading-none text-amber-800">
-                    {heldCount}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-
+        {/* RIGHT SIDE: Sync/Refresh Action */}
+        <div className="ml-auto flex items-center gap-2">
           <button
             type="button"
             onClick={handleRefresh}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
           >
             <RefreshCw className={`h-3.5 w-3.5 text-slate-500 ${refreshing ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </button>
-        </nav>
+        </div>
       </div>
 
       {showAbout && (

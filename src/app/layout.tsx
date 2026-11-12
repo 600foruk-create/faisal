@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { AppFooter } from '@/components/AppFooter';
 import { PosProvider } from '@/components/PosContext';
 import { PosHeader } from '@/components/PosHeader';
+import { PosSidebar } from '@/components/PosSidebar';
 import { TopBrandBar } from '@/components/TopBrandBar';
 import './globals.css';
 
@@ -21,8 +22,9 @@ export default function RootLayout({
         <PosProvider>
           <TopBrandBar />
           <PosHeader />
-          <div className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-5 sm:px-6">
-            <main>{children}</main>
+          <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-5 px-4 py-5 sm:px-6 lg:flex-row lg:items-start">
+            <PosSidebar />
+            <main className="min-w-0 flex-1">{children}</main>
           </div>
           <AppFooter />
         </PosProvider>
