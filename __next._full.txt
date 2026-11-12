@@ -1,7 +1,7 @@
 1:"$Sreact.fragment"
 2:"static/chunks/63-2fea4396770988db.js"
-3:"static/chunks/279-12df6eb2391d9ffb.js"
-4:"static/chunks/app/layout-e62c6b7455e6633d.js"
+3:"static/chunks/279-d3ed4d950b8f9d51.js"
+4:"static/chunks/app/layout-7d6bae3877b28b6e.js"
 5:I[3057,["63","$2","279","$3","177","$4"],"PosProvider"]
 6:I[7098,["63","$2","279","$3","177","$4"],"TopBrandBar"]
 7:I[2123,["63","$2","279","$3","177","$4"],"PosHeader"]
@@ -10,22 +10,21 @@
 a:I[3230,["63","$2","279","$3","177","$4"],"AppFooter"]
 c:I[1304,[],"ClientPageRoot"]
 d:"static/chunks/874-58f155d47fceace9.js"
-e:"static/chunks/601-b51e64647c574eef.js"
-f:"static/chunks/490-6975b5fcbea478a3.js"
-10:"static/chunks/app/page-7ed7c73c2154147b.js"
-11:I[7462,["63","$2","874","$d","601","$e","490","$f","974","$10"],"default"]
-14:I[484,[],"OutletBoundary"]
-15:"$Sreact.suspense"
-17:"ViewportBoundary"
-18:I[484,[],"$17"]
-1a:"MetadataBoundary"
-1b:I[484,[],"$1a"]
-1d:I[7123,[],"default",1]
-:HL["/_next/static/css/9605c85f87ea9464.css","style"]
-b:[["children",{"s":"__PAGE__","h":512,"d":{"r":["$","$1","c",{"children":[["$","$Lc",null,{"Component":"$11","serverProvidedParams":{"searchParams":{},"params":{},"promises":["$@12","$@13"]}}],null,["$","$L14",null,{"children":["$","$15",null,{"name":"Next.MetadataOutlet","children":"$@16"}]}]]}],"p":false,"v":null}}]]
-0:{"P":null,"c":["",""],"q":"","i":false,"t":{"t":{"s":"","h":528,"d":{"r":["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/9605c85f87ea9464.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":["$","body",null,{"className":"flex min-h-screen flex-col antialiased","children":["$","$L5",null,{"children":[["$","$L6",null,{}],["$","div",null,{"className":"mx-auto w-full max-w-[1440px] flex-1 space-y-4 px-3 py-4 sm:px-6","children":[["$","$L7",null,{}],["$","main",null,{"children":["$","$L8",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L9",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}],["$","$La",null,{}]]}]}]}]]}],"p":false,"v":null},"c":"$Qb"},"h":{"r":["$","$1","h",{"children":[null,["$","$L18",null,{"children":"$L19"}],["$","$L1b",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$15",null,{"name":"Next.Metadata","children":"$L1c"}]}],null]}],null]}],"p":false,"v":null}},"m":"$undefined","G":["$1d",[]],"S":true,"r":"$undefined","s":"$undefined","a":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"38EnipjtzDsjISnubnekB"}
-12:{}
-13:"$b:0:1:d:r:props:children:0:props:serverProvidedParams:params"
-19:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
-16:null
-1c:[["$","title","0",{"children":"Softifyx - M/S Seastone PVC Pipe Industry | POS & FBR"}],["$","meta","1",{"name":"description","content":"Multi-Branch Retail POS & Pakistan FBR POS Integration System"}]]
+e:"static/chunks/490-6975b5fcbea478a3.js"
+f:"static/chunks/app/page-72051e9975d146d1.js"
+10:I[531,["63","$2","874","$d","490","$e","974","$f"],"default"]
+13:I[484,[],"OutletBoundary"]
+14:"$Sreact.suspense"
+16:"ViewportBoundary"
+17:I[484,[],"$16"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1c:I[7123,[],"default",1]
+:HL["/_next/static/css/b95d41060e32448d.css","style"]
+b:[["children",{"s":"__PAGE__","h":512,"d":{"r":["$","$1","c",{"children":[["$","$Lc",null,{"Component":"$10","serverProvidedParams":{"searchParams":{},"params":{},"promises":["$@11","$@12"]}}],null,["$","$L13",null,{"children":["$","$14",null,{"name":"Next.MetadataOutlet","children":"$@15"}]}]]}],"p":false,"v":null}}]]
+0:{"P":null,"c":["",""],"q":"","i":false,"t":{"t":{"s":"","h":528,"d":{"r":["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/b95d41060e32448d.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":["$","body",null,{"className":"flex min-h-screen flex-col antialiased","children":["$","$L5",null,{"children":[["$","$L6",null,{}],["$","$L7",null,{}],["$","div",null,{"className":"mx-auto w-full max-w-[1440px] flex-1 px-4 py-5 sm:px-6","children":["$","main",null,{"children":["$","$L8",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L9",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]}],["$","$La",null,{}]]}]}]}]]}],"p":false,"v":null},"c":"$Qb"},"h":{"r":["$","$1","h",{"children":[null,["$","$L17",null,{"children":"$L18"}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$14",null,{"name":"Next.Metadata","children":"$L1b"}]}],null]}],null]}],"p":false,"v":null}},"m":"$undefined","G":["$1c",[]],"S":true,"r":"$undefined","s":"$undefined","a":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"ApjLncriw5bG8-hTUrenr"}
+11:{}
+12:"$b:0:1:d:r:props:children:0:props:serverProvidedParams:params"
+18:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+15:null
+1b:[["$","title","0",{"children":"Softifyx - M/S Seastone PVC Pipe Industry | POS & FBR"}],["$","meta","1",{"name":"description","content":"Multi-Branch Retail POS & Pakistan FBR POS Integration System"}]]
