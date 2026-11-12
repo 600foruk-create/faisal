@@ -179,8 +179,8 @@ function PosSidebarInner() {
           {/* Category 1: Record New */}
           <div>
             {!collapsed ? (
-              <div className="mb-1.5 flex items-center gap-1.5 rounded-lg bg-[#0f1b33] px-3 py-1.5 text-xs font-bold text-white">
-                <PlusCircle className="h-3.5 w-3.5 text-emerald-400" />
+              <div className="mb-1.5 flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#4b1c05] to-[#682708] px-3 py-1.5 text-xs font-bold text-white shadow-2xs">
+                <PlusCircle className="h-3.5 w-3.5 text-[#fbbf24]" />
                 <span>Record New</span>
               </div>
             ) : (
@@ -194,8 +194,8 @@ function PosSidebarInner() {
           {/* Category 2: View */}
           <div>
             {!collapsed ? (
-              <div className="mb-1.5 flex items-center gap-1.5 rounded-lg bg-[#0f1b33] px-3 py-1.5 text-xs font-bold text-white">
-                <Eye className="h-3.5 w-3.5 text-sky-400" />
+              <div className="mb-1.5 flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#4b1c05] to-[#682708] px-3 py-1.5 text-xs font-bold text-white shadow-2xs">
+                <Eye className="h-3.5 w-3.5 text-[#fbbf24]" />
                 <span>View</span>
               </div>
             ) : (
