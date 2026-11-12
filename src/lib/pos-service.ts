@@ -314,6 +314,19 @@ export function exportSystemBackup(db: DatabaseSync) {
   };
 }
 
+export function clearAllTransactions(db: DatabaseSync): { cleared: true } {
+  return withTransaction(db, () => {
+    db.prepare('DELETE FROM fbr_sync_logs').run();
+    db.prepare('DELETE FROM invoice_items').run();
+    db.prepare('DELETE FROM invoices WHERE original_invoice_id IS NOT NULL').run();
+    db.prepare('DELETE FROM invoices').run();
+    db.prepare('DELETE FROM held_carts').run();
+    db.prepare('DELETE FROM day_closings').run();
+    db.prepare('UPDATE pos_terminals SET next_sequence = 1').run();
+    return { cleared: true };
+  });
+}
+
 export function authenticateUser(
   db: DatabaseSync,
   username: string,

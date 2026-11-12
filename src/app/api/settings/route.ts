@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { jsonError, jsonOk } from '../../../lib/api-utils.ts';
 import { getDb } from '../../../lib/db.ts';
 import {
+  clearAllTransactions,
   createUser,
   exportSystemBackup,
   getBranchesWithTerminals,
@@ -68,7 +69,8 @@ export async function POST(req: NextRequest) {
             is_active: number;
             password?: string;
           };
-        };
+        }
+      | { action: 'clear_transactions'; data?: { confirm?: string } };
 
     const db = getDb();
     if (body.action === 'business') {
@@ -86,6 +88,12 @@ export async function POST(req: NextRequest) {
     if (body.action === 'user_update') {
       const user = updateUser(db, body.data);
       return jsonOk({ user });
+    }
+    if (body.action === 'clear_transactions') {
+      if (body.data?.confirm !== 'CLEAR') {
+        return jsonError(new Error('Type CLEAR to confirm clearing transactions'), 400);
+      }
+      return jsonOk(clearAllTransactions(db));
     }
     return jsonError(new Error('Unknown settings action'), 400);
   } catch (err) {

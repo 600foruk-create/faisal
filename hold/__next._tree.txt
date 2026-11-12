@@ -1,4 +1,4 @@
-:HL["/_next/static/css/c207120a2f431ca1.css","style"]
+:HL["/_next/static/css/81695bca7d386dac.css","style"]
 2:[["children",{"s":"__PAGE__","h":160}]]
 1:[["children",{"s":"hold","h":96,"c":"$Q2"}]]
-0:{"b":"vICSTma6XQlsCicLY3eFf","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
+0:{"b":"rOry30NXr0ws1B7YPoExC","t":{"t":{"s":"","h":80,"c":"$Q1"}}}

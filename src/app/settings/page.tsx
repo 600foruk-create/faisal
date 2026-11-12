@@ -3,22 +3,69 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
+  AlertTriangle,
   Building2,
+  CheckCircle2,
   DatabaseBackup,
   ImagePlus,
+  KeyRound,
   Lock,
   Package,
   Plus,
   RotateCcw,
   Settings,
-  Shield,
+  ShieldCheck,
+  SlidersHorizontal,
+  Store,
+  Trash2,
+  UserCheck,
   Users,
 } from 'lucide-react';
 import { usePosContext } from '@/components/PosContext';
 import { formatCurrency } from '@/lib/format';
 import type { Customer, FbrMode, ProductWithStock, UserRole, UserSummary } from '@/lib/types';
 
-type SettingsTab = 'business' | 'branches' | 'products' | 'customers' | 'users';
+type SettingsTab =
+  | 'business'
+  | 'logo'
+  | 'branches'
+  | 'system'
+  | 'products'
+  | 'customers'
+  | 'users'
+  | 'rights'
+  | 'passwords'
+  | 'clear';
+
+const VALID_TABS: SettingsTab[] = [
+  'business',
+  'logo',
+  'branches',
+  'system',
+  'products',
+  'customers',
+  'users',
+  'rights',
+  'passwords',
+  'clear',
+];
+
+const ROLE_RIGHTS_MATRIX: Array<{
+  feature: string;
+  admin: boolean;
+  manager: boolean;
+  cashier: boolean;
+}> = [
+  { feature: 'POS Billing & Receipt Printing', admin: true, manager: true, cashier: true },
+  { feature: 'Hold / Recall Parked Bills', admin: true, manager: true, cashier: true },
+  { feature: 'Sales Returns & Stock Restore', admin: true, manager: true, cashier: true },
+  { feature: 'View Sales Register & Reports', admin: true, manager: true, cashier: true },
+  { feature: 'Day Closing & Drawer Count', admin: true, manager: true, cashier: true },
+  { feature: 'Products, Pricing & Stock Management', admin: true, manager: true, cashier: false },
+  { feature: 'Customers Directory', admin: true, manager: true, cashier: false },
+  { feature: 'My Company, Logo & System Settings', admin: true, manager: true, cashier: false },
+  { feature: 'Branches, User Rights, Passwords & Clear Data', admin: true, manager: false, cashier: false },
+];
 
 function resizeLogoFileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -60,15 +107,13 @@ function SettingsContent() {
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
 
   useEffect(() => {
-    if (
-      tabParam &&
-      ['business', 'branches', 'products', 'customers', 'users'].includes(tabParam)
-    ) {
+    if (tabParam && VALID_TABS.includes(tabParam)) {
       setTab(tabParam);
+      setMessage(null);
     }
   }, [tabParam]);
 
-  // Company & Branding form
+  // Company, Logo & System Settings
   const [softBrand, setSoftBrand] = useState(settings.software_brand);
   const [bizName, setBizName] = useState(settings.business_name);
   const [bizLogo, setBizLogo] = useState(settings.logo_data_url);
@@ -80,7 +125,7 @@ function SettingsContent() {
   const [bizCurrency, setBizCurrency] = useState(settings.currency_symbol);
   const [bizFooter, setBizFooter] = useState(settings.receipt_footer);
 
-  // Branch & Terminal form
+  // Branch & Counter form
   const [editBranchId, setEditBranchId] = useState<number | undefined>(undefined);
   const [editTerminalId, setEditTerminalId] = useState<number | undefined>(undefined);
   const [bCode, setBCode] = useState('');
@@ -122,6 +167,13 @@ function SettingsContent() {
   const [uBranchId, setUBranchId] = useState<string>('');
   const [uActive, setUActive] = useState<number>(1);
 
+  // Dedicated Passwords & Clear Transactions
+  const [pwUserId, setPwUserId] = useState<string>('');
+  const [pwNew, setPwNew] = useState('');
+  const [pwConfirm, setPwConfirm] = useState('');
+  const [clearConfirmText, setClearConfirmText] = useState('');
+  const [clearing, setClearing] = useState(false);
+
   useEffect(() => {
     setSoftBrand(settings.software_brand);
     setBizName(settings.business_name);
@@ -140,6 +192,12 @@ function SettingsContent() {
       setStockBranchId(branches[0].id);
     }
   }, [branches, stockBranchId]);
+
+  useEffect(() => {
+    if (users.length > 0 && !pwUserId) {
+      setPwUserId(String(users[0].id));
+    }
+  }, [users, pwUserId]);
 
   const loadProductsAndCustomers = useCallback(async () => {
     const [pRes, cRes] = await Promise.all([
@@ -168,7 +226,7 @@ function SettingsContent() {
         </div>
         <h1 className="mt-3 text-lg font-bold text-slate-900">Administrator Access Required</h1>
         <p className="mt-1 text-xs text-slate-600">
-          Company Name, Logo, Branches &amp; Counters, and User Roles can only be changed by an{' '}
+          Company Name, Logo, Branches &amp; Counters, and User Settings can only be changed by an{' '}
           <strong>ADMIN</strong> or <strong>MANAGER</strong>. Switch user via the top bar{' '}
           <strong>Switch</strong> button above.
         </p>
@@ -176,13 +234,41 @@ function SettingsContent() {
     );
   }
 
+  const saveBusinessPayload = async (successMessage: string, overrideLogo?: string) => {
+    const res = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'business',
+        data: {
+          software_brand: softBrand.trim() || 'Softifyx',
+          business_name: bizName.trim(),
+          logo_data_url: overrideLogo !== undefined ? overrideLogo : bizLogo,
+          footer_text: bizFooterCredit.trim(),
+          ntn: bizNtn,
+          strn: bizStrn,
+          default_tax_rate: Number(bizTax) || 0,
+          default_opening_cash: Number(bizOpeningCash) || 0,
+          currency_symbol: bizCurrency.trim() || 'Rs.',
+          receipt_footer: bizFooter,
+        },
+      }),
+    });
+    if (res.ok) {
+      await reloadContext();
+      setMessage({ type: 'success', text: successMessage });
+    } else {
+      setMessage({ type: 'error', text: 'Failed to save settings.' });
+    }
+  };
+
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
       const dataUrl = await resizeLogoFileToDataUrl(file);
       setBizLogo(dataUrl);
-      setMessage({ type: 'success', text: 'Logo preview loaded. Click Save Branding & Settings to apply.' });
+      setMessage({ type: 'success', text: 'Logo preview loaded. Click Save Logo to apply.' });
     } catch {
       setMessage({ type: 'error', text: 'Could not process selected image file.' });
     }
@@ -199,35 +285,6 @@ function SettingsContent() {
     a.download = `softifyx-pos-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-  };
-
-  const saveBusiness = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const res = await fetch('/api/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'business',
-        data: {
-          software_brand: softBrand.trim() || 'Softifyx',
-          business_name: bizName.trim(),
-          logo_data_url: bizLogo,
-          footer_text: bizFooterCredit.trim(),
-          ntn: bizNtn,
-          strn: bizStrn,
-          default_tax_rate: Number(bizTax) || 18,
-          default_opening_cash: Number(bizOpeningCash) || 0,
-          currency_symbol: bizCurrency.trim() || 'Rs.',
-          receipt_footer: bizFooter,
-        },
-      }),
-    });
-    if (res.ok) {
-      await reloadContext();
-      setMessage({ type: 'success', text: 'Company branding & settings updated across the app!' });
-    } else {
-      setMessage({ type: 'error', text: 'Failed to save branding settings.' });
-    }
   };
 
   const selectBranchForEdit = (branchId: number) => {
@@ -417,32 +474,144 @@ function SettingsContent() {
     }
   };
 
+  const handleQuickRoleUpdate = async (u: UserSummary, nextRole: UserRole) => {
+    setMessage(null);
+    const res = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'user_update',
+        data: {
+          id: u.id,
+          full_name: u.full_name,
+          role: nextRole,
+          branch_id: u.branch_id,
+          is_active: u.is_active,
+        },
+      }),
+    });
+    if (res.ok) {
+      await reloadContext();
+      setMessage({ type: 'success', text: `Role for ${u.full_name} updated to ${nextRole}.` });
+    } else {
+      setMessage({ type: 'error', text: 'Failed to update user role.' });
+    }
+  };
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage(null);
+    const targetUser = users.find((u) => String(u.id) === pwUserId);
+    if (!targetUser) {
+      setMessage({ type: 'error', text: 'Select a valid user account.' });
+      return;
+    }
+    if (!pwNew.trim() || pwNew.trim().length < 4) {
+      setMessage({ type: 'error', text: 'New password must be at least 4 characters.' });
+      return;
+    }
+    if (pwNew !== pwConfirm) {
+      setMessage({ type: 'error', text: 'Passwords do not match.' });
+      return;
+    }
+    const res = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'user_update',
+        data: {
+          id: targetUser.id,
+          full_name: targetUser.full_name,
+          role: targetUser.role,
+          branch_id: targetUser.branch_id,
+          is_active: targetUser.is_active,
+          password: pwNew.trim(),
+        },
+      }),
+    });
+    if (res.ok) {
+      setPwNew('');
+      setPwConfirm('');
+      await reloadContext();
+      setMessage({ type: 'success', text: `Password updated for ${targetUser.username}.` });
+    } else {
+      setMessage({ type: 'error', text: 'Failed to update password.' });
+    }
+  };
+
+  const handleClearTransactions = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage(null);
+    if (clearConfirmText.trim().toUpperCase() !== 'CLEAR') {
+      setMessage({ type: 'error', text: 'Type CLEAR in the box to confirm.' });
+      return;
+    }
+    setClearing(true);
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'clear_transactions', data: { confirm: 'CLEAR' } }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (res.ok) {
+        setClearConfirmText('');
+        await reloadContext();
+        setMessage({
+          type: 'success',
+          text: 'All sales invoices, returns, held bills, and day closings cleared.',
+        });
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Failed to clear transactions.' });
+      }
+    } finally {
+      setClearing(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Settings className="h-5 w-5 text-amber-600" />
-            <h1 className="text-lg font-bold text-slate-900">Administrator &amp; System Settings</h1>
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+              <Settings className="h-5 w-5" />
+            </span>
+            <div>
+              <h1 className="text-lg font-bold text-slate-900">Administrator &amp; POS Setup</h1>
+              <p className="text-xs text-slate-500">
+                Manage company profile, logo, branches, users, currency &amp; utilities
+              </p>
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {(
               [
-                { key: 'business', label: 'Company & Logo', icon: Building2 },
-                { key: 'branches', label: 'Branches & Counters', icon: Settings },
+                { key: 'business', label: 'My Company', icon: Building2 },
+                { key: 'logo', label: 'My Logo', icon: ImagePlus },
+                { key: 'branches', label: 'Branches & Counters', icon: Store },
+                { key: 'system', label: 'System & Currency', icon: SlidersHorizontal },
+                { key: 'users', label: 'User Logins', icon: UserCheck },
+                { key: 'rights', label: 'User Rights', icon: ShieldCheck },
+                { key: 'passwords', label: 'Passwords', icon: KeyRound },
                 { key: 'products', label: 'Products & Stock', icon: Package },
                 { key: 'customers', label: 'Customers', icon: Users },
-                { key: 'users', label: 'Users & Roles', icon: Shield },
+                { key: 'clear', label: 'Clear / Backup', icon: Trash2 },
               ] as const
             ).map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
                 type="button"
-                onClick={() => setTab(key)}
-                className={`inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition ${
+                onClick={() => {
+                  setTab(key);
+                  setMessage(null);
+                }}
+                className={`inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
                   tab === key
-                    ? 'bg-emerald-600 text-white shadow-xs'
+                    ? key === 'clear'
+                      ? 'bg-rose-600 text-white shadow-xs'
+                      : 'bg-emerald-600 text-white shadow-xs'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
@@ -456,7 +625,7 @@ function SettingsContent() {
 
       {message && (
         <div
-          className={`rounded-xl border px-4 py-2 text-xs font-medium ${
+          className={`rounded-xl border px-4 py-2.5 text-xs font-medium ${
             message.type === 'error'
               ? 'border-red-200 bg-red-50 text-red-700'
               : 'border-emerald-200 bg-emerald-50 text-emerald-800'
@@ -467,185 +636,246 @@ function SettingsContent() {
       )}
 
       {tab === 'business' && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-          <form
-            onSubmit={saveBusiness}
-            className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-8"
-          >
-            <h2 className="border-b border-slate-100 pb-2 text-sm font-bold text-slate-900">
-              Company Branding, Tax &amp; Receipt Identity
-            </h2>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void saveBusinessPayload('Company profile updated across the application!');
+          }}
+          className="max-w-3xl space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+        >
+          <h2 className="border-b border-slate-100 pb-2 text-sm font-bold text-slate-900">
+            My Company Profile
+          </h2>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-600">
-                  Software Brand Title (Top-Left)
-                </label>
-                <input
-                  type="text"
-                  value={softBrand}
-                  onChange={(e) => setSoftBrand(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-600">
-                  Company / Business Name (Header &amp; Receipts)
-                </label>
-                <input
-                  type="text"
-                  value={bizName}
-                  onChange={(e) => setBizName(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5">
-              <label className="mb-2 block text-xs font-semibold text-slate-700">
-                Company Logo (Shown on Top Header &amp; Printed Receipts)
-              </label>
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex h-16 w-20 items-center justify-center overflow-hidden rounded-lg border border-slate-300 bg-white p-1">
-                  {bizLogo ? (
-                    <img src={bizLogo} alt="Preview" className="h-full w-full object-contain" />
-                  ) : (
-                    <span className="text-[11px] font-semibold text-slate-400">Default SVG</span>
-                  )}
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-900">
-                    <ImagePlus className="h-3.5 w-3.5" />
-                    <span>Upload Logo Image</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoUpload}
-                      className="hidden"
-                    />
-                  </label>
-                  {bizLogo && (
-                    <button
-                      type="button"
-                      onClick={() => setBizLogo('')}
-                      className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-                    >
-                      <RotateCcw className="h-3.5 w-3.5" />
-                      Reset Default
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-600">NTN</label>
-                <input
-                  type="text"
-                  value={bizNtn}
-                  onChange={(e) => setBizNtn(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-600">STRN</label>
-                <input
-                  type="text"
-                  value={bizStrn}
-                  onChange={(e) => setBizStrn(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-600">Default GST %</label>
-                <input
-                  type="number"
-                  value={bizTax}
-                  onChange={(e) => setBizTax(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-600">Currency</label>
-                <input
-                  type="text"
-                  value={bizCurrency}
-                  onChange={(e) => setBizCurrency(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-600">
-                  Opening Cash
-                </label>
-                <input
-                  type="number"
-                  value={bizOpeningCash}
-                  onChange={(e) => setBizOpeningCash(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                />
-              </div>
-            </div>
-
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-semibold text-slate-600">
-                Thermal Receipt Footer Message
-              </label>
-              <textarea
-                rows={2}
-                value={bizFooter}
-                onChange={(e) => setBizFooter(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-slate-600">
-                Application Footer Credit
+                Software Brand Title (Top-Left)
               </label>
               <input
                 type="text"
-                value={bizFooterCredit}
-                onChange={(e) => setBizFooterCredit(e.target.value)}
+                value={softBrand}
+                onChange={(e) => setSoftBrand(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-slate-600">
+                Company / Business Name (Header &amp; Receipts)
+              </label>
+              <input
+                type="text"
+                value={bizName}
+                onChange={(e) => setBizName(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-slate-600">NTN</label>
+              <input
+                type="text"
+                value={bizNtn}
+                onChange={(e) => setBizNtn(e.target.value)}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               />
             </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-slate-600">STRN</label>
+              <input
+                type="text"
+                value={bizStrn}
+                onChange={(e) => setBizStrn(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
 
-            <button
-              type="submit"
-              className="cursor-pointer rounded-lg bg-[#0fa968] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#0d945b]"
-            >
-              Save Branding &amp; Settings
-            </button>
-          </form>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">
+              Application Footer Credit
+            </label>
+            <input
+              type="text"
+              value={bizFooterCredit}
+              onChange={(e) => setBizFooterCredit(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+          </div>
 
-          <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-4">
+          <button
+            type="submit"
+            className="cursor-pointer rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"
+          >
+            Save Company Profile
+          </button>
+        </form>
+      )}
+
+      {tab === 'logo' && (
+        <div className="grid max-w-4xl grid-cols-1 gap-4 md:grid-cols-2">
+          <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="border-b border-slate-100 pb-2 text-sm font-bold text-slate-900">
-              System Maintenance &amp; Backup
+              My Logo — Upload &amp; Manage
             </h2>
-            <p className="text-xs text-slate-600">
-              Download a full JSON snapshot of your company settings, branches, products, customers,
-              invoices, and day closings.
+            <p className="text-xs text-slate-500">
+              This logo appears in the Top Brand Bar and on all printed 80mm POS thermal receipts.
             </p>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex h-20 w-24 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2">
+                {bizLogo ? (
+                  <img
+                    src={bizLogo}
+                    alt="Company Logo Preview"
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <span className="text-[11px] font-semibold text-slate-400">Default Logo</span>
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-slate-800 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-900">
+                  <ImagePlus className="h-3.5 w-3.5" />
+                  <span>Choose Image (PNG/JPG/SVG)</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="hidden"
+                  />
+                </label>
+                {bizLogo && (
+                  <button
+                    type="button"
+                    onClick={() => setBizLogo('')}
+                    className="inline-flex cursor-pointer items-center justify-center gap-1 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Reset to Default Logo
+                  </button>
+                )}
+              </div>
+            </div>
             <button
               type="button"
-              onClick={handleDownloadBackup}
-              className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-xs font-bold text-white hover:bg-slate-800"
+              onClick={() => void saveBusinessPayload('Company logo saved and applied!')}
+              className="w-full cursor-pointer rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"
             >
-              <DatabaseBackup className="h-4 w-4" />
-              Download System Backup (JSON)
+              Save Logo
             </button>
           </section>
+
+          <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 className="border-b border-slate-100 pb-2 text-sm font-bold text-slate-900">
+              Live Header &amp; Receipt Preview
+            </h2>
+            <div className="flex items-center gap-3 rounded-xl bg-[#0b1324] px-4 py-3 text-white">
+              <div className="flex h-9 w-10 items-center justify-center overflow-hidden rounded-lg bg-white p-0.5">
+                {bizLogo ? (
+                  <img src={bizLogo} alt="Preview" className="h-full w-full object-contain" />
+                ) : (
+                  <span className="text-[10px] font-bold text-slate-700">SP</span>
+                )}
+              </div>
+              <div className="min-w-0 text-xs">
+                <div className="font-bold text-white">{softBrand || 'Softifyx'}</div>
+                <div className="truncate font-semibold text-amber-400">{bizName}</div>
+              </div>
+            </div>
+            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center">
+              {bizLogo && (
+                <img src={bizLogo} alt="Receipt Preview" className="mx-auto mb-1.5 h-10 object-contain" />
+              )}
+              <div className="text-xs font-bold text-slate-900">{bizName}</div>
+              <div className="text-[10px] text-slate-500">POS Sales Receipt Preview</div>
+            </div>
+          </section>
         </div>
+      )}
+
+      {tab === 'system' && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void saveBusinessPayload('System settings & currency updated!');
+          }}
+          className="max-w-3xl space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+        >
+          <h2 className="border-b border-slate-100 pb-2 text-sm font-bold text-slate-900">
+            System Settings &amp; Currency
+          </h2>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-slate-600">
+                Currency Symbol
+              </label>
+              <input
+                type="text"
+                value={bizCurrency}
+                onChange={(e) => setBizCurrency(e.target.value)}
+                placeholder="Rs."
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold"
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-slate-600">
+                Default Tax / GST (%)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={bizTax}
+                onChange={(e) => setBizTax(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-slate-600">
+                Default Opening Cash Float
+              </label>
+              <input
+                type="number"
+                value={bizOpeningCash}
+                onChange={(e) => setBizOpeningCash(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">
+              Thermal Receipt Footer Message
+            </label>
+            <textarea
+              rows={2}
+              value={bizFooter}
+              onChange={(e) => setBizFooter(e.target.value)}
+              placeholder="Thank you for shopping with us!"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="cursor-pointer rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"
+          >
+            Save System &amp; Currency Settings
+          </button>
+        </form>
       )}
 
       {tab === 'branches' && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-7">
-            <h2 className="mb-3 text-sm font-bold text-slate-900">Configured Branches &amp; POS Counters</h2>
+            <h2 className="mb-3 text-sm font-bold text-slate-900">
+              Configured Branches &amp; POS Counters
+            </h2>
             <div className="space-y-2.5">
               {branches.map((b) => {
                 const t = terminals.find((term) => term.branch_id === b.id);
@@ -689,7 +919,7 @@ function SettingsContent() {
           >
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold text-slate-900">
-                {editBranchId ? 'Edit Branch & Terminal' : 'Add New Branch & Terminal'}
+                {editBranchId ? 'Edit Branch & Counter' : 'Add New Branch & Counter'}
               </h2>
               {editBranchId && (
                 <button
@@ -756,6 +986,316 @@ function SettingsContent() {
               className="w-full cursor-pointer rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white hover:bg-emerald-700"
             >
               Save Branch &amp; POS Counter
+            </button>
+          </form>
+        </div>
+      )}
+
+      {tab === 'users' && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-8">
+            <h2 className="mb-3 text-sm font-bold text-slate-900">User Logins &amp; Branches</h2>
+            <table className="w-full border-collapse text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">
+                  <th className="px-3 py-2">Username</th>
+                  <th className="px-3 py-2">Full Name</th>
+                  <th className="px-3 py-2">Role</th>
+                  <th className="px-3 py-2">Assigned Branch</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2 text-center">Edit</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {users.map((u) => (
+                  <tr key={u.id}>
+                    <td className="px-3 py-2 font-mono font-bold">{u.username}</td>
+                    <td className="px-3 py-2">{u.full_name}</td>
+                    <td className="px-3 py-2 font-semibold">{u.role}</td>
+                    <td className="px-3 py-2">{u.branch_name ?? 'All Branches'}</td>
+                    <td className="px-3 py-2">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          u.is_active
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-slate-200 text-slate-600'
+                        }`}
+                      >
+                        {u.is_active ? 'Active' : 'Disabled'}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() => startEditUser(u)}
+                        className="cursor-pointer rounded border border-slate-300 px-2 py-0.5 hover:bg-slate-50"
+                      >
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+
+          <form
+            onSubmit={saveUserForm}
+            className="space-y-2.5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-4"
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold text-slate-900">
+                {editUserId ? 'Edit User Account' : 'Create User Login'}
+              </h2>
+              {editUserId && (
+                <button
+                  type="button"
+                  onClick={resetUserForm}
+                  className="cursor-pointer text-xs font-semibold text-slate-500 hover:underline"
+                >
+                  + Create New
+                </button>
+              )}
+            </div>
+            <input
+              type="text"
+              placeholder="Username *"
+              value={uUsername}
+              disabled={Boolean(editUserId)}
+              onChange={(e) => setUUsername(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs disabled:bg-slate-100"
+              required
+            />
+            <input
+              type="text"
+              placeholder="Full Name *"
+              value={uFullName}
+              onChange={(e) => setUFullName(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
+              required
+            />
+            <input
+              type="password"
+              placeholder={editUserId ? 'New Password (optional)' : 'Password / PIN *'}
+              value={uPassword}
+              onChange={(e) => setUPassword(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
+              required={!editUserId}
+            />
+            <select
+              value={uRole}
+              onChange={(e) => setURole(e.target.value as UserRole)}
+              className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
+            >
+              <option value="CASHIER">CASHIER (Counter Only)</option>
+              <option value="MANAGER">MANAGER</option>
+              <option value="ADMIN">ADMIN (Full Access)</option>
+            </select>
+            <select
+              value={uBranchId}
+              onChange={(e) => setUBranchId(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
+            >
+              <option value="">All Branches (Admin)</option>
+              {branches.map((b) => (
+                <option key={b.id} value={String(b.id)}>
+                  {b.display_name}
+                </option>
+              ))}
+            </select>
+            {editUserId && (
+              <label className="flex items-center gap-2 text-xs font-medium text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={uActive === 1}
+                  onChange={(e) => setUActive(e.target.checked ? 1 : 0)}
+                />
+                User Account Active
+              </label>
+            )}
+            <button
+              type="submit"
+              className="w-full cursor-pointer rounded-xl bg-emerald-600 py-2 text-xs font-bold text-white hover:bg-emerald-700"
+            >
+              {editUserId ? 'Update User' : 'Create User'}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {tab === 'rights' && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-7">
+            <h2 className="mb-3 text-sm font-bold text-slate-900">
+              Role Rights &amp; Access Permissions
+            </h2>
+            <table className="w-full border-collapse text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">
+                  <th className="px-3 py-2.5">POS Module / Permission</th>
+                  <th className="px-3 py-2.5 text-center">ADMIN</th>
+                  <th className="px-3 py-2.5 text-center">MANAGER</th>
+                  <th className="px-3 py-2.5 text-center">CASHIER</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {ROLE_RIGHTS_MATRIX.map((row) => (
+                  <tr key={row.feature}>
+                    <td className="px-3 py-2.5 font-medium text-slate-800">{row.feature}</td>
+                    {[row.admin, row.manager, row.cashier].map((allowed, idx) => (
+                      <td key={idx} className="px-3 py-2.5 text-center">
+                        {allowed ? (
+                          <CheckCircle2 className="mx-auto h-4 w-4 text-emerald-600" />
+                        ) : (
+                          <span className="text-slate-300">—</span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-5">
+            <h2 className="mb-3 text-sm font-bold text-slate-900">Assign User Roles</h2>
+            <div className="space-y-2.5">
+              {users.map((u) => (
+                <div
+                  key={u.id}
+                  className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2.5 text-xs"
+                >
+                  <div className="min-w-0">
+                    <div className="truncate font-bold text-slate-900">{u.full_name}</div>
+                    <div className="font-mono text-[11px] text-slate-500">{u.username}</div>
+                  </div>
+                  <select
+                    aria-label={`Role for ${u.username}`}
+                    value={u.role}
+                    onChange={(e) => void handleQuickRoleUpdate(u, e.target.value as UserRole)}
+                    className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800"
+                  >
+                    <option value="ADMIN">ADMIN</option>
+                    <option value="MANAGER">MANAGER</option>
+                    <option value="CASHIER">CASHIER</option>
+                  </select>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {tab === 'passwords' && (
+        <form
+          onSubmit={handlePasswordReset}
+          className="max-w-lg space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+        >
+          <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+            <KeyRound className="h-4 w-4 text-amber-600" />
+            <h2 className="text-sm font-bold text-slate-900">Change / Reset User Passwords</h2>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">
+              Select User Account
+            </label>
+            <select
+              value={pwUserId}
+              onChange={(e) => setPwUserId(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold"
+            >
+              {users.map((u) => (
+                <option key={u.id} value={String(u.id)}>
+                  {u.full_name} ({u.username} — {u.role})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">
+              New Password / PIN
+            </label>
+            <input
+              type="password"
+              value={pwNew}
+              onChange={(e) => setPwNew(e.target.value)}
+              placeholder="Minimum 4 characters"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">
+              Confirm New Password / PIN
+            </label>
+            <input
+              type="password"
+              value={pwConfirm}
+              onChange={(e) => setPwConfirm(e.target.value)}
+              placeholder="Re-enter password"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="cursor-pointer rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"
+          >
+            Update Password
+          </button>
+        </form>
+      )}
+
+      {tab === 'clear' && (
+        <div className="grid max-w-4xl grid-cols-1 gap-4 md:grid-cols-2">
+          <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 className="border-b border-slate-100 pb-2 text-sm font-bold text-slate-900">
+              BackUp Utility (JSON Snapshot)
+            </h2>
+            <p className="text-xs text-slate-600">
+              Always download a full JSON backup of your company settings, branches, products,
+              customers, invoices, and day closings before clearing transactions.
+            </p>
+            <button
+              type="button"
+              onClick={handleDownloadBackup}
+              className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-xs font-bold text-white hover:bg-slate-800"
+            >
+              <DatabaseBackup className="h-4 w-4" />
+              Download System Backup (JSON)
+            </button>
+          </section>
+
+          <form
+            onSubmit={handleClearTransactions}
+            className="space-y-3 rounded-2xl border border-rose-200 bg-white p-5 shadow-sm"
+          >
+            <div className="flex items-center gap-2 border-b border-rose-100 pb-2 text-rose-700">
+              <AlertTriangle className="h-4 w-4" />
+              <h2 className="text-sm font-bold">Clear Transactions (Go-Live Reset)</h2>
+            </div>
+            <p className="text-xs text-slate-600">
+              Removes all test <strong>sales invoices</strong>, <strong>returns</strong>,{' '}
+              <strong>held bills</strong>, and <strong>day closings</strong>. Your Company Settings,
+              Logo, Branches, Products, Customers, and User Logins stay intact.
+            </p>
+            <input
+              type="text"
+              value={clearConfirmText}
+              onChange={(e) => setClearConfirmText(e.target.value)}
+              placeholder='Type "CLEAR" to confirm'
+              className="w-full rounded-lg border border-rose-200 px-3 py-2 text-sm font-semibold focus:border-rose-500 focus:outline-none"
+            />
+            <button
+              type="submit"
+              disabled={clearing || clearConfirmText.trim().toUpperCase() !== 'CLEAR'}
+              className="w-full cursor-pointer rounded-xl bg-rose-600 py-2.5 text-xs font-bold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {clearing ? 'Clearing Transactions...' : 'Clear All Transactions'}
             </button>
           </form>
         </div>
@@ -913,7 +1453,7 @@ function SettingsContent() {
             </div>
             <button
               type="submit"
-              className="inline-flex w-full cursor-pointer items-center justify-center gap-1 rounded-lg bg-[#0fa968] py-2 text-xs font-bold text-white hover:bg-[#0d945b]"
+              className="inline-flex w-full cursor-pointer items-center justify-center gap-1 rounded-xl bg-emerald-600 py-2 text-xs font-bold text-white hover:bg-emerald-700"
             >
               <Plus className="h-3.5 w-3.5" />
               Save Product
@@ -984,141 +1524,9 @@ function SettingsContent() {
             />
             <button
               type="submit"
-              className="w-full cursor-pointer rounded-lg bg-[#0fa968] py-2 text-xs font-bold text-white hover:bg-[#0d945b]"
+              className="w-full cursor-pointer rounded-xl bg-emerald-600 py-2 text-xs font-bold text-white hover:bg-emerald-700"
             >
               Add Customer
-            </button>
-          </form>
-        </div>
-      )}
-
-      {tab === 'users' && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-8">
-            <h2 className="mb-3 text-sm font-bold text-slate-900">POS Users &amp; Role Permissions</h2>
-            <table className="w-full border-collapse text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">
-                  <th className="px-3 py-2">Username</th>
-                  <th className="px-3 py-2">Full Name</th>
-                  <th className="px-3 py-2">Role</th>
-                  <th className="px-3 py-2">Assigned Branch</th>
-                  <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2 text-center">Edit</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {users.map((u) => (
-                  <tr key={u.id}>
-                    <td className="px-3 py-2 font-mono font-bold">{u.username}</td>
-                    <td className="px-3 py-2">{u.full_name}</td>
-                    <td className="px-3 py-2 font-semibold">{u.role}</td>
-                    <td className="px-3 py-2">{u.branch_name ?? 'All Branches'}</td>
-                    <td className="px-3 py-2">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                          u.is_active
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-slate-200 text-slate-600'
-                        }`}
-                      >
-                        {u.is_active ? 'Active' : 'Disabled'}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-center">
-                      <button
-                        type="button"
-                        onClick={() => startEditUser(u)}
-                        className="cursor-pointer rounded border border-slate-300 px-2 py-0.5 hover:bg-slate-50"
-                      >
-                        Edit
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-
-          <form
-            onSubmit={saveUserForm}
-            className="space-y-2.5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-4"
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-slate-900">
-                {editUserId ? 'Edit User & Reset Password' : 'Create User'}
-              </h2>
-              {editUserId && (
-                <button
-                  type="button"
-                  onClick={resetUserForm}
-                  className="cursor-pointer text-xs font-semibold text-slate-500 hover:underline"
-                >
-                  + Create New
-                </button>
-              )}
-            </div>
-            <input
-              type="text"
-              placeholder="Username *"
-              value={uUsername}
-              disabled={Boolean(editUserId)}
-              onChange={(e) => setUUsername(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs disabled:bg-slate-100"
-              required
-            />
-            <input
-              type="text"
-              placeholder="Full Name *"
-              value={uFullName}
-              onChange={(e) => setUFullName(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
-              required
-            />
-            <input
-              type="password"
-              placeholder={editUserId ? 'New Password (optional)' : 'Password / PIN *'}
-              value={uPassword}
-              onChange={(e) => setUPassword(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
-              required={!editUserId}
-            />
-            <select
-              value={uRole}
-              onChange={(e) => setURole(e.target.value as UserRole)}
-              className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
-            >
-              <option value="CASHIER">CASHIER (Counter Only)</option>
-              <option value="MANAGER">MANAGER</option>
-              <option value="ADMIN">ADMIN (Full Access)</option>
-            </select>
-            <select
-              value={uBranchId}
-              onChange={(e) => setUBranchId(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
-            >
-              <option value="">All Branches (Admin)</option>
-              {branches.map((b) => (
-                <option key={b.id} value={String(b.id)}>
-                  {b.display_name}
-                </option>
-              ))}
-            </select>
-            {editUserId && (
-              <label className="flex items-center gap-2 text-xs font-medium text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={uActive === 1}
-                  onChange={(e) => setUActive(e.target.checked ? 1 : 0)}
-                />
-                User Account Active
-              </label>
-            )}
-            <button
-              type="submit"
-              className="w-full cursor-pointer rounded-lg bg-[#0fa968] py-2 text-xs font-bold text-white hover:bg-[#0d945b]"
-            >
-              {editUserId ? 'Update User' : 'Create User'}
             </button>
           </form>
         </div>
@@ -1129,7 +1537,7 @@ function SettingsContent() {
 
 export default function SettingsPage() {
   return (
-    <Suspense fallback={<div className="rounded-xl bg-white p-6 text-sm">Loading settings...</div>}>
+    <Suspense fallback={<div className="rounded-2xl bg-white p-6 text-sm">Loading settings...</div>}>
       <SettingsContent />
     </Suspense>
   );

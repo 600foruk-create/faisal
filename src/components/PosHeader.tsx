@@ -6,11 +6,17 @@ import {
   Building2,
   ChevronDown,
   DatabaseBackup,
+  ImagePlus,
   Info,
+  KeyRound,
   Package,
   RefreshCw,
   Shield,
+  ShieldCheck,
+  SlidersHorizontal,
   Store,
+  Trash2,
+  UserCheck,
   Users,
 } from 'lucide-react';
 import { usePosContext } from './PosContext';
@@ -36,10 +42,15 @@ const ADMIN_SUBHEADER_MENUS: DropdownGroup[] = [
     label: 'Administrator',
     adminOnly: true,
     items: [
-      { label: 'Company Name, Logo & Branding', href: '/settings?tab=business', icon: Building2 },
-      { label: 'Branches & POS Counters', href: '/settings?tab=branches', icon: Store },
-      { label: 'Users, Roles & Passwords', href: '/settings?tab=users', icon: Shield },
-      { label: 'Download System Backup (JSON)', action: 'backup', icon: DatabaseBackup },
+      { label: 'My Company', href: '/settings?tab=business', icon: Building2 },
+      { label: 'My Logo', href: '/settings?tab=logo', icon: ImagePlus },
+      { label: 'Branches & Counters', href: '/settings?tab=branches', icon: Store },
+      { label: 'User Logins', href: '/settings?tab=users', icon: UserCheck },
+      { label: 'User Rights', href: '/settings?tab=rights', icon: ShieldCheck },
+      { label: 'Passwords', href: '/settings?tab=passwords', icon: KeyRound },
+      { label: 'System Settings & Currency', href: '/settings?tab=system', icon: SlidersHorizontal },
+      { label: 'Clear Transactions', href: '/settings?tab=clear', icon: Trash2 },
+      { label: 'BackUp Utility', action: 'backup', icon: DatabaseBackup },
     ],
   },
   {
@@ -138,7 +149,7 @@ export function PosHeader() {
                             key={item.label}
                             type="button"
                             onClick={() => void handleDownloadBackup()}
-                            className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700"
+                            className="flex w-full cursor-pointer items-center gap-2.5 border-t border-slate-100 px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700"
                           >
                             <Icon className="h-3.5 w-3.5 text-emerald-600" />
                             <span>{item.label}</span>
@@ -166,9 +177,19 @@ export function PosHeader() {
                           key={item.label}
                           href={item.href || '/'}
                           onClick={() => setOpenMenu(null)}
-                          className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700"
+                          className={`flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold hover:bg-slate-50 ${
+                            item.href === '/settings?tab=clear'
+                              ? 'text-rose-700 hover:text-rose-800'
+                              : 'text-slate-700 hover:text-emerald-700'
+                          }`}
                         >
-                          <Icon className="h-3.5 w-3.5 text-slate-500" />
+                          <Icon
+                            className={`h-3.5 w-3.5 ${
+                              item.href === '/settings?tab=clear'
+                                ? 'text-rose-500'
+                                : 'text-slate-500'
+                            }`}
+                          />
                           <span>{item.label}</span>
                         </Link>
                       );
@@ -207,7 +228,7 @@ export function PosHeader() {
                   {settings.strn ? `| STRN: ${settings.strn}` : ''}
                 </p>
               )}
-              <p>Default Tax Rate: {settings.default_tax_rate}%</p>
+              <p>Default Tax Rate: {settings.default_tax_rate}% | Currency: {settings.currency_symbol}</p>
               <p>{settings.footer_text}</p>
             </div>
             <div className="mt-4 flex justify-end">

@@ -20,6 +20,7 @@ import {
   syncPendingFbrInvoices,
   updateBusinessSettings,
   updateUser,
+  clearAllTransactions,
 } from '../src/lib/pos-service.ts';
 
 describe('Multi-Branch POS & FBR Integration Service', () => {
@@ -250,6 +251,20 @@ describe('Multi-Branch POS & FBR Integration Service', () => {
     for (const u of backup.users as unknown as Array<Record<string, unknown>>) {
       assert.equal('password_hash' in u, false);
     }
+  });
+
+  it('clears transactions while keeping company settings, branches, users, and products', () => {
+    const db = createInMemoryDb(true);
+    assert.ok(getDashboardSummary(db, { fromDate: '2000-01-01', toDate: '2099-12-31' }).total_invoices > 0);
+
+    const res = clearAllTransactions(db);
+    assert.equal(res.cleared, true);
+
+    const after = getDashboardSummary(db, { fromDate: '2000-01-01', toDate: '2099-12-31' });
+    assert.equal(after.total_invoices, 0);
+    assert.equal(after.held_carts_count, 0);
+    assert.equal(getUsers(db).length >= 3, true);
+    assert.equal(getProducts(db, { includeInactive: true }).length > 0, true);
   });
 });
 

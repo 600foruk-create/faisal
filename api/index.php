@@ -260,6 +260,12 @@ try {
             if ($action === 'user_update') {
                 json_out(['user' => mysql_update_user($pdo, $data)]);
             }
+            if ($action === 'clear_transactions') {
+                if ((string)($data['confirm'] ?? '') !== 'CLEAR') {
+                    json_out(['error' => 'Type CLEAR to confirm clearing transactions'], 400);
+                }
+                json_out(mysql_clear_all_transactions($pdo));
+            }
             json_out(['error' => 'Unknown settings action'], 400);
         }
     }

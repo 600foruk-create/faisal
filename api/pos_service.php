@@ -260,6 +260,25 @@ function mysql_export_system_backup(PDO $pdo): array
     ];
 }
 
+function mysql_clear_all_transactions(PDO $pdo): array
+{
+    $pdo->beginTransaction();
+    try {
+        $pdo->exec('DELETE FROM fbr_sync_logs');
+        $pdo->exec('DELETE FROM invoice_items');
+        $pdo->exec('DELETE FROM invoices WHERE original_invoice_id IS NOT NULL');
+        $pdo->exec('DELETE FROM invoices');
+        $pdo->exec('DELETE FROM held_carts');
+        $pdo->exec('DELETE FROM day_closings');
+        $pdo->exec('UPDATE pos_terminals SET next_sequence = 1');
+        $pdo->commit();
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        throw $e;
+    }
+    return ['cleared' => true];
+}
+
 function mysql_authenticate_user(PDO $pdo, string $username, string $password): ?array
 {
     $stmt = $pdo->prepare(
