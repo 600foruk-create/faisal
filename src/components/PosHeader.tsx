@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import {
+  Award,
+  Boxes,
   Building2,
   Check,
   ChevronDown,
@@ -12,21 +14,27 @@ import {
   KeyRound,
   LogOut,
   Package,
+  Percent,
+  Phone,
   RefreshCw,
   Shield,
   ShieldCheck,
   SlidersHorizontal,
   Store,
+  Tag,
   Trash2,
   UserCheck,
   Users,
 } from 'lucide-react';
 import { usePosContext } from './PosContext';
 
+type MenuAction = 'backup' | 'about_software' | 'about_license' | 'about_contact';
+type AboutSection = 'software' | 'license' | 'contact';
+
 interface DropdownItem {
   label: string;
   href?: string;
-  action?: 'backup' | 'about';
+  action?: MenuAction;
   icon: React.ComponentType<{ className?: string }>;
 }
 
@@ -60,14 +68,21 @@ const ADMIN_SUBHEADER_MENUS: DropdownGroup[] = [
     label: 'Maintain',
     adminOnly: true,
     items: [
-      { label: 'Products & Pricing', href: '/settings?tab=products', icon: Package },
-      { label: 'Registered Customers', href: '/settings?tab=customers', icon: Users },
+      { label: 'Customers', href: '/settings?tab=customers', icon: Users },
+      { label: 'Chart Of Inventory', href: '/settings?tab=products', icon: Package },
+      { label: 'Inventory Opening Balances', href: '/settings?tab=stock_opening', icon: Boxes },
+      { label: 'Item Price Settings', href: '/settings?tab=pricing', icon: Tag },
+      { label: 'Item Sales Tax Rates', href: '/settings?tab=tax_rates', icon: Percent },
     ],
   },
   {
     key: 'about',
     label: 'About',
-    items: [{ label: 'Software & License Info', action: 'about', icon: Info }],
+    items: [
+      { label: 'Software Information', action: 'about_software', icon: Info },
+      { label: 'License Details', action: 'about_license', icon: Award },
+      { label: 'Contact Info', action: 'about_contact', icon: Phone },
+    ],
   },
 ];
 
@@ -89,7 +104,7 @@ export function PosHeader() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
-  const [showAbout, setShowAbout] = useState(false);
+  const [aboutModal, setAboutModal] = useState<AboutSection | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const barRef = useRef<HTMLDivElement | null>(null);
@@ -216,14 +231,27 @@ export function PosHeader() {
                           </button>
                         );
                       }
-                      if (item.action === 'about') {
+                      if (
+                        item.action === 'about_software' ||
+                        item.action === 'about_license' ||
+                        item.action === 'about_contact'
+                      ) {
+                        const sectionMap: Record<
+                          'about_software' | 'about_license' | 'about_contact',
+                          AboutSection
+                        > = {
+                          about_software: 'software',
+                          about_license: 'license',
+                          about_contact: 'contact',
+                        };
+                        const targetSection = sectionMap[item.action];
                         return (
                           <button
                             key={item.label}
                             type="button"
                             onClick={() => {
                               setOpenMenu(null);
-                              setShowAbout(true);
+                              setAboutModal(targetSection);
                             }}
                             className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-sky-700"
                           >
@@ -434,27 +462,127 @@ export function PosHeader() {
         </div>
       </div>
 
-      {showAbout && (
+      {aboutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
           <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 text-slate-800 shadow-2xl">
-            <h3 className="text-base font-bold text-slate-900">
-              {settings.software_brand} — Multi-Branch Retail POS
-            </h3>
-            <p className="mt-1 text-xs font-semibold text-emerald-700">{settings.business_name}</p>
-            <div className="mt-3 space-y-1.5 rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
-              {(settings.ntn || settings.strn) && (
-                <p>
-                  {settings.ntn ? `NTN: ${settings.ntn}` : ''}{' '}
-                  {settings.strn ? `| STRN: ${settings.strn}` : ''}
-                </p>
-              )}
-              <p>Default Tax Rate: {settings.default_tax_rate}% | Currency: {settings.currency_symbol}</p>
-              <p>{settings.footer_text}</p>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  {aboutModal === 'software' && 'Software Information'}
+                  {aboutModal === 'license' && 'License Details'}
+                  {aboutModal === 'contact' && 'Contact & Support Info'}
+                </h3>
+                <p className="text-xs font-semibold text-emerald-700">{settings.business_name}</p>
+              </div>
+              <div className="flex gap-1">
+                {(
+                  [
+                    { key: 'software', label: 'Software' },
+                    { key: 'license', label: 'License' },
+                    { key: 'contact', label: 'Contact' },
+                  ] as const
+                ).map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setAboutModal(t.key)}
+                    className={`cursor-pointer rounded-lg px-2 py-1 text-[11px] font-bold ${
+                      aboutModal === t.key
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {aboutModal === 'software' && (
+              <div className="mt-3 space-y-2 rounded-xl bg-slate-50 p-3.5 text-xs text-slate-600">
+                <div className="flex justify-between">
+                  <span>Application:</span>
+                  <strong className="text-slate-900">
+                    {settings.software_brand || 'Softifyx'} Retail POS
+                  </strong>
+                </div>
+                <div className="flex justify-between">
+                  <span>Edition:</span>
+                  <strong className="text-slate-900">Multi-Branch POS v2.5</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span>Currency &amp; Default Tax:</span>
+                  <strong className="text-slate-900">
+                    {settings.currency_symbol} • {settings.default_tax_rate}%
+                  </strong>
+                </div>
+                <p className="border-t border-slate-200 pt-2 text-[11px] text-slate-500">
+                  Includes POS Billing, Returns, Hold/Recall, Multi-Branch Inventory, Day Closing,
+                  and Reports.
+                </p>
+              </div>
+            )}
+
+            {aboutModal === 'license' && (
+              <div className="mt-3 space-y-2 rounded-xl bg-slate-50 p-3.5 text-xs text-slate-600">
+                <div className="flex justify-between">
+                  <span>Licensed To:</span>
+                  <strong className="text-slate-900">{settings.business_name}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span>License Status:</span>
+                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
+                    Active &amp; Verified
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Active Outlets:</span>
+                  <strong className="text-slate-900">{branches.length} Branch(es)</strong>
+                </div>
+                {(settings.ntn || settings.strn) && (
+                  <div className="flex justify-between">
+                    <span>Tax Registration:</span>
+                    <strong className="text-slate-900">
+                      {settings.ntn ? `NTN ${settings.ntn}` : ''}{' '}
+                      {settings.strn ? `| STRN ${settings.strn}` : ''}
+                    </strong>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {aboutModal === 'contact' && (
+              <div className="mt-3 space-y-2 rounded-xl bg-slate-50 p-3.5 text-xs text-slate-600">
+                <div>
+                  <span className="text-[11px] font-bold text-slate-400 uppercase">
+                    Software Provider
+                  </span>
+                  <p className="mt-0.5 font-semibold text-slate-900">
+                    {settings.footer_text || 'Softifyx Technologies'}
+                  </p>
+                </div>
+                <div className="border-t border-slate-200 pt-2">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase">
+                    Configured Branch Contacts
+                  </span>
+                  <div className="mt-1 space-y-1">
+                    {branches.map((b) => (
+                      <div key={b.id} className="rounded-lg bg-white px-2.5 py-1.5 ring-1 ring-slate-200/70">
+                        <div className="font-bold text-slate-800">{b.display_name}</div>
+                        <div className="text-[11px] text-slate-500">
+                          {b.address || 'Main Store'} {b.phone ? `• ${b.phone}` : ''}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="mt-4 flex justify-end">
               <button
                 type="button"
-                onClick={() => setShowAbout(false)}
+                onClick={() => setAboutModal(null)}
                 className="cursor-pointer rounded-lg bg-slate-900 px-4 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
               >
                 Close

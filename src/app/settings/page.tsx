@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   AlertTriangle,
+  Boxes,
   Building2,
   CheckCircle2,
   DatabaseBackup,
@@ -11,12 +12,14 @@ import {
   KeyRound,
   Lock,
   Package,
+  Percent,
   Plus,
   RotateCcw,
   Settings,
   ShieldCheck,
   SlidersHorizontal,
   Store,
+  Tag,
   Trash2,
   UserCheck,
   Users,
@@ -31,6 +34,9 @@ type SettingsTab =
   | 'branches'
   | 'system'
   | 'products'
+  | 'stock_opening'
+  | 'pricing'
+  | 'tax_rates'
   | 'customers'
   | 'users'
   | 'rights'
@@ -43,6 +49,9 @@ const VALID_TABS: SettingsTab[] = [
   'branches',
   'system',
   'products',
+  'stock_opening',
+  'pricing',
+  'tax_rates',
   'customers',
   'users',
   'rights',
@@ -167,12 +176,16 @@ function SettingsContent() {
   const [uBranchId, setUBranchId] = useState<string>('');
   const [uActive, setUActive] = useState<number>(1);
 
-  // Dedicated Passwords & Clear Transactions
+  // Dedicated Passwords, Clear Transactions & Maintain Quick-Edit Drafts
   const [pwUserId, setPwUserId] = useState<string>('');
   const [pwNew, setPwNew] = useState('');
   const [pwConfirm, setPwConfirm] = useState('');
   const [clearConfirmText, setClearConfirmText] = useState('');
   const [clearing, setClearing] = useState(false);
+  const [draftStock, setDraftStock] = useState<Record<number, string>>({});
+  const [draftSalePrice, setDraftSalePrice] = useState<Record<number, string>>({});
+  const [draftCostPrice, setDraftCostPrice] = useState<Record<number, string>>({});
+  const [draftTaxRate, setDraftTaxRate] = useState<Record<number, string>>({});
 
   useEffect(() => {
     setSoftBrand(settings.software_brand);
@@ -207,6 +220,20 @@ function SettingsContent() {
     if (pRes.ok) {
       const pData = (await pRes.json()) as { products: ProductWithStock[] };
       setProducts(pData.products);
+      const stockMap: Record<number, string> = {};
+      const saleMap: Record<number, string> = {};
+      const costMap: Record<number, string> = {};
+      const taxMap: Record<number, string> = {};
+      for (const item of pData.products) {
+        stockMap[item.id] = String(item.stock_qty);
+        saleMap[item.id] = String(item.sale_price);
+        costMap[item.id] = String(item.cost_price);
+        taxMap[item.id] = String(item.tax_rate);
+      }
+      setDraftStock(stockMap);
+      setDraftSalePrice(saleMap);
+      setDraftCostPrice(costMap);
+      setDraftTaxRate(taxMap);
     }
     if (cRes.ok) {
       const cData = (await cRes.json()) as { customers: Customer[] };
@@ -539,6 +566,39 @@ function SettingsContent() {
     }
   };
 
+  const saveInlineProductEdit = async (
+    p: ProductWithStock,
+    overrides: Partial<{ sale_price: number; cost_price: number; tax_rate: number; stock_qty: number }>,
+    successMsg: string
+  ) => {
+    setMessage(null);
+    const res = await fetch('/api/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: p.id,
+        sku: p.sku,
+        barcode: p.barcode,
+        name: p.name,
+        category: p.category,
+        unit: p.unit,
+        sale_price: overrides.sale_price ?? p.sale_price,
+        cost_price: overrides.cost_price ?? p.cost_price,
+        tax_rate: overrides.tax_rate ?? p.tax_rate,
+        branch_id: stockBranchId,
+        stock_qty: overrides.stock_qty ?? p.stock_qty,
+        is_active: p.is_active,
+      }),
+    });
+    const data = (await res.json()) as { error?: string };
+    if (res.ok) {
+      await loadProductsAndCustomers();
+      setMessage({ type: 'success', text: successMsg });
+    } else {
+      setMessage({ type: 'error', text: data.error || 'Failed to update item' });
+    }
+  };
+
   const handleClearTransactions = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
@@ -595,7 +655,10 @@ function SettingsContent() {
                 { key: 'users', label: 'User Logins', icon: UserCheck },
                 { key: 'rights', label: 'User Rights', icon: ShieldCheck },
                 { key: 'passwords', label: 'Passwords', icon: KeyRound },
-                { key: 'products', label: 'Products & Stock', icon: Package },
+                { key: 'products', label: 'Chart Of Inventory', icon: Package },
+                { key: 'stock_opening', label: 'Opening Balances', icon: Boxes },
+                { key: 'pricing', label: 'Price Settings', icon: Tag },
+                { key: 'tax_rates', label: 'Sales Tax Rates', icon: Percent },
                 { key: 'customers', label: 'Customers', icon: Users },
                 { key: 'clear', label: 'Clear / Backup', icon: Trash2 },
               ] as const
@@ -1530,6 +1593,223 @@ function SettingsContent() {
             </button>
           </form>
         </div>
+      )}
+
+      {tab === 'stock_opening' && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">Inventory Opening Balances</h2>
+              <p className="text-xs text-slate-500">
+                Set or adjust branch opening/current stock quantities directly per SKU
+              </p>
+            </div>
+            <select
+              value={stockBranchId}
+              onChange={(e) => setStockBranchId(Number(e.target.value))}
+              className="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold"
+            >
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.display_name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">
+                  <th className="px-3 py-2.5">SKU</th>
+                  <th className="px-3 py-2.5">Item Name</th>
+                  <th className="px-3 py-2.5">Unit</th>
+                  <th className="px-3 py-2.5 text-right">Stock Qty</th>
+                  <th className="px-3 py-2.5 text-center">Save</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {products.map((p) => (
+                  <tr key={p.id}>
+                    <td className="px-3 py-2 font-mono text-[11px] text-slate-500">{p.sku}</td>
+                    <td className="px-3 py-2 font-semibold text-slate-900">{p.name}</td>
+                    <td className="px-3 py-2 text-slate-600">{p.unit}</td>
+                    <td className="px-3 py-2 text-right">
+                      <input
+                        type="number"
+                        step="any"
+                        value={draftStock[p.id] ?? String(p.stock_qty)}
+                        onChange={(e) =>
+                          setDraftStock((prev) => ({ ...prev, [p.id]: e.target.value }))
+                        }
+                        className="w-24 rounded-lg border border-slate-300 px-2 py-1 text-right font-bold"
+                      />
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void saveInlineProductEdit(
+                            p,
+                            { stock_qty: Number(draftStock[p.id] ?? p.stock_qty) || 0 },
+                            `Opening stock saved for ${p.name}.`
+                          )
+                        }
+                        className="cursor-pointer rounded-lg bg-emerald-600 px-3 py-1 font-bold text-white hover:bg-emerald-700"
+                      >
+                        Update
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {tab === 'pricing' && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-4">
+            <h2 className="text-sm font-bold text-slate-900">Item Price Settings</h2>
+            <p className="text-xs text-slate-500">
+              Manage Cost Price, Retail Sale Price, and Profit Margin per product
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">
+                  <th className="px-3 py-2.5">SKU</th>
+                  <th className="px-3 py-2.5">Item Name</th>
+                  <th className="px-3 py-2.5 text-right">Cost Price ({settings.currency_symbol})</th>
+                  <th className="px-3 py-2.5 text-right">Sale Price ({settings.currency_symbol})</th>
+                  <th className="px-3 py-2.5 text-right">Margin</th>
+                  <th className="px-3 py-2.5 text-center">Save</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {products.map((p) => {
+                  const costVal = Number(draftCostPrice[p.id] ?? p.cost_price) || 0;
+                  const saleVal = Number(draftSalePrice[p.id] ?? p.sale_price) || 0;
+                  const marginPct =
+                    costVal > 0 ? Math.round(((saleVal - costVal) / costVal) * 100) : 0;
+                  return (
+                    <tr key={p.id}>
+                      <td className="px-3 py-2 font-mono text-[11px] text-slate-500">{p.sku}</td>
+                      <td className="px-3 py-2 font-semibold text-slate-900">{p.name}</td>
+                      <td className="px-3 py-2 text-right">
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={draftCostPrice[p.id] ?? String(p.cost_price)}
+                          onChange={(e) =>
+                            setDraftCostPrice((prev) => ({ ...prev, [p.id]: e.target.value }))
+                          }
+                          className="w-28 rounded-lg border border-slate-300 px-2 py-1 text-right font-medium"
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={draftSalePrice[p.id] ?? String(p.sale_price)}
+                          onChange={(e) =>
+                            setDraftSalePrice((prev) => ({ ...prev, [p.id]: e.target.value }))
+                          }
+                          className="w-28 rounded-lg border border-slate-300 px-2 py-1 text-right font-bold"
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-right font-bold text-emerald-700">
+                        {costVal > 0 ? `${marginPct}%` : '-'}
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void saveInlineProductEdit(
+                              p,
+                              { cost_price: costVal, sale_price: saleVal },
+                              `Prices updated for ${p.name}.`
+                            )
+                          }
+                          className="cursor-pointer rounded-lg bg-emerald-600 px-3 py-1 font-bold text-white hover:bg-emerald-700"
+                        >
+                          Update
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {tab === 'tax_rates' && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-4">
+            <h2 className="text-sm font-bold text-slate-900">Item Sales Tax Rates</h2>
+            <p className="text-xs text-slate-500">
+              Configure item-wise Sales Tax / GST percentage applied during POS billing
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">
+                  <th className="px-3 py-2.5">SKU</th>
+                  <th className="px-3 py-2.5">Item Name</th>
+                  <th className="px-3 py-2.5 text-right">Sale Price</th>
+                  <th className="px-3 py-2.5 text-right">Tax Rate (%)</th>
+                  <th className="px-3 py-2.5 text-center">Save</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {products.map((p) => (
+                  <tr key={p.id}>
+                    <td className="px-3 py-2 font-mono text-[11px] text-slate-500">{p.sku}</td>
+                    <td className="px-3 py-2 font-semibold text-slate-900">{p.name}</td>
+                    <td className="px-3 py-2 text-right font-medium">
+                      {formatCurrency(p.sale_price, settings.currency_symbol)}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        max={100}
+                        value={draftTaxRate[p.id] ?? String(p.tax_rate)}
+                        onChange={(e) =>
+                          setDraftTaxRate((prev) => ({ ...prev, [p.id]: e.target.value }))
+                        }
+                        className="w-24 rounded-lg border border-slate-300 px-2 py-1 text-right font-bold"
+                      />
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void saveInlineProductEdit(
+                            p,
+                            { tax_rate: Number(draftTaxRate[p.id] ?? p.tax_rate) || 0 },
+                            `Tax rate updated for ${p.name}.`
+                          )
+                        }
+                        className="cursor-pointer rounded-lg bg-emerald-600 px-3 py-1 font-bold text-white hover:bg-emerald-700"
+                      >
+                        Update
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
     </div>
   );
