@@ -188,11 +188,11 @@ export default function MainDashboardPage() {
     : 0;
 
   return (
-    <div className="grid grid-cols-1 gap-4 xl:grid-cols-12 xl:items-start">
-      {/* CENTER WORKSPACE (9 cols on xl) */}
-      <div className="min-w-0 space-y-4 xl:col-span-9">
+    <div className="flex flex-col gap-4 xl:h-full xl:flex-row xl:overflow-hidden">
+      {/* CENTER WORKSPACE (Scrollable independently) */}
+      <div className="min-w-0 flex-1 space-y-4 xl:h-full xl:overflow-y-auto xl:pr-1.5">
         {/* Filter Toolbar */}
-        <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white px-5 py-3.5 shadow-sm">
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white px-4 py-3 shadow-sm">
           <div>
             <div className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-500/15" />
@@ -274,26 +274,28 @@ export default function MainDashboardPage() {
         </section>
 
         {/* 4 Hero KPI Cards */}
-        <section className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="relative min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400" />
-            <div className="flex items-center justify-between">
-              <span className="text-[13px] font-semibold text-slate-600">{saleCardTitle}</span>
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200/60">
+            <div className="flex items-center justify-between gap-2">
+              <span className="truncate text-[13px] font-semibold text-slate-600">
+                {saleCardTitle}
+              </span>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200/60">
                 <TrendingUp className="h-4 w-4" />
               </span>
             </div>
-            <div className="tabular-nums mt-2.5 text-xl font-bold text-slate-900 sm:text-[22px]">
+            <div className="tabular-nums mt-2.5 truncate text-lg font-bold text-slate-900 2xl:text-[21px]">
               {summary ? formatCurrency(summary.total_sale, settings.currency_symbol) : 'Loading...'}
             </div>
-            <div className="mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2 text-[11px] text-slate-500">
-              <span>
-                Avg Bill:{' '}
+            <div className="mt-2.5 flex items-center justify-between gap-1 border-t border-slate-100 pt-2 text-[11px] text-slate-500">
+              <span className="truncate">
+                Avg:{' '}
                 <strong className="tabular-nums text-slate-800">
                   {summary ? formatCurrency(summary.avg_ticket, settings.currency_symbol) : '-'}
                 </strong>
               </span>
-              <span>
+              <span className="truncate">
                 Tax:{' '}
                 <strong className="tabular-nums text-slate-800">
                   {summary ? formatCurrency(summary.tax_collected, settings.currency_symbol) : '-'}
@@ -302,48 +304,49 @@ export default function MainDashboardPage() {
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <div className="relative min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-600 to-sky-400" />
-            <div className="flex items-center justify-between">
-              <span className="text-[13px] font-semibold text-slate-600">Total Invoices</span>
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-50 text-sky-600 ring-1 ring-sky-200/60">
+            <div className="flex items-center justify-between gap-2">
+              <span className="truncate text-[13px] font-semibold text-slate-600">
+                Total Invoices
+              </span>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600 ring-1 ring-sky-200/60">
                 <FileText className="h-4 w-4" />
               </span>
             </div>
-            <div className="tabular-nums mt-2.5 text-xl font-bold text-slate-900 sm:text-[22px]">
+            <div className="tabular-nums mt-2.5 text-lg font-bold text-slate-900 2xl:text-[21px]">
               {summary ? summary.total_invoices : '-'}
             </div>
-            <div className="mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2 text-[11px] text-slate-500">
-              <span>
+            <div className="mt-2.5 flex items-center justify-between gap-1 border-t border-slate-100 pt-2 text-[11px] text-slate-500">
+              <span className="truncate">
                 Returns:{' '}
                 <strong className="tabular-nums text-rose-600">
                   {summary ? formatCurrency(summary.total_returns, settings.currency_symbol) : '-'}
                 </strong>
               </span>
-              <Link
-                href="/register"
-                className="font-semibold text-sky-700 hover:underline"
-              >
+              <Link href="/register" className="shrink-0 font-semibold text-sky-700 hover:underline">
                 Register →
               </Link>
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <div className="relative min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-500 to-orange-400" />
-            <div className="flex items-center justify-between">
-              <span className="text-[13px] font-semibold text-slate-600">Cash Received</span>
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600 ring-1 ring-amber-200/60">
+            <div className="flex items-center justify-between gap-2">
+              <span className="truncate text-[13px] font-semibold text-slate-600">
+                Cash Received
+              </span>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 ring-1 ring-amber-200/60">
                 <Banknote className="h-4 w-4" />
               </span>
             </div>
-            <div className="tabular-nums mt-2.5 text-xl font-bold text-slate-900 sm:text-[22px]">
+            <div className="tabular-nums mt-2.5 truncate text-lg font-bold text-slate-900 2xl:text-[21px]">
               {summary
                 ? formatCurrency(summary.cash_received, settings.currency_symbol)
                 : 'Loading...'}
             </div>
-            <div className="mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2 text-[11px] text-slate-500">
-              <span>
+            <div className="mt-2.5 flex items-center justify-between gap-1 border-t border-slate-100 pt-2 text-[11px] text-slate-500">
+              <span className="truncate">
                 Card+Bank:{' '}
                 <strong className="tabular-nums text-slate-800">
                   {summary
@@ -354,7 +357,7 @@ export default function MainDashboardPage() {
                     : '-'}
                 </strong>
               </span>
-              <span>
+              <span className="truncate">
                 Drawer:{' '}
                 <strong className="tabular-nums text-emerald-700">
                   {summary ? formatCurrency(netCashPosition, settings.currency_symbol) : '-'}
@@ -363,7 +366,7 @@ export default function MainDashboardPage() {
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <div className="relative min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
             <div
               className={`absolute inset-x-0 top-0 h-1 ${
                 lowStockCount > 0
@@ -371,19 +374,21 @@ export default function MainDashboardPage() {
                   : 'bg-gradient-to-r from-violet-600 to-purple-400'
               }`}
             />
-            <div className="flex items-center justify-between">
-              <span className="text-[13px] font-semibold text-slate-600">Held Bills &amp; Alerts</span>
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-50 text-violet-600 ring-1 ring-violet-200/60">
+            <div className="flex items-center justify-between gap-2">
+              <span className="truncate text-[13px] font-semibold text-slate-600">
+                Held Bills &amp; Alerts
+              </span>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600 ring-1 ring-violet-200/60">
                 <PauseCircle className="h-4 w-4" />
               </span>
             </div>
-            <div className="mt-2.5 flex items-baseline gap-2">
-              <span className="tabular-nums text-xl font-bold text-slate-900 sm:text-[22px]">
+            <div className="mt-2.5 flex items-baseline gap-1.5">
+              <span className="tabular-nums text-lg font-bold text-slate-900 2xl:text-[21px]">
                 {summary ? summary.held_carts_count : '-'}
               </span>
               <span className="text-xs text-slate-500">parked bills</span>
             </div>
-            <div className="mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2 text-[11px]">
+            <div className="mt-2.5 flex items-center justify-between gap-1 border-t border-slate-100 pt-2 text-[11px]">
               <span
                 className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold ${
                   lowStockCount > 0
@@ -395,7 +400,7 @@ export default function MainDashboardPage() {
               </span>
               <Link
                 href="/hold"
-                className="inline-flex items-center gap-0.5 font-semibold text-violet-700 hover:underline"
+                className="inline-flex shrink-0 items-center gap-0.5 font-semibold text-violet-700 hover:underline"
               >
                 Recall <ArrowUpRight className="h-3 w-3" />
               </Link>
@@ -419,7 +424,7 @@ export default function MainDashboardPage() {
             </div>
 
             {!summary || summary.sales_trend.length === 0 ? (
-              <div className="flex h-48 flex-col items-center justify-center gap-2 text-xs text-slate-400">
+              <div className="flex h-44 flex-col items-center justify-center gap-2 text-xs text-slate-400">
                 <p>No sales recorded for {periodLabelMap[period]}.</p>
                 {period === 'today' && (
                   <button
@@ -432,7 +437,7 @@ export default function MainDashboardPage() {
                 )}
               </div>
             ) : (
-              <div className="relative mt-5 flex h-48 items-end gap-3 border-b border-slate-100 pb-1">
+              <div className="relative mt-4 flex h-44 items-end gap-3 border-b border-slate-100 pb-1">
                 {summary.sales_trend.map((pt) => {
                   const heightPct = Math.max(
                     12,
@@ -636,30 +641,32 @@ export default function MainDashboardPage() {
         </section>
       </div>
 
-      {/* RIGHT SIDEBAR PANEL: Today's Summary (3 cols on xl) */}
-      <aside className="space-y-3.5 xl:sticky xl:top-4 xl:col-span-3">
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">Today&apos;s Summary</h2>
-              <p className="text-[11px] font-medium text-slate-400">
-                {formatDisplayDate(todayIso)} • {selectedBranchId === 'ALL' ? 'All Branches' : selectedBranchLabel}
-              </p>
+      {/* RIGHT SIDEBAR PANEL: Fixed Height, Same Width (244px) as Left Sidebar */}
+      <aside className="w-full shrink-0 xl:h-full xl:w-[244px]">
+        <div className="flex flex-col justify-between gap-2 rounded-2xl border border-slate-200/80 bg-white p-2.5 shadow-sm xl:h-full xl:overflow-y-auto">
+          <div className="space-y-1.5">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+              <div className="min-w-0">
+                <h2 className="text-sm font-bold text-slate-900">Today&apos;s Summary</h2>
+                <p className="truncate text-[10.5px] font-medium text-slate-400">
+                  {formatDisplayDate(todayIso)} •{' '}
+                  {selectedBranchId === 'ALL' ? 'All Branches' : selectedBranchLabel}
+                </p>
+              </div>
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                Live
+              </span>
             </div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              Live
-            </span>
-          </div>
 
-          <div className="mt-3.5 space-y-3">
-            {/* Cash Position Card */}
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5">
-              <div className="flex items-center gap-2 border-b border-slate-200/70 pb-2">
-                <Coins className="h-4 w-4 text-amber-500" />
+            {/* Cash Position */}
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-2">
+              <div className="flex items-center gap-1.5 border-b border-slate-200/70 pb-1">
+                <Coins className="h-3.5 w-3.5 text-amber-500" />
                 <h3 className="text-xs font-bold text-slate-800">Cash Position</h3>
               </div>
-              <div className="mt-2.5 space-y-1.5 text-xs">
+              <div className="mt-1 space-y-0.5 text-[11px]">
                 <div className="flex justify-between text-slate-600">
                   <span>Opening:</span>
                   <strong className="tabular-nums font-semibold text-slate-900">
@@ -669,7 +676,7 @@ export default function MainDashboardPage() {
                   </strong>
                 </div>
                 <div className="flex justify-between text-slate-600">
-                  <span>Cash Receipts:</span>
+                  <span>Receipts:</span>
                   <strong className="tabular-nums font-semibold text-emerald-700">
                     {rightSummary
                       ? formatCurrency(rightSummary.cash_received, settings.currency_symbol)
@@ -684,7 +691,7 @@ export default function MainDashboardPage() {
                       : '-'}
                   </strong>
                 </div>
-                <div className="flex justify-between border-t border-slate-200 pt-1.5 text-slate-900">
+                <div className="flex justify-between border-t border-slate-200 pt-0.5 text-slate-900">
                   <span className="font-bold">Net Cash:</span>
                   <strong className="tabular-nums font-bold text-slate-900">
                     {rightSummary ? formatCurrency(todayNetCash, settings.currency_symbol) : '-'}
@@ -693,15 +700,15 @@ export default function MainDashboardPage() {
               </div>
             </div>
 
-            {/* POS Activity Card */}
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5">
-              <div className="flex items-center gap-2 border-b border-slate-200/70 pb-2">
-                <ShoppingCart className="h-4 w-4 text-blue-600" />
+            {/* POS Activity */}
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-2">
+              <div className="flex items-center gap-1.5 border-b border-slate-200/70 pb-1">
+                <ShoppingCart className="h-3.5 w-3.5 text-blue-600" />
                 <h3 className="text-xs font-bold text-slate-800">POS Activity</h3>
               </div>
-              <div className="mt-2.5 space-y-1.5 text-xs">
+              <div className="mt-1 space-y-0.5 text-[11px]">
                 <div className="flex justify-between text-slate-600">
-                  <span>Today&apos;s Counter Bills:</span>
+                  <span>Today&apos;s Bills:</span>
                   <strong className="tabular-nums font-bold text-slate-900">
                     {rightSummary ? rightSummary.total_invoices : '-'}
                   </strong>
@@ -723,7 +730,7 @@ export default function MainDashboardPage() {
                   </strong>
                 </div>
                 <div className="flex justify-between text-slate-600">
-                  <span>Held / Parked Bills:</span>
+                  <span>Held Bills:</span>
                   <Link
                     href="/hold"
                     className="tabular-nums font-bold text-amber-700 hover:underline"
@@ -734,11 +741,11 @@ export default function MainDashboardPage() {
               </div>
             </div>
 
-            {/* Inventory Watch Card */}
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5">
-              <div className="flex items-center justify-between border-b border-slate-200/70 pb-2">
-                <div className="flex items-center gap-2">
-                  <PackageCheck className="h-4 w-4 text-emerald-600" />
+            {/* Inventory Watch */}
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-2">
+              <div className="flex items-center justify-between border-b border-slate-200/70 pb-1">
+                <div className="flex items-center gap-1.5">
+                  <PackageCheck className="h-3.5 w-3.5 text-emerald-600" />
                   <h3 className="text-xs font-bold text-slate-800">Inventory Watch</h3>
                 </div>
                 {!isCashier && (
@@ -751,17 +758,17 @@ export default function MainDashboardPage() {
                 )}
               </div>
 
-              <div className="mt-2.5 space-y-1.5">
-                {summary?.low_stock_items.slice(0, 4).map((item) => {
+              <div className="mt-1 space-y-1">
+                {summary?.low_stock_items.slice(0, 2).map((item) => {
                   const isLow = item.stock_qty <= 25;
                   return (
                     <div
                       key={item.product_id}
-                      className="flex items-center justify-between gap-2 rounded-lg bg-white px-2.5 py-1.5 text-xs ring-1 ring-slate-200/70"
+                      className="flex items-center justify-between gap-1.5 rounded-lg bg-white px-2 py-1 text-[11px] ring-1 ring-slate-200/70"
                     >
                       <span className="truncate font-medium text-slate-700">{item.name}</span>
                       <span
-                        className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        className={`inline-flex shrink-0 items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
                           isLow
                             ? 'bg-amber-100 text-amber-800'
                             : 'bg-emerald-100 text-emerald-800'
@@ -776,43 +783,40 @@ export default function MainDashboardPage() {
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Quick Counter Actions Card */}
-        <div className="rounded-2xl bg-gradient-to-br from-[#09111e] via-[#0f1d36] to-[#15294a] p-4 text-white shadow-sm">
-          <h3 className="text-sm font-bold">Quick Counter Actions</h3>
-          <p className="mt-0.5 text-[11px] text-slate-300">
-            Jump directly to daily cashier &amp; store operations.
-          </p>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <Link
-              href="/sale"
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500 px-3 py-2 text-xs font-bold text-slate-950 shadow-xs transition hover:bg-emerald-400"
-            >
-              <ShoppingCart className="h-3.5 w-3.5" />
-              POS Sale
-            </Link>
-            <Link
-              href="/returns"
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/20"
-            >
-              <Undo2 className="h-3.5 w-3.5 text-amber-400" />
-              Returns
-            </Link>
-            <Link
-              href="/closing"
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/20"
-            >
-              <DoorOpen className="h-3.5 w-3.5 text-sky-400" />
-              Day Closing
-            </Link>
-            <Link
-              href="/reports"
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/20"
-            >
-              <BarChart3 className="h-3.5 w-3.5 text-emerald-400" />
-              Reports
-            </Link>
+          {/* Quick Counter Actions anchored inside matching sidebar height */}
+          <div className="rounded-xl bg-gradient-to-br from-[#091529] via-[#0e1f3d] to-[#132952] p-2.5 text-white">
+            <h3 className="text-xs font-bold">Quick Counter Actions</h3>
+            <div className="mt-2 grid grid-cols-2 gap-1.5">
+              <Link
+                href="/sale"
+                className="inline-flex items-center justify-center gap-1 rounded-lg bg-emerald-500 px-2 py-1.5 text-[11px] font-bold text-slate-950 transition hover:bg-emerald-400"
+              >
+                <ShoppingCart className="h-3 w-3" />
+                POS Sale
+              </Link>
+              <Link
+                href="/returns"
+                className="inline-flex items-center justify-center gap-1 rounded-lg bg-white/10 px-2 py-1.5 text-[11px] font-semibold text-white transition hover:bg-white/20"
+              >
+                <Undo2 className="h-3 w-3 text-amber-400" />
+                Returns
+              </Link>
+              <Link
+                href="/closing"
+                className="inline-flex items-center justify-center gap-1 rounded-lg bg-white/10 px-2 py-1.5 text-[11px] font-semibold text-white transition hover:bg-white/20"
+              >
+                <DoorOpen className="h-3 w-3 text-sky-400" />
+                Closing
+              </Link>
+              <Link
+                href="/reports"
+                className="inline-flex items-center justify-center gap-1 rounded-lg bg-white/10 px-2 py-1.5 text-[11px] font-semibold text-white transition hover:bg-white/20"
+              >
+                <BarChart3 className="h-3 w-3 text-emerald-400" />
+                Reports
+              </Link>
+            </div>
           </div>
         </div>
       </aside>

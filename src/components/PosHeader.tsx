@@ -180,7 +180,7 @@ export function PosHeader() {
                     setBranchMenuOpen(false);
                     setOpenMenu(isOpen ? null : group.key);
                   }}
-                  className={`inline-flex cursor-pointer items-center gap-1 rounded-lg px-3 py-1.5 text-[13px] font-bold transition ${
+                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-bold transition sm:text-[15px] ${
                     group.key === 'administrator'
                       ? isOpen
                         ? 'bg-amber-400 text-slate-950 shadow-xs'
@@ -192,11 +192,11 @@ export function PosHeader() {
                 >
                   {group.key === 'administrator' && (
                     <Shield
-                      className={`h-3.5 w-3.5 ${isOpen ? 'text-slate-950' : 'text-amber-400'}`}
+                      className={`h-4 w-4 ${isOpen ? 'text-slate-950' : 'text-amber-400'}`}
                     />
                   )}
                   <span>{group.label}</span>
-                  <ChevronDown className="h-3.5 w-3.5 opacity-85" />
+                  <ChevronDown className="h-4 w-4 opacity-85" />
                 </button>
 
                 {isOpen && (
@@ -415,10 +415,12 @@ export function PosHeader() {
           </div>
 
           <div className="hidden items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold text-white md:inline-flex">
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-slate-950">
+            <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-400 text-slate-950">
               <UserCheck className="h-3 w-3" />
             </span>
-            <span>Welcome {activeUser?.full_name ?? 'Administrator'}</span>
+            <span className="max-w-[165px] truncate">
+              Welcome {activeUser?.full_name ?? 'Administrator'}
+            </span>
           </div>
 
           <button
