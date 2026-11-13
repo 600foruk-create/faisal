@@ -624,39 +624,39 @@ export function PosSaleModal() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3 md:p-4 bg-slate-950/45 backdrop-blur-[2px] transition-all font-sans">
-      {/* FLOATING WINDOW CONTAINER - FIXED HEIGHT WITH INTERNAL TABLE SCROLL ONLY */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-6 bg-slate-950/45 backdrop-blur-[2px] transition-all font-sans">
+      {/* FLOATING WINDOW CONTAINER - COMPACT ERP PROPORTIONS MATCHING SCREENSHOT */}
       <div
-        className={`flex w-full flex-col overflow-hidden rounded-2xl bg-[#F8FAFC] shadow-[0_25px_70px_-15px_rgba(0,0,0,0.5)] border border-slate-200 transition-all duration-200 ${
+        className={`flex w-full flex-col overflow-hidden rounded-xl bg-[#F8FAFC] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.55)] border border-slate-300 transition-all duration-200 ${
           isMaximized
             ? 'fixed inset-2 z-50 h-[calc(100vh-16px)] max-h-none'
-            : 'max-w-[1460px] h-[92vh] max-h-[94vh]'
+            : 'w-[92vw] max-w-[1240px] h-[82vh] max-h-[85vh]'
         }`}
       >
-        {/* 1. SEASTONE EXECUTIVE TITLE BAR (FIXED PINNED HEADER) */}
-        <div className="shrink-0 flex select-none items-center justify-between border-b-2 border-emerald-500/80 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] px-4 py-2 text-white shadow-sm">
+        {/* 1. SEASTONE EXECUTIVE TITLE BAR (SLIM ERP TITLE BAR) */}
+        <div className="shrink-0 flex select-none items-center justify-between border-b border-emerald-500/80 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] px-3 py-1.5 text-white shadow-2xs">
           {/* Left: Window Icon + Title + Live Store Badge */}
-          <div className="flex items-center gap-2.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 ring-4 ring-emerald-400/20" />
-            <ShoppingCart className="h-4 w-4 text-emerald-400" />
-            <h2 className="text-xs font-bold tracking-wider uppercase text-white sm:text-sm">
-              POS Sale (New Bill)
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-emerald-400/20" />
+            <ShoppingCart className="h-3.5 w-3.5 text-emerald-400" />
+            <h2 className="text-xs font-bold tracking-wide uppercase text-white">
+              POS Sale
             </h2>
-            <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300 ring-1 ring-white/15">
+            <span className="rounded-full bg-white/10 px-2 py-0.2 text-[10px] font-semibold text-emerald-300 ring-1 ring-white/15">
               {activeBranch?.code} • {activeBranch?.name}
             </span>
           </div>
 
           {/* Right: Window Controls (Minimize, Maximize/Restore, Close) */}
-          <div className="flex items-center gap-1.5 text-slate-300">
+          <div className="flex items-center gap-1 text-slate-300">
             {/* Minimize */}
             <button
               type="button"
               onClick={() => setIsMinimized(true)}
               title="Minimize Form to Bottom Tab"
-              className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-lg hover:bg-white/15 hover:text-white transition"
+              className="flex h-5 w-5 cursor-pointer items-center justify-center rounded hover:bg-white/15 hover:text-white transition"
             >
-              <Minus className="h-3.5 w-3.5" />
+              <Minus className="h-3 w-3" />
             </button>
 
             {/* Maximize / Restore */}
@@ -664,12 +664,12 @@ export function PosSaleModal() {
               type="button"
               onClick={() => setIsMaximized((m) => !m)}
               title={isMaximized ? 'Restore View' : 'Maximize Fullscreen'}
-              className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-lg hover:bg-white/15 hover:text-white transition"
+              className="flex h-5 w-5 cursor-pointer items-center justify-center rounded hover:bg-white/15 hover:text-white transition"
             >
               {isMaximized ? (
-                <Minimize2 className="h-3.5 w-3.5 text-emerald-300" />
+                <Minimize2 className="h-3 w-3 text-emerald-300" />
               ) : (
-                <Maximize2 className="h-3.5 w-3.5" />
+                <Maximize2 className="h-3 w-3" />
               )}
             </button>
 
@@ -678,143 +678,147 @@ export function PosSaleModal() {
               type="button"
               onClick={closePosSale}
               title="Close Form (Return to Dashboard)"
-              className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-lg hover:bg-rose-600 hover:text-white transition"
+              className="flex h-5 w-5 cursor-pointer items-center justify-center rounded hover:bg-rose-600 hover:text-white transition"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3 w-3" />
             </button>
           </div>
         </div>
 
-        {/* 2. FIXED TOP SECTION (BARCODE SCANNER, ACTIONS & INVOICE META - NEVER SCROLLS) */}
-        <div className="shrink-0 space-y-2 p-2.5 sm:p-3 pb-1 bg-[#F8FAFC]">
-          {/* Omni Barcode Scanner & Hotkeys Row */}
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200/90 bg-white p-2 shadow-xs">
-            {/* Omni Barcode Scanner Bar */}
-            <form onSubmit={handleBarcodeSubmit} className="flex flex-1 items-center gap-2 max-w-xl">
-              <div className="relative flex-1">
-                <Barcode className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+        {/* 2. TOP ACTION BUTTONS & OMNI SCANNER ROW (SINGLE SLIM LINE MATCHING SCREENSHOT) */}
+        <div className="shrink-0 flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-200 bg-white px-3 py-1 shadow-2xs">
+          {/* Left: POS Sale Header & Fast Barcode Scan */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 text-xs font-bold text-slate-800">
+              <ShoppingCart className="h-3.5 w-3.5 text-blue-600" />
+              <span>POS Sale</span>
+            </div>
+
+            <form onSubmit={handleBarcodeSubmit} className="flex items-center gap-1">
+              <div className="relative">
+                <Barcode className="absolute left-2 top-1.5 h-3 w-3 text-slate-400" />
                 <input
                   ref={barcodeInputRef}
                   type="text"
                   value={barcodeQuery}
                   onChange={(e) => setBarcodeQuery(e.target.value)}
-                  placeholder="Scan Barcode / SKU / Item Name (Press F2 to focus)..."
-                  className="w-full rounded-lg border border-slate-300 bg-slate-50/70 py-1 pl-9 pr-3 text-xs font-normal text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  placeholder="Scan Barcode / SKU (F2)..."
+                  className="h-6 w-48 rounded border border-slate-300 bg-slate-50/80 py-0 pl-6 pr-2 text-[11px] font-normal text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:outline-none"
                 />
               </div>
               <button
                 type="submit"
-                className="cursor-pointer rounded-lg bg-emerald-600 px-3 py-1 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-500 active:scale-95 flex items-center gap-1"
+                className="h-6 cursor-pointer rounded bg-emerald-600 px-2 text-[11px] font-bold text-white shadow-2xs transition hover:bg-emerald-500 active:scale-95"
               >
-                <Plus className="h-3.5 w-3.5" />
-                <span>Scan/Add</span>
+                + Scan
               </button>
             </form>
-
-            {/* 7 Fast Action Buttons Row (Executive Palette - Bold Text) */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              {/* 1. Add Row */}
-              <button
-                type="button"
-                onClick={addEmptyRow}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:from-blue-500 hover:to-indigo-500 active:scale-95"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                <span>+ Add Row</span>
-              </button>
-
-              {/* 2. Recall (F7) */}
-              <button
-                type="button"
-                onClick={() => void openRecallModal()}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:from-indigo-500 hover:to-purple-500 active:scale-95"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                <span>Recall (F7)</span>
-              </button>
-
-              {/* 3. Hold Sale (F6) */}
-              <button
-                type="button"
-                onClick={() => void handleHoldSale()}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:from-amber-400 hover:to-orange-400 active:scale-95"
-              >
-                <PauseCircle className="h-3.5 w-3.5" />
-                <span>Hold Sale (F6)</span>
-              </button>
-
-              {/* 4. Save & Checkout (Ctrl+S) - Executive Emerald */}
-              <button
-                type="button"
-                onClick={() => setShowPaymentModal(true)}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:from-emerald-500 hover:to-teal-500 active:scale-95"
-              >
-                <Save className="h-3.5 w-3.5 text-emerald-200" />
-                <span>Save (Ctrl+S)</span>
-              </button>
-
-              {/* 5. Delete Row */}
-              <button
-                type="button"
-                onClick={() => {
-                  const filled = rows.filter((r) => r.itemCode || r.description || r.qty > 0);
-                  if (filled.length > 0) {
-                    removeRow(filled[filled.length - 1].id);
-                  } else if (rows.length > DEFAULT_ROW_COUNT) {
-                    removeRow(rows[rows.length - 1].id);
-                  }
-                }}
-                className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 active:scale-95"
-                title="Delete last row"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                <span>Delete</span>
-              </button>
-
-              {/* 6. Clear Sale */}
-              <button
-                type="button"
-                onClick={clearAllRows}
-                className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100 active:scale-95"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                <span>Clear</span>
-              </button>
-
-              {/* 7. Print */}
-              <button
-                type="button"
-                onClick={() => setShowPaymentModal(true)}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#091529] px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-slate-900 active:scale-95"
-              >
-                <Printer className="h-3.5 w-3.5 text-slate-300" />
-                <span>Print</span>
-              </button>
-            </div>
           </div>
 
-          {/* Invoice Metadata Header Card (Clean Labels - font-normal, Values font-medium / bold where appropriate) */}
-          <div className="grid grid-cols-1 gap-2.5 rounded-xl border border-slate-200/90 bg-white p-2.5 shadow-xs lg:grid-cols-12">
-            {/* Left Column (6 cols): Invoice No / Date / Location */}
-            <div className="space-y-1.5 lg:col-span-6">
+          {/* Right: 7 Fast Action Buttons (Matching Screenshot) */}
+          <div className="flex flex-wrap items-center gap-1">
+            {/* 1. Add Row */}
+            <button
+              type="button"
+              onClick={addEmptyRow}
+              className="inline-flex h-6.5 cursor-pointer items-center gap-1 rounded bg-[#1d4ed8] px-2.5 text-[11px] font-bold text-white shadow-2xs transition hover:bg-blue-800 active:scale-95"
+            >
+              <Plus className="h-3 w-3" />
+              <span>+ Add Row</span>
+            </button>
+
+            {/* 2. Recall (F7) */}
+            <button
+              type="button"
+              onClick={() => void openRecallModal()}
+              className="inline-flex h-6.5 cursor-pointer items-center gap-1 rounded bg-[#4338ca] px-2.5 text-[11px] font-bold text-white shadow-2xs transition hover:bg-indigo-800 active:scale-95"
+            >
+              <RotateCcw className="h-3 w-3" />
+              <span>Recall (F7)</span>
+            </button>
+
+            {/* 3. Hold Sale (F6) */}
+            <button
+              type="button"
+              onClick={() => void handleHoldSale()}
+              className="inline-flex h-6.5 cursor-pointer items-center gap-1 rounded bg-[#d97706] px-2.5 text-[11px] font-bold text-white shadow-2xs transition hover:bg-amber-600 active:scale-95"
+            >
+              <PauseCircle className="h-3 w-3" />
+              <span>Hold Sale (F6)</span>
+            </button>
+
+            {/* 4. Save (Ctrl+S) */}
+            <button
+              type="button"
+              onClick={() => setShowPaymentModal(true)}
+              className="inline-flex h-6.5 cursor-pointer items-center gap-1 rounded bg-[#0f172a] px-2.5 text-[11px] font-bold text-white shadow-2xs transition hover:bg-slate-800 active:scale-95"
+            >
+              <Save className="h-3 w-3 text-emerald-300" />
+              <span>Save (Ctrl+S)</span>
+            </button>
+
+            {/* 5. Delete Row */}
+            <button
+              type="button"
+              onClick={() => {
+                const filled = rows.filter((r) => r.itemCode || r.description || r.qty > 0);
+                if (filled.length > 0) {
+                  removeRow(filled[filled.length - 1].id);
+                } else if (rows.length > DEFAULT_ROW_COUNT) {
+                  removeRow(rows[rows.length - 1].id);
+                }
+              }}
+              className="inline-flex h-6.5 cursor-pointer items-center gap-1 rounded bg-[#dc2626] px-2 text-[11px] font-bold text-white shadow-2xs transition hover:bg-rose-700 active:scale-95"
+              title="Delete last row"
+            >
+              <Trash2 className="h-3 w-3" />
+              <span>Delete</span>
+            </button>
+
+            {/* 6. Clear Sale */}
+            <button
+              type="button"
+              onClick={clearAllRows}
+              className="inline-flex h-6.5 cursor-pointer items-center gap-1 rounded bg-[#475569] px-2 text-[11px] font-bold text-white shadow-2xs transition hover:bg-slate-700 active:scale-95"
+            >
+              <RotateCcw className="h-3 w-3" />
+              <span>Clear Sale</span>
+            </button>
+
+            {/* 7. Print */}
+            <button
+              type="button"
+              onClick={() => setShowPaymentModal(true)}
+              className="inline-flex h-6.5 cursor-pointer items-center gap-1 rounded bg-[#0369a1] px-2.5 text-[11px] font-bold text-white shadow-2xs transition hover:bg-sky-800 active:scale-95"
+            >
+              <Printer className="h-3 w-3" />
+              <span>Print</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 3. INVOICE METADATA DUAL BOXES (COMPACT 2 BOXES AS IN SCREENSHOT) */}
+        <div className="shrink-0 px-3 py-1.5 bg-[#F8FAFC]">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-2 text-xs">
+            {/* Left Box (col-span-6): Invoice No / Date / Location */}
+            <div className="rounded-lg border border-slate-200/90 bg-white p-2 shadow-2xs space-y-1.5 md:col-span-6">
               <div className="flex items-center gap-2">
-                <span className="w-24 shrink-0 text-xs font-normal text-slate-600">Invoice No</span>
-                <div className="rounded-lg border border-emerald-300 bg-emerald-50/80 px-2.5 py-0.5 tabular-nums text-xs font-bold text-emerald-950 shadow-2xs">
+                <span className="w-24 shrink-0 text-[11px] font-normal text-slate-600">Invoice No</span>
+                <div className="rounded border border-amber-300 bg-amber-50/80 px-2 py-0.5 tabular-nums text-xs font-bold text-amber-900 shadow-2xs">
                   {generatedInvoiceNo}
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="w-24 shrink-0 text-xs font-normal text-slate-600">Date</span>
-                <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-800">
+                <span className="w-24 shrink-0 text-[11px] font-normal text-slate-600">Date</span>
+                <div className="rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-normal text-slate-800">
                   {formatDisplayDate(getLocalIsoDate())}
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="w-24 shrink-0 text-xs font-normal text-slate-600">Location</span>
-                <div className="flex flex-1 items-center gap-1.5">
-                  <Store className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                <span className="w-24 shrink-0 text-[11px] font-normal text-slate-600">Location / Branch</span>
+                <div className="flex flex-1 items-center gap-1">
                   <select
                     value={branchId}
                     onChange={(e) => {
@@ -822,7 +826,7 @@ export function PosSaleModal() {
                       setBranchId(id);
                       setActiveBranchId(id);
                     }}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="h-6 w-full rounded border border-slate-200 bg-white px-2 py-0 text-xs font-normal text-slate-800 focus:border-emerald-500 focus:outline-none"
                   >
                     {branches.map((b) => (
                       <option key={b.id} value={b.id}>
@@ -834,16 +838,15 @@ export function PosSaleModal() {
               </div>
             </div>
 
-            {/* Right Column (6 cols): Customer / Address */}
-            <div className="space-y-1.5 lg:col-span-6">
+            {/* Right Box (col-span-6): Customer / Address */}
+            <div className="rounded-lg border border-slate-200/90 bg-white p-2 shadow-2xs space-y-1.5 md:col-span-6">
               <div className="flex items-center gap-2">
-                <span className="w-20 shrink-0 text-xs font-normal text-slate-600">Customer</span>
-                <div className="flex flex-1 items-center gap-1.5">
-                  <User className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                <span className="w-16 shrink-0 text-[11px] font-normal text-slate-600">Customer</span>
+                <div className="flex flex-1 items-center gap-1">
                   <select
                     value={selectedCustomerId ?? ''}
                     onChange={(e) => setSelectedCustomerId(Number(e.target.value))}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="h-6 w-full rounded border border-slate-200 bg-white px-2 py-0 text-xs font-normal text-slate-800 focus:border-emerald-500 focus:outline-none"
                   >
                     {customers.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -855,7 +858,7 @@ export function PosSaleModal() {
                     type="button"
                     onClick={() => setShowNewCustomer(true)}
                     title="Add New Customer"
-                    className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 shadow-2xs hover:bg-emerald-100"
+                    className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
                   >
                     <UserPlus className="h-3 w-3" />
                   </button>
@@ -863,13 +866,13 @@ export function PosSaleModal() {
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="w-20 shrink-0 text-xs font-normal text-slate-600">Address</span>
+                <span className="w-16 shrink-0 text-[11px] font-normal text-slate-600">Address</span>
                 <input
                   type="text"
                   value={customerAddress}
                   onChange={(e) => setCustomerAddress(e.target.value)}
                   placeholder="Customer Address / Contact..."
-                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-normal text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="h-6 w-full rounded border border-slate-200 bg-white px-2 py-0 text-xs font-normal text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -878,7 +881,7 @@ export function PosSaleModal() {
           {/* Message Banner if active */}
           {message && (
             <div
-              className={`flex items-center justify-between rounded-lg border px-3 py-1.5 text-xs font-medium shadow-2xs ${
+              className={`mt-1 flex items-center justify-between rounded border px-2.5 py-1 text-xs font-medium ${
                 message.type === 'error'
                   ? 'border-rose-300 bg-rose-50 text-rose-700'
                   : 'border-emerald-300 bg-emerald-50 text-emerald-800'
@@ -886,55 +889,54 @@ export function PosSaleModal() {
             >
               <span>{message.text}</span>
               <button type="button" onClick={() => setMessage(null)} className="cursor-pointer">
-                <X className="h-3.5 w-3.5" />
+                <X className="h-3 w-3" />
               </button>
             </div>
           )}
         </div>
 
-        {/* 3. SCROLLABLE MIDDLE SECTION - ONLY THIS TABLE GRID SCROLLS! (YELLOW HIGHLIGHTED AREA) */}
-        <div className="flex-1 min-h-0 px-2.5 sm:px-3 py-1">
-          <div className="relative h-full overflow-y-auto overflow-x-auto rounded-xl border border-slate-200/90 bg-white shadow-xs [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400 [&::-webkit-scrollbar-track]:bg-slate-100">
-            <table className="w-full min-w-[1080px] border-separate border-spacing-0 text-left text-xs">
+        {/* 4. SCROLLABLE MIDDLE SECTION - ONLY THIS TABLE GRID SCROLLS! (COMPACT ERP ROWS) */}
+        <div className="flex-1 min-h-0 px-3 py-1">
+          <div className="relative h-full overflow-y-auto overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-2xs [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400 [&::-webkit-scrollbar-track]:bg-slate-100">
+            <table className="w-full min-w-[1060px] border-separate border-spacing-0 text-left text-xs">
               {/* Sticky Table Header - BOLD UPPERCASE */}
               <thead className="sticky top-0 z-20 shadow-xs">
-                <tr className="bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] text-[11px] font-bold uppercase tracking-wider text-slate-100">
-                  <th className="w-9 px-2 py-2 text-center border-b-2 border-emerald-500 border-r border-white/10 bg-[#091529]">#</th>
-                  <th className="w-36 px-2 py-2 border-b-2 border-emerald-500 border-r border-white/10 bg-[#0a182e]">ITEM CODE</th>
-                  <th className="w-28 px-2 py-2 border-b-2 border-emerald-500 border-r border-white/10 bg-[#0c1c36]">HS CODE</th>
-                  <th className="min-w-[220px] px-2 py-2 border-b-2 border-emerald-500 border-r border-white/10 bg-[#0e1f3d]">DESCRIPTION</th>
-                  <th className="w-20 px-2 py-2 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#0f2243]">PIECES</th>
-                  <th className="w-20 px-2 py-2 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#10254a]">QTY</th>
-                  <th className="w-16 px-1.5 py-2 text-center border-b-2 border-emerald-500 border-r border-white/10 bg-[#11264c]">UNIT</th>
-                  <th className="w-24 px-2 py-2 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#12274e]">RATE</th>
-                  <th className="w-28 px-2 py-2 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#132952]">VAL EXCL. TAX</th>
-                  <th className="w-16 px-1.5 py-2 text-center border-b-2 border-emerald-500 border-r border-white/10 bg-[#132952]">S.T %</th>
-                  <th className="w-24 px-2 py-2 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#132952]">S.T AMT</th>
-                  <th className="w-28 px-2 py-2 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#132952]">VAL INCL. TAX</th>
-                  <th className="w-10 px-1 py-2 text-center border-b-2 border-emerald-500 bg-[#132952]">
+                <tr className="bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] text-[10.5px] font-bold uppercase tracking-wider text-slate-100">
+                  <th className="w-8 px-1.5 py-1 text-center border-b-2 border-emerald-500 border-r border-white/10 bg-[#091529]">#</th>
+                  <th className="w-32 px-1.5 py-1 border-b-2 border-emerald-500 border-r border-white/10 bg-[#0a182e]">ITEM CODE</th>
+                  <th className="w-24 px-1.5 py-1 border-b-2 border-emerald-500 border-r border-white/10 bg-[#0c1c36]">HS CODE</th>
+                  <th className="min-w-[200px] px-2 py-1 border-b-2 border-emerald-500 border-r border-white/10 bg-[#0e1f3d]">DESCRIPTION</th>
+                  <th className="w-18 px-1.5 py-1 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#0f2243]">PIECES</th>
+                  <th className="w-18 px-1.5 py-1 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#10254a]">QTY</th>
+                  <th className="w-14 px-1 py-1 text-center border-b-2 border-emerald-500 border-r border-white/10 bg-[#11264c]">UNIT</th>
+                  <th className="w-20 px-1.5 py-1 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#12274e]">RATE</th>
+                  <th className="w-24 px-1.5 py-1 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#132952]">VAL EXCL. TAX</th>
+                  <th className="w-14 px-1 py-1 text-center border-b-2 border-emerald-500 border-r border-white/10 bg-[#132952]">S.T %</th>
+                  <th className="w-20 px-1.5 py-1 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#132952]">S.T AMT</th>
+                  <th className="w-24 px-1.5 py-1 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#132952]">VAL INCL. TAX</th>
+                  <th className="w-8 px-1 py-1 text-center border-b-2 border-emerald-500 bg-[#132952]">
                     <Trash2 className="mx-auto h-3 w-3 opacity-70" />
                   </th>
                 </tr>
               </thead>
 
-              {/* Scrollable Table Rows (Only this area swipes/scrolls! Clean regular font-normal, calculated outputs bold) */}
+              {/* Scrollable Table Rows (Compact ERP Rows - 10 Rows Fit On Screen) */}
               <tbody className="divide-y divide-slate-200/80">
                 {calculatedRows.map((r, idx) => {
-                  const isFilled = r.isFilled;
                   return (
                     <tr
                       key={r.id}
-                      className={`transition hover:bg-emerald-50/30 ${
+                      className={`h-6.5 transition hover:bg-emerald-50/30 ${
                         idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
                       }`}
                     >
                       {/* # (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-1.5 py-1 text-center font-normal text-slate-500 tabular-nums">
+                      <td className="border-b border-r border-slate-200/80 px-1 py-0.5 text-center font-normal text-slate-500 tabular-nums text-xs">
                         {idx + 1}
                       </td>
 
                       {/* ITEM CODE with Autocomplete Dropdown (Regular font-normal) */}
-                      <td className="relative border-b border-r border-slate-200/80 px-1.5 py-0.5">
+                      <td className="relative border-b border-r border-slate-200/80 px-1 py-0.5">
                         <input
                           type="text"
                           value={r.itemCode}
@@ -958,21 +960,21 @@ export function PosSaleModal() {
                             }
                           }}
                           placeholder=""
-                          className="w-full rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-normal text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          className="h-5.5 w-full rounded border border-slate-200 bg-white px-1.5 py-0 text-xs font-normal text-slate-800 focus:border-emerald-500 focus:outline-none"
                         />
 
                         {/* Interactive Autocomplete Dropdown */}
                         {activeSearchRowId === r.id && autocompleteProducts.length > 0 && (
                           <div
                             ref={searchDropdownRef}
-                            className="absolute left-1.5 top-8 z-50 max-h-56 w-88 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-2xl"
+                            className="absolute left-1 top-7 z-50 max-h-52 w-80 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-2xl"
                           >
                             {autocompleteProducts.map((p) => (
                               <button
                                 key={p.id}
                                 type="button"
                                 onMouseDown={() => selectProductIntoRow(r.id, p)}
-                                className="flex w-full cursor-pointer items-center justify-between px-3 py-1.5 text-left text-xs hover:bg-emerald-50 transition"
+                                className="flex w-full cursor-pointer items-center justify-between px-2.5 py-1 text-left text-xs hover:bg-emerald-50 transition"
                               >
                                 <div>
                                   <span className="font-semibold text-emerald-700">{p.sku}</span>
@@ -993,17 +995,17 @@ export function PosSaleModal() {
                       </td>
 
                       {/* HS CODE (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-1.5 py-0.5">
+                      <td className="border-b border-r border-slate-200/80 px-1 py-0.5">
                         <input
                           type="text"
                           value={r.hsCode}
                           onChange={(e) => updateRow(r.id, { hsCode: e.target.value })}
-                          className="w-full rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-normal text-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          className="h-5.5 w-full rounded border border-slate-200 bg-white px-1.5 py-0 text-xs font-normal text-slate-600 focus:border-emerald-500 focus:outline-none"
                         />
                       </td>
 
                       {/* DESCRIPTION (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-1.5 py-0.5">
+                      <td className="border-b border-r border-slate-200/80 px-1 py-0.5">
                         <input
                           type="text"
                           value={r.description}
@@ -1014,12 +1016,12 @@ export function PosSaleModal() {
                             setActiveSearchRowId(r.id);
                           }}
                           placeholder=""
-                          className="w-full rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-normal text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          className="h-5.5 w-full rounded border border-slate-200 bg-white px-1.5 py-0 text-xs font-normal text-slate-900 focus:border-emerald-500 focus:outline-none"
                         />
                       </td>
 
                       {/* PIECES (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-1.5 py-0.5">
+                      <td className="border-b border-r border-slate-200/80 px-1 py-0.5">
                         <input
                           type="number"
                           min={0}
@@ -1028,12 +1030,12 @@ export function PosSaleModal() {
                           onChange={(e) =>
                             updateRow(r.id, { pieces: Math.max(0, Number(e.target.value) || 0) })
                           }
-                          className="w-full rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-right text-xs font-normal text-slate-700 tabular-nums focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400"
+                          className="h-5.5 w-full rounded border border-slate-200 bg-white px-1 py-0 text-right text-xs font-normal text-slate-700 tabular-nums focus:border-emerald-500 focus:outline-none placeholder:text-slate-400"
                         />
                       </td>
 
                       {/* QTY (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-1.5 py-0.5">
+                      <td className="border-b border-r border-slate-200/80 px-1 py-0.5">
                         <input
                           type="number"
                           min={0}
@@ -1042,22 +1044,22 @@ export function PosSaleModal() {
                           onChange={(e) =>
                             updateRow(r.id, { qty: Math.max(0, Number(e.target.value) || 0) })
                           }
-                          className="w-full rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-right text-xs font-normal text-slate-700 tabular-nums focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400"
+                          className="h-5.5 w-full rounded border border-slate-200 bg-white px-1 py-0 text-right text-xs font-normal text-slate-700 tabular-nums focus:border-emerald-500 focus:outline-none placeholder:text-slate-400"
                         />
                       </td>
 
                       {/* UNIT (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-1.5 py-0.5 text-center">
+                      <td className="border-b border-r border-slate-200/80 px-1 py-0.5 text-center">
                         <input
                           type="text"
                           value={r.unit}
                           onChange={(e) => updateRow(r.id, { unit: e.target.value })}
-                          className="w-14 rounded-md border border-slate-200 bg-white py-0.5 text-center text-xs font-normal text-slate-600 focus:border-emerald-500 focus:outline-none"
+                          className="h-5.5 w-12 rounded border border-slate-200 bg-white py-0 text-center text-xs font-normal text-slate-600 focus:border-emerald-500 focus:outline-none"
                         />
                       </td>
 
                       {/* RATE (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-1.5 py-0.5">
+                      <td className="border-b border-r border-slate-200/80 px-1 py-0.5">
                         <input
                           type="number"
                           min={0}
@@ -1066,39 +1068,39 @@ export function PosSaleModal() {
                           onChange={(e) =>
                             updateRow(r.id, { rate: Math.max(0, Number(e.target.value) || 0) })
                           }
-                          className="w-full rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-right text-xs font-normal text-slate-700 tabular-nums focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400"
+                          className="h-5.5 w-full rounded border border-slate-200 bg-white px-1 py-0 text-right text-xs font-normal text-slate-700 tabular-nums focus:border-emerald-500 focus:outline-none placeholder:text-slate-400"
                         />
                       </td>
 
                       {/* VAL EXCL. TAX (BOLD as in Screenshot!) */}
-                      <td className="border-b border-r border-slate-200/80 px-2 py-1 text-right tabular-nums text-xs font-bold text-slate-900">
+                      <td className="border-b border-r border-slate-200/80 px-1.5 py-0.5 text-right tabular-nums text-xs font-bold text-slate-900">
                         {r.valExclTax.toFixed(2)}
                       </td>
 
                       {/* S.T % (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-1.5 py-1 text-center tabular-nums text-xs font-normal text-slate-600">
+                      <td className="border-b border-r border-slate-200/80 px-1 py-0.5 text-center tabular-nums text-xs font-normal text-slate-600">
                         {r.taxRate.toFixed(2)}
                       </td>
 
                       {/* S.T AMT (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-2 py-1 text-right tabular-nums text-xs font-normal text-slate-800">
+                      <td className="border-b border-r border-slate-200/80 px-1.5 py-0.5 text-right tabular-nums text-xs font-normal text-slate-800">
                         {r.taxAmt.toFixed(2)}
                       </td>
 
                       {/* VAL INCL. TAX (BOLD AMBER as in Screenshot!) */}
-                      <td className="border-b border-r border-slate-200/80 px-2 py-1 text-right tabular-nums text-xs font-bold text-amber-700">
+                      <td className="border-b border-r border-slate-200/80 px-1.5 py-0.5 text-right tabular-nums text-xs font-bold text-amber-700">
                         {r.valInclTax.toFixed(2)}
                       </td>
 
                       {/* Action Delete */}
-                      <td className="border-b px-1 py-1 text-center border-slate-200/80">
+                      <td className="border-b px-1 py-0.5 text-center border-slate-200/80">
                         <button
                           type="button"
                           onClick={() => removeRow(r.id)}
-                          className="cursor-pointer rounded-md p-1 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                          className="cursor-pointer rounded p-0.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
                           title="Delete row"
                         >
-                          <Trash2 className="mx-auto h-3.5 w-3.5" />
+                          <Trash2 className="mx-auto h-3 w-3" />
                         </button>
                       </td>
                     </tr>
@@ -1109,171 +1111,179 @@ export function PosSaleModal() {
               {/* Sticky Table Totals Footer (BOLD TOTALS - PINNED AT BOTTOM OF TABLE) */}
               <tfoot className="sticky bottom-0 z-20 shadow-xs">
                 <tr className="bg-slate-100/98 text-slate-900 text-xs">
-                  <td colSpan={4} className="border-t-2 border-r border-slate-300 px-4 py-2 text-right uppercase tracking-wider text-slate-800 font-bold bg-slate-100">
+                  <td colSpan={4} className="border-t-2 border-r border-slate-300 px-3 py-1 text-right uppercase tracking-wider text-slate-800 font-bold bg-slate-100">
                     Totals:
                   </td>
-                  <td className="border-t-2 border-r border-slate-300 px-2 py-2 text-right tabular-nums text-xs font-bold text-slate-900 bg-slate-100">
+                  <td className="border-t-2 border-r border-slate-300 px-1.5 py-1 text-right tabular-nums text-xs font-bold text-slate-900 bg-slate-100">
                     {totals.pieces === 0 ? '0' : totals.pieces.toFixed(2)}
                   </td>
-                  <td className="border-t-2 border-r border-slate-300 px-2 py-2 text-right tabular-nums text-xs font-bold text-slate-900 bg-slate-100">
+                  <td className="border-t-2 border-r border-slate-300 px-1.5 py-1 text-right tabular-nums text-xs font-bold text-slate-900 bg-slate-100">
                     {totals.qty === 0 ? '0' : totals.qty.toFixed(2)}
                   </td>
-                  <td className="border-t-2 border-r border-slate-300 px-1 py-2 text-center text-xs text-slate-400 font-normal bg-slate-100">-</td>
-                  <td className="border-t-2 border-r border-slate-300 px-1 py-2 text-center text-xs text-slate-400 font-normal bg-slate-100">-</td>
-                  <td className="border-t-2 border-r border-slate-300 px-2.5 py-2 text-right tabular-nums text-xs font-bold text-slate-950 bg-slate-100">
+                  <td className="border-t-2 border-r border-slate-300 px-1 py-1 text-center text-xs text-slate-400 font-normal bg-slate-100">-</td>
+                  <td className="border-t-2 border-r border-slate-300 px-1 py-1 text-center text-xs text-slate-400 font-normal bg-slate-100">-</td>
+                  <td className="border-t-2 border-r border-slate-300 px-1.5 py-1 text-right tabular-nums text-xs font-bold text-slate-950 bg-slate-100">
                     {totals.subtotal.toFixed(2)}
                   </td>
-                  <td className="border-t-2 border-r border-slate-300 px-1 py-2 text-center text-xs text-slate-400 font-normal bg-slate-100">-</td>
-                  <td className="border-t-2 border-r border-slate-300 px-2.5 py-2 text-right tabular-nums text-xs font-bold text-amber-700 bg-slate-100">
+                  <td className="border-t-2 border-r border-slate-300 px-1 py-1 text-center text-xs text-slate-400 font-normal bg-slate-100">-</td>
+                  <td className="border-t-2 border-r border-slate-300 px-1.5 py-1 text-right tabular-nums text-xs font-bold text-amber-700 bg-slate-100">
                     {totals.taxTotal.toFixed(2)}
                   </td>
-                  <td className="border-t-2 border-r border-slate-300 px-2.5 py-2 text-right tabular-nums text-xs font-bold text-amber-700 bg-slate-100">
+                  <td className="border-t-2 border-r border-slate-300 px-1.5 py-1 text-right tabular-nums text-xs font-bold text-amber-700 bg-slate-100">
                     {totals.grandTotal.toFixed(2)}
                   </td>
-                  <td className="border-t-2 border-slate-300 px-1 py-2 bg-slate-100" />
+                  <td className="border-t-2 border-slate-300 px-1 py-1 bg-slate-100" />
                 </tr>
               </tfoot>
             </table>
           </div>
         </div>
 
-        {/* 4. FIXED BOTTOM SECTION: CASHIER ACTIONS & FINANCIAL TOTALS (NEVER SCROLLS) */}
-        <div className="shrink-0 px-2.5 sm:px-3 pt-1.5 pb-2.5 sm:pb-3 bg-[#F8FAFC]">
-          <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-12">
-            {/* Left: Cashier Actions Box (8 Cols) */}
-            <div className="flex flex-col justify-between rounded-xl border border-slate-200/90 bg-white p-3 shadow-xs lg:col-span-8">
+        {/* 5. FIXED BOTTOM SECTION: CASHIER ACTIONS & FINANCIAL TOTALS (EXACT ERP SYMMETRY AS IN SCREENSHOT) */}
+        <div className="shrink-0 px-3 pt-1 pb-2 bg-[#F8FAFC]">
+          <div className="grid grid-cols-1 gap-2 lg:grid-cols-12">
+            {/* Left: Cashier Actions Box (8 Cols - Exactly Matching Screenshot) */}
+            <div className="flex flex-col justify-between rounded-lg border border-slate-200/90 bg-white p-2 shadow-2xs lg:col-span-8">
               <div>
-                <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                  <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-[#091529] uppercase">
-                    <Zap className="h-3.5 w-3.5 text-amber-500" />
+                <div className="flex items-center justify-between border-b border-slate-100 pb-1">
+                  <span className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-[#091529] uppercase">
+                    <Zap className="h-3 w-3 text-amber-500" />
                     <span>Cashier Actions</span>
                   </span>
-                  <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20" />
+                  <span className="flex items-center gap-1.5 text-[10.5px] font-medium text-slate-600">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20" />
                     <span className="text-emerald-700 font-semibold">Ready for Sale</span>
                   </span>
                 </div>
 
-                {/* 4 Big Action Cards (Title Bold, Subtitle Regular) */}
-                <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {/* 4 Action Cards Row (Exact Proportion & Colors as Screenshot) */}
+                <div className="mt-1.5 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
                   {/* 1: Hold Sale (F6) */}
                   <button
                     type="button"
                     onClick={() => void handleHoldSale()}
-                    className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-amber-200 bg-amber-50/70 p-2.5 text-center shadow-xs transition hover:-translate-y-0.5 hover:bg-amber-100 hover:shadow-sm active:scale-95"
+                    className="flex cursor-pointer items-center gap-2 rounded-lg border border-amber-200 bg-amber-50/70 p-1.5 text-left shadow-2xs transition hover:bg-amber-100 active:scale-95"
                   >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 text-white shadow-xs">
-                      <PauseCircle className="h-4.5 w-4.5" />
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white shadow-2xs">
+                      <PauseCircle className="h-4 w-4" />
                     </div>
-                    <span className="mt-1.5 text-xs font-bold text-amber-950">Hold Sale</span>
-                    <span className="text-[10px] font-normal text-amber-700">F6</span>
+                    <div>
+                      <span className="block text-xs font-bold text-amber-950">Hold Sale</span>
+                      <span className="text-[10px] font-normal text-amber-700">F6</span>
+                    </div>
                   </button>
 
                   {/* 2: Recall Sale (F7) */}
                   <button
                     type="button"
                     onClick={() => void openRecallModal()}
-                    className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50/70 p-2.5 text-center shadow-xs transition hover:-translate-y-0.5 hover:bg-indigo-100 hover:shadow-sm active:scale-95"
+                    className="flex cursor-pointer items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50/70 p-1.5 text-left shadow-2xs transition hover:bg-indigo-100 active:scale-95"
                   >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-white shadow-xs">
-                      <RotateCcw className="h-4.5 w-4.5" />
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white shadow-2xs">
+                      <RotateCcw className="h-4 w-4" />
                     </div>
-                    <span className="mt-1.5 text-xs font-bold text-indigo-950">Recall Sale</span>
-                    <span className="text-[10px] font-normal text-indigo-700">F7</span>
+                    <div>
+                      <span className="block text-xs font-bold text-indigo-950">Recall Sale</span>
+                      <span className="text-[10px] font-normal text-indigo-700">F7</span>
+                    </div>
                   </button>
 
-                  {/* 3: Post to FBR (Executive Midnight Navy) */}
+                  {/* 3: Post to FBR (Midnight Executive Navy as in Screenshot) */}
                   <button
                     type="button"
                     disabled={submitting}
                     onClick={() => setShowPaymentModal(true)}
-                    className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-slate-900 bg-gradient-to-br from-[#091529] via-[#0e1f3d] to-[#132952] p-2.5 text-center text-white shadow-xs transition hover:-translate-y-0.5 hover:brightness-110 hover:shadow-sm active:scale-95"
+                    className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-900 bg-gradient-to-br from-[#091529] via-[#0e1f3d] to-[#132952] p-1.5 text-left text-white shadow-2xs transition hover:brightness-110 active:scale-95"
                   >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-slate-950 shadow-xs">
-                      <CloudUpload className="h-4.5 w-4.5" />
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-slate-950 shadow-2xs">
+                      <CloudUpload className="h-4 w-4" />
                     </div>
-                    <span className="mt-1.5 text-xs font-bold text-white">Post to FBR</span>
-                    <span className="text-[10px] font-normal text-emerald-300">FBR Submit</span>
+                    <div>
+                      <span className="block text-xs font-bold text-white">Post to FBR</span>
+                      <span className="text-[10px] font-normal text-emerald-300">FBR Submit</span>
+                    </div>
                   </button>
 
                   {/* 4: Clear Sale (Esc) */}
                   <button
                     type="button"
                     onClick={clearAllRows}
-                    className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50/70 p-2.5 text-center shadow-xs transition hover:-translate-y-0.5 hover:bg-rose-100 hover:shadow-sm active:scale-95"
+                    className="flex cursor-pointer items-center gap-2 rounded-lg border border-rose-200 bg-rose-50/70 p-1.5 text-left shadow-2xs transition hover:bg-rose-100 active:scale-95"
                   >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-600 text-white shadow-xs">
-                      <Trash2 className="h-4.5 w-4.5" />
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-600 text-white shadow-2xs">
+                      <Trash2 className="h-4 w-4" />
                     </div>
-                    <span className="mt-1.5 text-xs font-bold text-rose-950">Clear Sale</span>
-                    <span className="text-[10px] font-normal text-rose-700">Esc</span>
+                    <div>
+                      <span className="block text-xs font-bold text-rose-950">Clear Sale</span>
+                      <span className="text-[10px] font-normal text-rose-700">Esc</span>
+                    </div>
                   </button>
                 </div>
               </div>
 
-              {/* Footer FBR Disclaimer (Regular font-normal) */}
-              <div className="mt-2 flex items-center gap-2 border-t border-slate-100 pt-1.5 text-[11px] text-slate-500 font-normal">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20" />
+              {/* Footer FBR Disclaimer (Matching Screenshot) */}
+              <div className="mt-1 flex items-center gap-1.5 border-t border-slate-100 pt-1 text-[10.5px] text-slate-500 font-normal">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20" />
                 <span>
                   Saved sales are stored locally in ERP database and can be edited or deleted until submitted to <strong className="font-semibold text-slate-700">FBR</strong>.
                 </span>
               </div>
             </div>
 
-            {/* Right: Financial Totals Box (4 Cols - Labels Regular, Outputs Medium/Bold) */}
-            <div className="flex flex-col justify-between rounded-xl border border-slate-200/90 bg-white p-3 shadow-xs lg:col-span-4">
-              <div className="space-y-1.5 text-xs">
+            {/* Right: Financial Totals Box (4 Cols - Exactly Matching Screenshot) */}
+            <div className="flex flex-col justify-between rounded-lg border border-slate-200/90 bg-white p-2 shadow-2xs lg:col-span-4">
+              <div className="space-y-1 text-xs">
                 <div className="flex items-center justify-between text-slate-600">
-                  <span className="font-normal text-slate-600">Gross Amount</span>
+                  <span className="font-normal text-slate-600 text-[11px]">Gross Amount</span>
                   <span className="tabular-nums font-semibold text-slate-900">
                     {totals.subtotal.toFixed(2)}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between text-slate-600">
-                  <span className="font-normal text-slate-600">Discount Amount</span>
+                  <span className="font-normal text-slate-600 text-[11px]">Discount Amount</span>
                   <input
                     type="number"
                     min={0}
                     value={invoiceDiscount === 0 ? '' : invoiceDiscount}
                     placeholder="0.00"
                     onChange={(e) => setInvoiceDiscount(Math.max(0, Number(e.target.value) || 0))}
-                    className="w-28 rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-right tabular-nums text-xs font-normal text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400"
+                    className="h-5.5 w-24 rounded border border-slate-200 bg-white px-1.5 py-0 text-right tabular-nums text-xs font-normal text-slate-900 focus:border-emerald-500 focus:outline-none placeholder:text-slate-400"
                   />
                 </div>
 
                 <div className="flex items-center justify-between text-slate-600">
-                  <span className="font-normal text-slate-600">Total After Discount</span>
+                  <span className="font-normal text-slate-600 text-[11px]">Total After Discount</span>
                   <span className="tabular-nums font-semibold text-slate-900">
                     {totals.totalAfterDiscount.toFixed(2)}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between text-slate-600">
-                  <span className="font-normal text-slate-600">Sales Tax Amount</span>
+                  <span className="font-normal text-slate-600 text-[11px]">Sales Tax Amount</span>
                   <span className="tabular-nums font-semibold text-amber-600">
                     {totals.taxTotal.toFixed(2)}
                   </span>
                 </div>
 
-                <div className="border-t-2 border-slate-200 pt-1.5">
+                <div className="border-t border-slate-200 pt-1">
                   <div className="flex items-baseline justify-between">
-                    <span className="text-sm font-bold text-slate-900 uppercase tracking-wide">Net Total</span>
-                    <span className="tabular-nums text-2xl font-bold text-emerald-700">
+                    <span className="text-xs font-bold text-slate-900 uppercase tracking-wide">Net Total</span>
+                    <span className="tabular-nums text-xl font-bold text-[#091529]">
                       {formatCurrency(totals.grandTotal, settings.currency_symbol)}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Complete & Pay Button (Bold) */}
+              {/* Fast Checkout Click Link */}
               <button
                 type="button"
                 onClick={() => setShowPaymentModal(true)}
-                className="mt-2.5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 py-2.5 text-center text-xs font-bold tracking-wide text-white shadow-md transition hover:from-emerald-500 hover:to-teal-500 active:scale-98 uppercase"
+                className="mt-1 flex w-full cursor-pointer items-center justify-center gap-1 rounded bg-emerald-600 py-1 text-center text-[11px] font-bold text-white shadow-2xs hover:bg-emerald-500 active:scale-95 transition"
               >
-                <CheckCircle2 className="h-4 w-4" />
-                <span>Checkout &amp; Print Bill (Ctrl+S / F12)</span>
+                <CheckCircle2 className="h-3 w-3" />
+                <span>Save &amp; Checkout (Ctrl+S)</span>
               </button>
             </div>
           </div>
