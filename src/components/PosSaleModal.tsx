@@ -5,7 +5,6 @@ import {
   Banknote,
   Barcode,
   CheckCircle2,
-  Clock,
   CloudUpload,
   CreditCard,
   Keyboard,
@@ -20,7 +19,6 @@ import {
   Save,
   Search,
   ShoppingCart,
-  Sparkles,
   Store,
   Trash2,
   User,
@@ -102,11 +100,11 @@ export function PosSaleModal() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
   const [customerAddress, setCustomerAddress] = useState<string>('Haripur');
 
-  // Window states: Normal floating dialog, Maximized, or Minimized
+  // Window state: floating modal, maximized, minimized
   const [isMaximized, setIsMaximized] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
 
-  // Quick Barcode / Omni search input ref
+  // Quick Barcode / Omni search
   const barcodeInputRef = useRef<HTMLInputElement | null>(null);
   const [barcodeQuery, setBarcodeQuery] = useState('');
 
@@ -306,7 +304,6 @@ export function PosSaleModal() {
     );
 
     if (match) {
-      // Find first empty row or append
       const emptyRow = rows.find((r) => !r.productId && !r.itemCode);
       if (emptyRow) {
         selectProductIntoRow(emptyRow.id, match);
@@ -605,19 +602,19 @@ export function PosSaleModal() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showPaymentModal, showRecallModal, showNewCustomer, calculatedRows, closePosSale]);
 
-  // Minimized state dock tab on bottom right
+  // Minimized dock pill on bottom right
   if (isMinimized) {
     return (
       <div className="fixed bottom-4 right-4 z-50 animate-bounce-short">
         <button
           type="button"
           onClick={() => setIsMinimized(false)}
-          className="flex cursor-pointer items-center gap-2.5 rounded-2xl border-2 border-emerald-500 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] px-4 py-3 text-xs font-black text-white shadow-2xl transition hover:scale-105 active:scale-95"
+          className="flex cursor-pointer items-center gap-2.5 rounded-2xl border-2 border-emerald-500 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] px-4 py-3 text-xs font-bold text-white shadow-2xl transition hover:scale-105 active:scale-95"
         >
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 ring-4 ring-emerald-400/25" />
           <ShoppingCart className="h-4 w-4 text-emerald-400" />
           <span>POS Sale: {generatedInvoiceNo}</span>
-          <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] text-emerald-300">
+          <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] text-emerald-300 font-medium">
             {totals.grandTotal > 0 ? formatCurrency(totals.grandTotal, settings.currency_symbol) : 'Ready'}
           </span>
           <Maximize2 className="ml-1 h-3.5 w-3.5 text-emerald-400" />
@@ -627,23 +624,25 @@ export function PosSaleModal() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-950/45 backdrop-blur-[2px] transition-all">
-      {/* FLOATING WINDOW CONTAINER */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3 md:p-4 bg-slate-950/45 backdrop-blur-[2px] transition-all font-sans">
+      {/* FLOATING WINDOW CONTAINER - FIXED HEIGHT WITH INTERNAL TABLE SCROLL ONLY */}
       <div
-        className={`flex w-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_25px_70px_-15px_rgba(0,0,0,0.5)] border border-slate-200 transition-all duration-200 ${
-          isMaximized ? 'fixed inset-2 z-50 max-h-[98vh]' : 'max-w-[1440px] max-h-[92vh]'
+        className={`flex w-full flex-col overflow-hidden rounded-2xl bg-[#F8FAFC] shadow-[0_25px_70px_-15px_rgba(0,0,0,0.5)] border border-slate-200 transition-all duration-200 ${
+          isMaximized
+            ? 'fixed inset-2 z-50 h-[calc(100vh-16px)] max-h-none'
+            : 'max-w-[1460px] h-[92vh] max-h-[94vh]'
         }`}
       >
-        {/* 1. SEASTONE EXECUTIVE TITLE BAR (Midnight Navy & Emerald Accent) */}
-        <div className="flex select-none items-center justify-between border-b-2 border-emerald-500/80 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] px-4 py-2 text-white shadow-sm">
+        {/* 1. SEASTONE EXECUTIVE TITLE BAR (FIXED PINNED HEADER) */}
+        <div className="shrink-0 flex select-none items-center justify-between border-b-2 border-emerald-500/80 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] px-4 py-2 text-white shadow-sm">
           {/* Left: Window Icon + Title + Live Store Badge */}
           <div className="flex items-center gap-2.5">
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 ring-4 ring-emerald-400/20" />
             <ShoppingCart className="h-4 w-4 text-emerald-400" />
-            <h2 className="text-xs font-black tracking-wider uppercase text-white sm:text-sm">
+            <h2 className="text-xs font-bold tracking-wider uppercase text-white sm:text-sm">
               POS Sale (New Bill)
             </h2>
-            <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300 ring-1 ring-white/15">
+            <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300 ring-1 ring-white/15">
               {activeBranch?.code} • {activeBranch?.name}
             </span>
           </div>
@@ -686,10 +685,10 @@ export function PosSaleModal() {
           </div>
         </div>
 
-        {/* 2. WINDOW BODY */}
-        <div className="flex-1 space-y-2.5 overflow-y-auto bg-[#F8FAFC] p-3 sm:p-3.5">
+        {/* 2. FIXED TOP SECTION (BARCODE SCANNER, ACTIONS & INVOICE META - NEVER SCROLLS) */}
+        <div className="shrink-0 space-y-2 p-2.5 sm:p-3 pb-1 bg-[#F8FAFC]">
           {/* Omni Barcode Scanner & Hotkeys Row */}
-          <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-slate-200/90 bg-white p-2.5 shadow-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200/90 bg-white p-2 shadow-xs">
             {/* Omni Barcode Scanner Bar */}
             <form onSubmit={handleBarcodeSubmit} className="flex flex-1 items-center gap-2 max-w-xl">
               <div className="relative flex-1">
@@ -700,19 +699,19 @@ export function PosSaleModal() {
                   value={barcodeQuery}
                   onChange={(e) => setBarcodeQuery(e.target.value)}
                   placeholder="Scan Barcode / SKU / Item Name (Press F2 to focus)..."
-                  className="w-full rounded-lg border border-slate-300 bg-slate-50/70 py-1.5 pl-9 pr-3 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full rounded-lg border border-slate-300 bg-slate-50/70 py-1 pl-9 pr-3 text-xs font-normal text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
               <button
                 type="submit"
-                className="cursor-pointer rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-500 active:scale-95 flex items-center gap-1"
+                className="cursor-pointer rounded-lg bg-emerald-600 px-3 py-1 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-500 active:scale-95 flex items-center gap-1"
               >
                 <Plus className="h-3.5 w-3.5" />
                 <span>Scan/Add</span>
               </button>
             </form>
 
-            {/* 7 Fast Action Buttons Row (Executive Palette) */}
+            {/* 7 Fast Action Buttons Row (Executive Palette - Bold Text) */}
             <div className="flex flex-wrap items-center gap-1.5">
               {/* 1. Add Row */}
               <button
@@ -748,7 +747,7 @@ export function PosSaleModal() {
               <button
                 type="button"
                 onClick={() => setShowPaymentModal(true)}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-3.5 py-1.5 text-xs font-black text-white shadow-xs transition hover:from-emerald-500 hover:to-teal-500 active:scale-95"
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:from-emerald-500 hover:to-teal-500 active:scale-95"
               >
                 <Save className="h-3.5 w-3.5 text-emerald-200" />
                 <span>Save (Ctrl+S)</span>
@@ -794,28 +793,28 @@ export function PosSaleModal() {
             </div>
           </div>
 
-          {/* 3. INVOICE META HEADER (Executive White Card) */}
-          <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200/90 bg-white p-3 shadow-xs lg:grid-cols-12">
+          {/* Invoice Metadata Header Card (Clean Labels - font-normal, Values font-medium / bold where appropriate) */}
+          <div className="grid grid-cols-1 gap-2.5 rounded-xl border border-slate-200/90 bg-white p-2.5 shadow-xs lg:grid-cols-12">
             {/* Left Column (6 cols): Invoice No / Date / Location */}
-            <div className="space-y-2 lg:col-span-6">
+            <div className="space-y-1.5 lg:col-span-6">
               <div className="flex items-center gap-2">
-                <span className="w-28 shrink-0 text-xs font-bold text-slate-600">Invoice No</span>
-                <div className="rounded-lg border border-emerald-300 bg-emerald-50/80 px-3 py-1 font-mono text-xs font-black text-emerald-950 shadow-2xs">
+                <span className="w-24 shrink-0 text-xs font-normal text-slate-600">Invoice No</span>
+                <div className="rounded-lg border border-emerald-300 bg-emerald-50/80 px-2.5 py-0.5 tabular-nums text-xs font-bold text-emerald-950 shadow-2xs">
                   {generatedInvoiceNo}
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="w-28 shrink-0 text-xs font-bold text-slate-600">Date</span>
-                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-800">
+                <span className="w-24 shrink-0 text-xs font-normal text-slate-600">Date</span>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-800">
                   {formatDisplayDate(getLocalIsoDate())}
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="w-28 shrink-0 text-xs font-bold text-slate-600">Location / Branch</span>
+                <span className="w-24 shrink-0 text-xs font-normal text-slate-600">Location</span>
                 <div className="flex flex-1 items-center gap-1.5">
-                  <Store className="h-4 w-4 shrink-0 text-emerald-600" />
+                  <Store className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
                   <select
                     value={branchId}
                     onChange={(e) => {
@@ -823,7 +822,7 @@ export function PosSaleModal() {
                       setBranchId(id);
                       setActiveBranchId(id);
                     }}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   >
                     {branches.map((b) => (
                       <option key={b.id} value={b.id}>
@@ -836,15 +835,15 @@ export function PosSaleModal() {
             </div>
 
             {/* Right Column (6 cols): Customer / Address */}
-            <div className="space-y-2 lg:col-span-6">
+            <div className="space-y-1.5 lg:col-span-6">
               <div className="flex items-center gap-2">
-                <span className="w-20 shrink-0 text-xs font-bold text-slate-600">Customer</span>
+                <span className="w-20 shrink-0 text-xs font-normal text-slate-600">Customer</span>
                 <div className="flex flex-1 items-center gap-1.5">
-                  <User className="h-4 w-4 shrink-0 text-slate-400" />
+                  <User className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                   <select
                     value={selectedCustomerId ?? ''}
                     onChange={(e) => setSelectedCustomerId(Number(e.target.value))}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   >
                     {customers.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -856,30 +855,30 @@ export function PosSaleModal() {
                     type="button"
                     onClick={() => setShowNewCustomer(true)}
                     title="Add New Customer"
-                    className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 shadow-2xs hover:bg-emerald-100"
+                    className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 shadow-2xs hover:bg-emerald-100"
                   >
-                    <UserPlus className="h-3.5 w-3.5" />
+                    <UserPlus className="h-3 w-3" />
                   </button>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="w-20 shrink-0 text-xs font-bold text-slate-600">Address</span>
+                <span className="w-20 shrink-0 text-xs font-normal text-slate-600">Address</span>
                 <input
                   type="text"
                   value={customerAddress}
                   onChange={(e) => setCustomerAddress(e.target.value)}
                   placeholder="Customer Address / Contact..."
-                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-normal text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
             </div>
           </div>
 
-          {/* Message Banner */}
+          {/* Message Banner if active */}
           {message && (
             <div
-              className={`flex items-center justify-between rounded-xl border px-3.5 py-2 text-xs font-bold shadow-2xs ${
+              className={`flex items-center justify-between rounded-lg border px-3 py-1.5 text-xs font-medium shadow-2xs ${
                 message.type === 'error'
                   ? 'border-rose-300 bg-rose-50 text-rose-700'
                   : 'border-emerald-300 bg-emerald-50 text-emerald-800'
@@ -891,30 +890,34 @@ export function PosSaleModal() {
               </button>
             </div>
           )}
+        </div>
 
-          {/* 4. THE 12-COLUMN TABLE GRID (Midnight Navy & Emerald) */}
-          <div className="relative overflow-x-auto rounded-xl border border-slate-200/90 bg-white shadow-xs">
-            <table className="w-full min-w-[1080px] border-collapse text-left text-xs">
-              <thead>
-                <tr className="border-b-2 border-emerald-500/80 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] text-[11px] font-extrabold uppercase tracking-wider text-slate-100">
-                  <th className="w-9 px-2 py-2 text-center border-r border-white/10">#</th>
-                  <th className="w-36 px-2 py-2 border-r border-white/10">ITEM CODE</th>
-                  <th className="w-28 px-2 py-2 border-r border-white/10">HS CODE</th>
-                  <th className="min-w-[220px] px-2 py-2 border-r border-white/10">DESCRIPTION</th>
-                  <th className="w-20 px-2 py-2 text-right border-r border-white/10">PIECES</th>
-                  <th className="w-20 px-2 py-2 text-right border-r border-white/10">QTY</th>
-                  <th className="w-16 px-1.5 py-2 text-center border-r border-white/10">UNIT</th>
-                  <th className="w-24 px-2 py-2 text-right border-r border-white/10">RATE</th>
-                  <th className="w-28 px-2 py-2 text-right border-r border-white/10">VAL EXCL. TAX</th>
-                  <th className="w-16 px-1.5 py-2 text-center border-r border-white/10">S.T %</th>
-                  <th className="w-24 px-2 py-2 text-right border-r border-white/10">S.T AMT</th>
-                  <th className="w-28 px-2 py-2 text-right border-r border-white/10">VAL INCL. TAX</th>
-                  <th className="w-10 px-1 py-2 text-center">
+        {/* 3. SCROLLABLE MIDDLE SECTION - ONLY THIS TABLE GRID SCROLLS! (YELLOW HIGHLIGHTED AREA) */}
+        <div className="flex-1 min-h-0 px-2.5 sm:px-3 py-1">
+          <div className="relative h-full overflow-y-auto overflow-x-auto rounded-xl border border-slate-200/90 bg-white shadow-xs [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400 [&::-webkit-scrollbar-track]:bg-slate-100">
+            <table className="w-full min-w-[1080px] border-separate border-spacing-0 text-left text-xs">
+              {/* Sticky Table Header - BOLD UPPERCASE */}
+              <thead className="sticky top-0 z-20 shadow-xs">
+                <tr className="bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] text-[11px] font-bold uppercase tracking-wider text-slate-100">
+                  <th className="w-9 px-2 py-2 text-center border-b-2 border-emerald-500 border-r border-white/10 bg-[#091529]">#</th>
+                  <th className="w-36 px-2 py-2 border-b-2 border-emerald-500 border-r border-white/10 bg-[#0a182e]">ITEM CODE</th>
+                  <th className="w-28 px-2 py-2 border-b-2 border-emerald-500 border-r border-white/10 bg-[#0c1c36]">HS CODE</th>
+                  <th className="min-w-[220px] px-2 py-2 border-b-2 border-emerald-500 border-r border-white/10 bg-[#0e1f3d]">DESCRIPTION</th>
+                  <th className="w-20 px-2 py-2 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#0f2243]">PIECES</th>
+                  <th className="w-20 px-2 py-2 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#10254a]">QTY</th>
+                  <th className="w-16 px-1.5 py-2 text-center border-b-2 border-emerald-500 border-r border-white/10 bg-[#11264c]">UNIT</th>
+                  <th className="w-24 px-2 py-2 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#12274e]">RATE</th>
+                  <th className="w-28 px-2 py-2 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#132952]">VAL EXCL. TAX</th>
+                  <th className="w-16 px-1.5 py-2 text-center border-b-2 border-emerald-500 border-r border-white/10 bg-[#132952]">S.T %</th>
+                  <th className="w-24 px-2 py-2 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#132952]">S.T AMT</th>
+                  <th className="w-28 px-2 py-2 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#132952]">VAL INCL. TAX</th>
+                  <th className="w-10 px-1 py-2 text-center border-b-2 border-emerald-500 bg-[#132952]">
                     <Trash2 className="mx-auto h-3 w-3 opacity-70" />
                   </th>
                 </tr>
               </thead>
 
+              {/* Scrollable Table Rows (Only this area swipes/scrolls! Clean regular font-normal, calculated outputs bold) */}
               <tbody className="divide-y divide-slate-200/80">
                 {calculatedRows.map((r, idx) => {
                   const isFilled = r.isFilled;
@@ -925,13 +928,13 @@ export function PosSaleModal() {
                         idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
                       }`}
                     >
-                      {/* # */}
-                      <td className="border-r border-slate-200/80 px-1.5 py-1 text-center font-bold text-slate-400">
+                      {/* # (Regular font-normal) */}
+                      <td className="border-b border-r border-slate-200/80 px-1.5 py-1 text-center font-normal text-slate-500 tabular-nums">
                         {idx + 1}
                       </td>
 
-                      {/* ITEM CODE with Autocomplete Dropdown */}
-                      <td className="relative border-r border-slate-200/80 px-1.5 py-0.5">
+                      {/* ITEM CODE with Autocomplete Dropdown (Regular font-normal) */}
+                      <td className="relative border-b border-r border-slate-200/80 px-1.5 py-0.5">
                         <input
                           type="text"
                           value={r.itemCode}
@@ -955,7 +958,7 @@ export function PosSaleModal() {
                             }
                           }}
                           placeholder=""
-                          className="w-full rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          className="w-full rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-normal text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                         />
 
                         {/* Interactive Autocomplete Dropdown */}
@@ -972,14 +975,14 @@ export function PosSaleModal() {
                                 className="flex w-full cursor-pointer items-center justify-between px-3 py-1.5 text-left text-xs hover:bg-emerald-50 transition"
                               >
                                 <div>
-                                  <span className="font-mono font-bold text-emerald-700">{p.sku}</span>
-                                  <span className="ml-2 font-semibold text-slate-800">{p.name}</span>
+                                  <span className="font-semibold text-emerald-700">{p.sku}</span>
+                                  <span className="ml-2 font-normal text-slate-800">{p.name}</span>
                                 </div>
                                 <div className="text-right">
-                                  <span className="font-bold text-slate-900">
+                                  <span className="font-semibold text-slate-900 tabular-nums">
                                     {formatCurrency(p.sale_price, settings.currency_symbol)}
                                   </span>
-                                  <span className="block text-[10px] text-emerald-600 font-semibold">
+                                  <span className="block text-[10px] text-emerald-600 font-normal">
                                     Stock: {p.stock_qty ?? 0} {p.unit || 'Pcs'}
                                   </span>
                                 </div>
@@ -989,18 +992,18 @@ export function PosSaleModal() {
                         )}
                       </td>
 
-                      {/* HS CODE */}
-                      <td className="border-r border-slate-200/80 px-1.5 py-0.5">
+                      {/* HS CODE (Regular font-normal) */}
+                      <td className="border-b border-r border-slate-200/80 px-1.5 py-0.5">
                         <input
                           type="text"
                           value={r.hsCode}
                           onChange={(e) => updateRow(r.id, { hsCode: e.target.value })}
-                          className="w-full rounded-md border border-slate-200 bg-white px-2 py-0.5 font-mono text-xs text-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          className="w-full rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-normal text-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                         />
                       </td>
 
-                      {/* DESCRIPTION */}
-                      <td className="border-r border-slate-200/80 px-1.5 py-0.5">
+                      {/* DESCRIPTION (Regular font-normal) */}
+                      <td className="border-b border-r border-slate-200/80 px-1.5 py-0.5">
                         <input
                           type="text"
                           value={r.description}
@@ -1011,12 +1014,12 @@ export function PosSaleModal() {
                             setActiveSearchRowId(r.id);
                           }}
                           placeholder=""
-                          className="w-full rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          className="w-full rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-normal text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                         />
                       </td>
 
-                      {/* PIECES */}
-                      <td className="border-r border-slate-200/80 px-1.5 py-0.5">
+                      {/* PIECES (Regular font-normal) */}
+                      <td className="border-b border-r border-slate-200/80 px-1.5 py-0.5">
                         <input
                           type="number"
                           min={0}
@@ -1025,12 +1028,12 @@ export function PosSaleModal() {
                           onChange={(e) =>
                             updateRow(r.id, { pieces: Math.max(0, Number(e.target.value) || 0) })
                           }
-                          className="w-full rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-right font-mono text-xs font-bold text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          className="w-full rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-right text-xs font-normal text-slate-700 tabular-nums focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400"
                         />
                       </td>
 
-                      {/* QTY */}
-                      <td className="border-r border-slate-200/80 px-1.5 py-0.5">
+                      {/* QTY (Regular font-normal) */}
+                      <td className="border-b border-r border-slate-200/80 px-1.5 py-0.5">
                         <input
                           type="number"
                           min={0}
@@ -1039,22 +1042,22 @@ export function PosSaleModal() {
                           onChange={(e) =>
                             updateRow(r.id, { qty: Math.max(0, Number(e.target.value) || 0) })
                           }
-                          className="w-full rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-right font-mono text-xs font-bold text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          className="w-full rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-right text-xs font-normal text-slate-700 tabular-nums focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400"
                         />
                       </td>
 
-                      {/* UNIT */}
-                      <td className="border-r border-slate-200/80 px-1.5 py-0.5 text-center">
+                      {/* UNIT (Regular font-normal) */}
+                      <td className="border-b border-r border-slate-200/80 px-1.5 py-0.5 text-center">
                         <input
                           type="text"
                           value={r.unit}
                           onChange={(e) => updateRow(r.id, { unit: e.target.value })}
-                          className="w-14 rounded-md border border-slate-200 bg-white py-0.5 text-center text-xs font-bold text-slate-600 focus:border-emerald-500 focus:outline-none"
+                          className="w-14 rounded-md border border-slate-200 bg-white py-0.5 text-center text-xs font-normal text-slate-600 focus:border-emerald-500 focus:outline-none"
                         />
                       </td>
 
-                      {/* RATE */}
-                      <td className="border-r border-slate-200/80 px-1.5 py-0.5">
+                      {/* RATE (Regular font-normal) */}
+                      <td className="border-b border-r border-slate-200/80 px-1.5 py-0.5">
                         <input
                           type="number"
                           min={0}
@@ -1063,32 +1066,32 @@ export function PosSaleModal() {
                           onChange={(e) =>
                             updateRow(r.id, { rate: Math.max(0, Number(e.target.value) || 0) })
                           }
-                          className="w-full rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-right font-mono text-xs font-bold text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          className="w-full rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-right text-xs font-normal text-slate-700 tabular-nums focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400"
                         />
                       </td>
 
-                      {/* VAL EXCL. TAX */}
-                      <td className="border-r border-slate-200/80 px-2 py-1 text-right font-mono text-xs font-bold text-slate-900">
+                      {/* VAL EXCL. TAX (BOLD as in Screenshot!) */}
+                      <td className="border-b border-r border-slate-200/80 px-2 py-1 text-right tabular-nums text-xs font-bold text-slate-900">
                         {r.valExclTax.toFixed(2)}
                       </td>
 
-                      {/* S.T % */}
-                      <td className="border-r border-slate-200/80 px-1.5 py-1 text-center font-mono text-xs font-bold text-slate-600">
+                      {/* S.T % (Regular font-normal) */}
+                      <td className="border-b border-r border-slate-200/80 px-1.5 py-1 text-center tabular-nums text-xs font-normal text-slate-600">
                         {r.taxRate.toFixed(2)}
                       </td>
 
-                      {/* S.T AMT */}
-                      <td className="border-r border-slate-200/80 px-2 py-1 text-right font-mono text-xs font-bold text-slate-900">
+                      {/* S.T AMT (Regular font-normal) */}
+                      <td className="border-b border-r border-slate-200/80 px-2 py-1 text-right tabular-nums text-xs font-normal text-slate-800">
                         {r.taxAmt.toFixed(2)}
                       </td>
 
-                      {/* VAL INCL. TAX */}
-                      <td className="border-r border-slate-200/80 px-2 py-1 text-right font-mono text-xs font-black text-slate-950">
+                      {/* VAL INCL. TAX (BOLD AMBER as in Screenshot!) */}
+                      <td className="border-b border-r border-slate-200/80 px-2 py-1 text-right tabular-nums text-xs font-bold text-amber-700">
                         {r.valInclTax.toFixed(2)}
                       </td>
 
                       {/* Action Delete */}
-                      <td className="px-1 py-1 text-center">
+                      <td className="border-b px-1 py-1 text-center border-slate-200/80">
                         <button
                           type="button"
                           onClick={() => removeRow(r.id)}
@@ -1103,78 +1106,80 @@ export function PosSaleModal() {
                 })}
               </tbody>
 
-              {/* Exactly Aligned Totals Footer */}
-              <tfoot>
-                <tr className="border-t-2 border-slate-300 bg-slate-100/90 font-extrabold text-slate-900 text-xs">
-                  <td colSpan={4} className="border-r border-slate-300 px-4 py-2 text-right uppercase tracking-wider text-slate-700">
+              {/* Sticky Table Totals Footer (BOLD TOTALS - PINNED AT BOTTOM OF TABLE) */}
+              <tfoot className="sticky bottom-0 z-20 shadow-xs">
+                <tr className="bg-slate-100/98 text-slate-900 text-xs">
+                  <td colSpan={4} className="border-t-2 border-r border-slate-300 px-4 py-2 text-right uppercase tracking-wider text-slate-800 font-bold bg-slate-100">
                     Totals:
                   </td>
-                  <td className="border-r border-slate-300 px-2 py-2 text-right font-mono text-xs font-black text-slate-900">
+                  <td className="border-t-2 border-r border-slate-300 px-2 py-2 text-right tabular-nums text-xs font-bold text-slate-900 bg-slate-100">
                     {totals.pieces === 0 ? '0' : totals.pieces.toFixed(2)}
                   </td>
-                  <td className="border-r border-slate-300 px-2 py-2 text-right font-mono text-xs font-black text-slate-900">
+                  <td className="border-t-2 border-r border-slate-300 px-2 py-2 text-right tabular-nums text-xs font-bold text-slate-900 bg-slate-100">
                     {totals.qty === 0 ? '0' : totals.qty.toFixed(2)}
                   </td>
-                  <td className="border-r border-slate-300 px-1 py-2 text-center text-xs text-slate-400">-</td>
-                  <td className="border-r border-slate-300 px-1 py-2 text-center text-xs text-slate-400">-</td>
-                  <td className="border-r border-slate-300 px-2.5 py-2 text-right font-mono text-xs font-black text-slate-950">
+                  <td className="border-t-2 border-r border-slate-300 px-1 py-2 text-center text-xs text-slate-400 font-normal bg-slate-100">-</td>
+                  <td className="border-t-2 border-r border-slate-300 px-1 py-2 text-center text-xs text-slate-400 font-normal bg-slate-100">-</td>
+                  <td className="border-t-2 border-r border-slate-300 px-2.5 py-2 text-right tabular-nums text-xs font-bold text-slate-950 bg-slate-100">
                     {totals.subtotal.toFixed(2)}
                   </td>
-                  <td className="border-r border-slate-300 px-1 py-2 text-center text-xs text-slate-400">-</td>
-                  <td className="border-r border-slate-300 px-2.5 py-2 text-right font-mono text-xs font-black text-amber-700">
+                  <td className="border-t-2 border-r border-slate-300 px-1 py-2 text-center text-xs text-slate-400 font-normal bg-slate-100">-</td>
+                  <td className="border-t-2 border-r border-slate-300 px-2.5 py-2 text-right tabular-nums text-xs font-bold text-amber-700 bg-slate-100">
                     {totals.taxTotal.toFixed(2)}
                   </td>
-                  <td className="border-r border-slate-300 px-2.5 py-2 text-right font-mono text-xs font-black text-emerald-800">
+                  <td className="border-t-2 border-r border-slate-300 px-2.5 py-2 text-right tabular-nums text-xs font-bold text-amber-700 bg-slate-100">
                     {totals.grandTotal.toFixed(2)}
                   </td>
-                  <td className="px-1 py-2" />
+                  <td className="border-t-2 border-slate-300 px-1 py-2 bg-slate-100" />
                 </tr>
               </tfoot>
             </table>
           </div>
+        </div>
 
-          {/* 5. BOTTOM SECTION: CASHIER ACTIONS (LEFT) VS FINANCIAL TOTALS (RIGHT) */}
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
+        {/* 4. FIXED BOTTOM SECTION: CASHIER ACTIONS & FINANCIAL TOTALS (NEVER SCROLLS) */}
+        <div className="shrink-0 px-2.5 sm:px-3 pt-1.5 pb-2.5 sm:pb-3 bg-[#F8FAFC]">
+          <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-12">
             {/* Left: Cashier Actions Box (8 Cols) */}
-            <div className="flex flex-col justify-between rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-xs lg:col-span-8">
+            <div className="flex flex-col justify-between rounded-xl border border-slate-200/90 bg-white p-3 shadow-xs lg:col-span-8">
               <div>
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                  <span className="flex items-center gap-1.5 text-xs font-black tracking-wider text-[#091529] uppercase">
-                    <Zap className="h-4 w-4 text-amber-500" />
+                <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                  <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-[#091529] uppercase">
+                    <Zap className="h-3.5 w-3.5 text-amber-500" />
                     <span>Cashier Actions</span>
                   </span>
-                  <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
                     <span className="h-2 w-2 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20" />
-                    <span className="text-emerald-700">Ready for Sale</span>
+                    <span className="text-emerald-700 font-semibold">Ready for Sale</span>
                   </span>
                 </div>
 
-                {/* 4 Big Action Cards (Executive Seastone Palette) */}
-                <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                {/* 4 Big Action Cards (Title Bold, Subtitle Regular) */}
+                <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {/* 1: Hold Sale (F6) */}
                   <button
                     type="button"
                     onClick={() => void handleHoldSale()}
-                    className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-center shadow-xs transition hover:-translate-y-0.5 hover:bg-amber-100 hover:shadow-sm active:scale-95"
+                    className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-amber-200 bg-amber-50/70 p-2.5 text-center shadow-xs transition hover:-translate-y-0.5 hover:bg-amber-100 hover:shadow-sm active:scale-95"
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-500 text-white shadow-xs">
-                      <PauseCircle className="h-5 w-5" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 text-white shadow-xs">
+                      <PauseCircle className="h-4.5 w-4.5" />
                     </div>
-                    <span className="mt-2 text-xs font-extrabold text-amber-950">Hold Sale</span>
-                    <span className="text-[10px] font-bold text-amber-700">F6</span>
+                    <span className="mt-1.5 text-xs font-bold text-amber-950">Hold Sale</span>
+                    <span className="text-[10px] font-normal text-amber-700">F6</span>
                   </button>
 
                   {/* 2: Recall Sale (F7) */}
                   <button
                     type="button"
                     onClick={() => void openRecallModal()}
-                    className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50/70 p-3 text-center shadow-xs transition hover:-translate-y-0.5 hover:bg-indigo-100 hover:shadow-sm active:scale-95"
+                    className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50/70 p-2.5 text-center shadow-xs transition hover:-translate-y-0.5 hover:bg-indigo-100 hover:shadow-sm active:scale-95"
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 text-white shadow-xs">
-                      <RotateCcw className="h-5 w-5" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-white shadow-xs">
+                      <RotateCcw className="h-4.5 w-4.5" />
                     </div>
-                    <span className="mt-2 text-xs font-extrabold text-indigo-950">Recall Sale</span>
-                    <span className="text-[10px] font-bold text-indigo-700">F7</span>
+                    <span className="mt-1.5 text-xs font-bold text-indigo-950">Recall Sale</span>
+                    <span className="text-[10px] font-normal text-indigo-700">F7</span>
                   </button>
 
                   {/* 3: Post to FBR (Executive Midnight Navy) */}
@@ -1182,90 +1187,90 @@ export function PosSaleModal() {
                     type="button"
                     disabled={submitting}
                     onClick={() => setShowPaymentModal(true)}
-                    className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-slate-900 bg-gradient-to-br from-[#091529] via-[#0e1f3d] to-[#132952] p-3 text-center text-white shadow-xs transition hover:-translate-y-0.5 hover:brightness-110 hover:shadow-sm active:scale-95"
+                    className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-slate-900 bg-gradient-to-br from-[#091529] via-[#0e1f3d] to-[#132952] p-2.5 text-center text-white shadow-xs transition hover:-translate-y-0.5 hover:brightness-110 hover:shadow-sm active:scale-95"
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-slate-950 shadow-xs">
-                      <CloudUpload className="h-5 w-5" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-slate-950 shadow-xs">
+                      <CloudUpload className="h-4.5 w-4.5" />
                     </div>
-                    <span className="mt-2 text-xs font-extrabold text-white">Post to FBR</span>
-                    <span className="text-[10px] font-bold text-emerald-300">FBR Submit</span>
+                    <span className="mt-1.5 text-xs font-bold text-white">Post to FBR</span>
+                    <span className="text-[10px] font-normal text-emerald-300">FBR Submit</span>
                   </button>
 
                   {/* 4: Clear Sale (Esc) */}
                   <button
                     type="button"
                     onClick={clearAllRows}
-                    className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50/70 p-3 text-center shadow-xs transition hover:-translate-y-0.5 hover:bg-rose-100 hover:shadow-sm active:scale-95"
+                    className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50/70 p-2.5 text-center shadow-xs transition hover:-translate-y-0.5 hover:bg-rose-100 hover:shadow-sm active:scale-95"
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-600 text-white shadow-xs">
-                      <Trash2 className="h-5 w-5" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-600 text-white shadow-xs">
+                      <Trash2 className="h-4.5 w-4.5" />
                     </div>
-                    <span className="mt-2 text-xs font-extrabold text-rose-950">Clear Sale</span>
-                    <span className="text-[10px] font-bold text-rose-700">Esc</span>
+                    <span className="mt-1.5 text-xs font-bold text-rose-950">Clear Sale</span>
+                    <span className="text-[10px] font-normal text-rose-700">Esc</span>
                   </button>
                 </div>
               </div>
 
-              {/* Footer FBR Disclaimer */}
-              <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-2 text-[11px] text-slate-500">
+              {/* Footer FBR Disclaimer (Regular font-normal) */}
+              <div className="mt-2 flex items-center gap-2 border-t border-slate-100 pt-1.5 text-[11px] text-slate-500 font-normal">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20" />
                 <span>
-                  Saved sales are stored locally in ERP database and can be edited or deleted until submitted to <strong>FBR</strong>.
+                  Saved sales are stored locally in ERP database and can be edited or deleted until submitted to <strong className="font-semibold text-slate-700">FBR</strong>.
                 </span>
               </div>
             </div>
 
-            {/* Right: Financial Totals Box (4 Cols) */}
-            <div className="flex flex-col justify-between rounded-xl border border-slate-200/90 bg-white p-4 shadow-xs lg:col-span-4">
-              <div className="space-y-2.5 text-xs">
+            {/* Right: Financial Totals Box (4 Cols - Labels Regular, Outputs Medium/Bold) */}
+            <div className="flex flex-col justify-between rounded-xl border border-slate-200/90 bg-white p-3 shadow-xs lg:col-span-4">
+              <div className="space-y-1.5 text-xs">
                 <div className="flex items-center justify-between text-slate-600">
-                  <span className="font-bold">Gross Amount</span>
-                  <span className="font-mono text-sm font-extrabold text-slate-900">
+                  <span className="font-normal text-slate-600">Gross Amount</span>
+                  <span className="tabular-nums font-semibold text-slate-900">
                     {totals.subtotal.toFixed(2)}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between text-slate-600">
-                  <span className="font-bold">Discount Amount</span>
+                  <span className="font-normal text-slate-600">Discount Amount</span>
                   <input
                     type="number"
                     min={0}
                     value={invoiceDiscount === 0 ? '' : invoiceDiscount}
                     placeholder="0.00"
                     onChange={(e) => setInvoiceDiscount(Math.max(0, Number(e.target.value) || 0))}
-                    className="w-28 rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-right font-mono text-xs font-extrabold text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-28 rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-right tabular-nums text-xs font-normal text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400"
                   />
                 </div>
 
                 <div className="flex items-center justify-between text-slate-600">
-                  <span className="font-bold">Total After Discount</span>
-                  <span className="font-mono text-sm font-extrabold text-slate-900">
+                  <span className="font-normal text-slate-600">Total After Discount</span>
+                  <span className="tabular-nums font-semibold text-slate-900">
                     {totals.totalAfterDiscount.toFixed(2)}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between text-slate-600">
-                  <span className="font-bold">Sales Tax Amount</span>
-                  <span className="font-mono text-sm font-black text-amber-600">
+                  <span className="font-normal text-slate-600">Sales Tax Amount</span>
+                  <span className="tabular-nums font-semibold text-amber-600">
                     {totals.taxTotal.toFixed(2)}
                   </span>
                 </div>
 
-                <div className="border-t-2 border-slate-200 pt-2">
+                <div className="border-t-2 border-slate-200 pt-1.5">
                   <div className="flex items-baseline justify-between">
-                    <span className="text-sm font-black text-slate-900 uppercase">Net Total</span>
-                    <span className="font-mono text-2xl font-black text-emerald-700">
+                    <span className="text-sm font-bold text-slate-900 uppercase tracking-wide">Net Total</span>
+                    <span className="tabular-nums text-2xl font-bold text-emerald-700">
                       {formatCurrency(totals.grandTotal, settings.currency_symbol)}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Complete & Pay Button (Executive Emerald Gradient) */}
+              {/* Complete & Pay Button (Bold) */}
               <button
                 type="button"
                 onClick={() => setShowPaymentModal(true)}
-                className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 py-3 text-center text-xs font-black tracking-wide text-white shadow-md transition hover:from-emerald-500 hover:to-teal-500 active:scale-98 uppercase"
+                className="mt-2.5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 py-2.5 text-center text-xs font-bold tracking-wide text-white shadow-md transition hover:from-emerald-500 hover:to-teal-500 active:scale-98 uppercase"
               >
                 <CheckCircle2 className="h-4 w-4" />
                 <span>Checkout &amp; Print Bill (Ctrl+S / F12)</span>
@@ -1274,14 +1279,14 @@ export function PosSaleModal() {
           </div>
         </div>
 
-        {/* 6. PAYMENT CHECKOUT MODAL */}
+        {/* 5. PAYMENT CHECKOUT MODAL */}
         {showPaymentModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs font-sans">
             <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
-                  <h3 className="text-base font-black text-slate-900">Complete POS Payment</h3>
-                  <p className="text-xs text-slate-500">Bill No: {generatedInvoiceNo}</p>
+                  <h3 className="text-base font-bold text-slate-900">Complete POS Payment</h3>
+                  <p className="text-xs text-slate-500 font-normal">Bill No: {generatedInvoiceNo}</p>
                 </div>
                 <button
                   type="button"
@@ -1294,15 +1299,15 @@ export function PosSaleModal() {
 
               <div className="mt-4 space-y-4">
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3.5 text-center">
-                  <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Payable Net Total</span>
-                  <div className="font-mono text-3xl font-black text-emerald-950">
+                  <span className="text-xs font-medium text-emerald-800 uppercase tracking-wider">Payable Net Total</span>
+                  <div className="tabular-nums text-3xl font-bold text-emerald-950">
                     {formatCurrency(totals.grandTotal, settings.currency_symbol)}
                   </div>
                 </div>
 
                 {/* Payment Mode */}
                 <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700">Payment Mode</label>
+                  <label className="mb-1 block text-xs font-medium text-slate-700">Payment Mode</label>
                   <div className="grid grid-cols-4 gap-1.5">
                     {(
                       [
@@ -1316,7 +1321,7 @@ export function PosSaleModal() {
                         key={mode}
                         type="button"
                         onClick={() => setPaymentMode(mode)}
-                        className={`inline-flex cursor-pointer items-center justify-center gap-1 rounded-lg border py-2 text-xs font-bold transition ${
+                        className={`inline-flex cursor-pointer items-center justify-center gap-1 rounded-lg border py-2 text-xs font-semibold transition ${
                           paymentMode === mode
                             ? 'border-emerald-600 bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xs'
                             : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
@@ -1333,19 +1338,19 @@ export function PosSaleModal() {
                   <div className="space-y-2 text-xs">
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="mb-1 block font-bold text-slate-600">Cash Received</label>
+                        <label className="mb-1 block font-medium text-slate-600">Cash Received</label>
                         <input
                           type="number"
                           min={0}
                           placeholder={String(totals.grandTotal)}
                           value={tenderedAmount}
                           onChange={(e) => setTenderedAmount(e.target.value)}
-                          className="w-full rounded-lg border border-slate-300 px-3 py-1.5 font-mono text-sm font-bold focus:border-emerald-500 focus:outline-none"
+                          className="w-full rounded-lg border border-slate-300 px-3 py-1.5 tabular-nums text-sm font-normal focus:border-emerald-500 focus:outline-none"
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block font-bold text-slate-600">Change Due</label>
-                        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 font-mono text-sm font-black text-emerald-800">
+                        <label className="mb-1 block font-medium text-slate-600">Change Due</label>
+                        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 tabular-nums text-sm font-bold text-emerald-800">
                           {formatCurrency(changeDue, settings.currency_symbol)}
                         </div>
                       </div>
@@ -1358,7 +1363,7 @@ export function PosSaleModal() {
                           key={idx}
                           type="button"
                           onClick={() => setTenderedAmount(String(amt))}
-                          className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 font-mono text-[11px] font-bold text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300 transition"
+                          className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 tabular-nums text-[11px] font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300 transition"
                         >
                           {idx === 0 ? 'Exact' : `Rs. ${amt}`}
                         </button>
@@ -1370,33 +1375,33 @@ export function PosSaleModal() {
                 {paymentMode === 'SPLIT' && (
                   <div className="grid grid-cols-3 gap-1.5 text-xs">
                     <div>
-                      <label className="mb-1 block font-bold text-slate-600">Cash</label>
+                      <label className="mb-1 block font-medium text-slate-600">Cash</label>
                       <input
                         type="number"
                         min={0}
                         value={splitCash}
                         onChange={(e) => setSplitCash(e.target.value)}
-                        className="w-full rounded-lg border border-slate-300 px-2 py-1 text-xs font-bold focus:border-emerald-500"
+                        className="w-full rounded-lg border border-slate-300 px-2 py-1 text-xs font-normal focus:border-emerald-500"
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block font-bold text-slate-600">Card</label>
+                      <label className="mb-1 block font-medium text-slate-600">Card</label>
                       <input
                         type="number"
                         min={0}
                         value={splitCard}
                         onChange={(e) => setSplitCard(e.target.value)}
-                        className="w-full rounded-lg border border-slate-300 px-2 py-1 text-xs font-bold focus:border-emerald-500"
+                        className="w-full rounded-lg border border-slate-300 px-2 py-1 text-xs font-normal focus:border-emerald-500"
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block font-bold text-slate-600">Bank</label>
+                      <label className="mb-1 block font-medium text-slate-600">Bank</label>
                       <input
                         type="number"
                         min={0}
                         value={splitBank}
                         onChange={(e) => setSplitBank(e.target.value)}
-                        className="w-full rounded-lg border border-slate-300 px-2 py-1 text-xs font-bold focus:border-emerald-500"
+                        className="w-full rounded-lg border border-slate-300 px-2 py-1 text-xs font-normal focus:border-emerald-500"
                       />
                     </div>
                   </div>
@@ -1407,14 +1412,14 @@ export function PosSaleModal() {
                   placeholder="Optional invoice notes / remark..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-normal focus:border-emerald-500 focus:outline-none"
                 />
 
                 <div className="flex gap-2 pt-2">
                   <button
                     type="button"
                     onClick={() => setShowPaymentModal(false)}
-                    className="flex-1 cursor-pointer rounded-xl border border-slate-200 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                    className="flex-1 cursor-pointer rounded-xl border border-slate-200 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                   >
                     Cancel
                   </button>
@@ -1422,7 +1427,7 @@ export function PosSaleModal() {
                     type="button"
                     disabled={submitting}
                     onClick={() => void handleSaveAndSubmitSale()}
-                    className="flex-1 cursor-pointer rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2.5 text-xs font-black text-white shadow-md hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50"
+                    className="flex-1 cursor-pointer rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2.5 text-xs font-bold text-white shadow-md hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50"
                   >
                     {submitting ? 'Submitting...' : 'Confirm & Print Invoice'}
                   </button>
@@ -1432,14 +1437,14 @@ export function PosSaleModal() {
           </div>
         )}
 
-        {/* 7. RECALL SALE (F7) MODAL */}
+        {/* 6. RECALL SALE (F7) MODAL */}
         {showRecallModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs font-sans">
             <div className="w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
                   <RotateCcw className="h-5 w-5 text-indigo-600" />
-                  <h3 className="text-base font-black text-slate-900">Recall Parked Bills (F7)</h3>
+                  <h3 className="text-base font-bold text-slate-900">Recall Parked Bills (F7)</h3>
                 </div>
                 <button
                   type="button"
@@ -1452,9 +1457,9 @@ export function PosSaleModal() {
 
               <div className="mt-3 max-h-80 overflow-y-auto">
                 {loadingHeld ? (
-                  <p className="py-8 text-center text-xs text-slate-500">Loading parked bills...</p>
+                  <p className="py-8 text-center text-xs text-slate-500 font-normal">Loading parked bills...</p>
                 ) : heldCartsList.length === 0 ? (
-                  <p className="py-8 text-center text-xs font-semibold text-slate-400">
+                  <p className="py-8 text-center text-xs font-normal text-slate-400">
                     No parked bills found in hold queue.
                   </p>
                 ) : (
@@ -1466,18 +1471,18 @@ export function PosSaleModal() {
                       >
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs font-black text-indigo-700">
+                            <span className="text-xs font-bold text-indigo-700">
                               Parked #{c.id}
                             </span>
-                            <span className="text-xs font-bold text-slate-800">{c.customer_name}</span>
+                            <span className="text-xs font-medium text-slate-800">{c.customer_name}</span>
                           </div>
-                          <p className="text-[11px] text-slate-500">
+                          <p className="text-[11px] text-slate-500 font-normal">
                             {c.item_count} items • {c.created_at}
                           </p>
                         </div>
 
                         <div className="flex items-center gap-3">
-                          <span className="font-mono text-sm font-black text-slate-900">
+                          <span className="tabular-nums text-sm font-bold text-slate-900">
                             {formatCurrency(c.total_amount, settings.currency_symbol)}
                           </span>
                           <button
@@ -1497,15 +1502,15 @@ export function PosSaleModal() {
           </div>
         )}
 
-        {/* 8. QUICK ADD CUSTOMER MODAL */}
+        {/* 7. QUICK ADD CUSTOMER MODAL */}
         {showNewCustomer && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs font-sans">
             <form
               onSubmit={handleCreateCustomer}
               className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl"
             >
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="text-base font-black text-slate-900">Add New Customer</h3>
+                <h3 className="text-base font-bold text-slate-900">Add New Customer</h3>
                 <button
                   type="button"
                   onClick={() => setShowNewCustomer(false)}
@@ -1517,35 +1522,35 @@ export function PosSaleModal() {
 
               <div className="mt-4 space-y-3 text-xs">
                 <div>
-                  <label className="mb-1 block font-bold text-slate-700">Customer Name *</label>
+                  <label className="mb-1 block font-medium text-slate-700">Customer Name *</label>
                   <input
                     type="text"
                     required
                     value={newCustName}
                     onChange={(e) => setNewCustName(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-1.5 font-semibold focus:border-emerald-500"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-1.5 font-normal focus:border-emerald-500"
                     placeholder="e.g. Walk-in Customer / Business Name"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block font-bold text-slate-700">Phone</label>
+                  <label className="mb-1 block font-medium text-slate-700">Phone</label>
                   <input
                     type="text"
                     value={newCustPhone}
                     onChange={(e) => setNewCustPhone(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-1.5 font-semibold focus:border-emerald-500"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-1.5 font-normal focus:border-emerald-500"
                     placeholder="0300-1234567"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block font-bold text-slate-700">CNIC / NTN</label>
+                  <label className="mb-1 block font-medium text-slate-700">CNIC / NTN</label>
                   <input
                     type="text"
                     value={newCustCnic}
                     onChange={(e) => setNewCustCnic(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-1.5 font-semibold focus:border-emerald-500"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-1.5 font-normal focus:border-emerald-500"
                     placeholder="15302-..."
                   />
                 </div>
@@ -1554,13 +1559,13 @@ export function PosSaleModal() {
                   <button
                     type="button"
                     onClick={() => setShowNewCustomer(false)}
-                    className="flex-1 cursor-pointer rounded-xl border border-slate-200 py-2 text-xs font-bold text-slate-600"
+                    className="flex-1 cursor-pointer rounded-xl border border-slate-200 py-2 text-xs font-semibold text-slate-600"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 cursor-pointer rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2 text-xs font-black text-white hover:from-emerald-500 hover:to-teal-500"
+                    className="flex-1 cursor-pointer rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2 text-xs font-bold text-white hover:from-emerald-500 hover:to-teal-500"
                   >
                     Save &amp; Select
                   </button>
@@ -1570,7 +1575,7 @@ export function PosSaleModal() {
           </div>
         )}
 
-        {/* 9. INVOICE PRINT MODAL */}
+        {/* 8. INVOICE PRINT MODAL */}
         <InvoiceModal
           invoiceId={completedInvoiceId}
           onClose={() => setCompletedInvoiceId(null)}
@@ -1580,4 +1585,3 @@ export function PosSaleModal() {
     </div>
   );
 }
-
