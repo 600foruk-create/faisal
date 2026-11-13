@@ -161,7 +161,7 @@ export default function PosSalePage() {
         const walkIn = cData.customers?.find((c) => c.is_walk_in === 1) || cData.customers?.[0];
         if (walkIn && !selectedCustomerId) {
           setSelectedCustomerId(walkIn.id);
-          setCustomerAddress(walkIn.address || walkIn.name || '');
+          setCustomerAddress(walkIn.phone || walkIn.name || '');
         }
       }
     } catch {
@@ -178,7 +178,7 @@ export default function PosSalePage() {
     if (selectedCustomerId) {
       const c = customers.find((cust) => cust.id === selectedCustomerId);
       if (c) {
-        setCustomerAddress(c.address || c.name);
+        setCustomerAddress(c.phone || c.name);
       }
     }
   }, [selectedCustomerId, customers]);
