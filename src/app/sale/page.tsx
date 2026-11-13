@@ -48,6 +48,7 @@ interface HeldCartSummary {
   branch_id: number;
   customer_name: string;
   total_amount: number;
+  discount_total?: number;
   item_count: number;
   created_at: string;
   notes?: string;
