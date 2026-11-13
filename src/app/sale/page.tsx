@@ -331,7 +331,7 @@ export default function PosSalePage() {
         const data = (await res.json()) as { customer: Customer };
         setCustomers((prev) => [...prev, data.customer]);
         setSelectedCustomerId(data.customer.id);
-        setCustomerAddress(data.customer.address || data.customer.name);
+        setCustomerAddress(data.customer.phone || data.customer.name);
         setNewCustName('');
         setNewCustPhone('');
         setNewCustCnic('');
