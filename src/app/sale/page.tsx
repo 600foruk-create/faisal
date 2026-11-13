@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   Banknote,
   CheckCircle2,
+  Clock,
   CloudUpload,
   CreditCard,
   Keyboard,
@@ -20,9 +21,12 @@ import {
   Save,
   Search,
   ShoppingCart,
+  Store,
   Trash2,
+  User,
   UserPlus,
   X,
+  Zap,
 } from 'lucide-react';
 import { InvoiceModal } from '@/components/InvoiceModal';
 import { usePosContext } from '@/components/PosContext';
@@ -102,7 +106,7 @@ export default function PosSalePage() {
   const [isMaximized, setIsMaximized] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
 
-  // Exact 10 initial rows matching Softifyx ERP Screenshot
+  // Exact 10 initial rows
   const [rows, setRows] = useState<RowItem[]>(() =>
     Array.from({ length: DEFAULT_ROW_COUNT }, () => createEmptyRow())
   );
@@ -137,7 +141,7 @@ export default function PosSalePage() {
   const [rowSearchQuery, setRowSearchQuery] = useState<string>('');
   const searchDropdownRef = useRef<HTMLDivElement | null>(null);
 
-  // Active branch sync
+  // Sync Branch
   useEffect(() => {
     if (activeBranchId) {
       setBranchId(activeBranchId);
@@ -146,7 +150,7 @@ export default function PosSalePage() {
     }
   }, [activeBranchId, branches, branchId]);
 
-  // Load Catalog (Products & Customers)
+  // Load Catalog
   const loadCatalog = useCallback(async () => {
     if (!branchId) return;
     try {
@@ -195,7 +199,7 @@ export default function PosSalePage() {
     return `${prefix}-POS-${seq}`;
   }, [activeTerminal, activeBranch]);
 
-  // Live row calculations
+  // Calculations
   const calculatedRows = useMemo(() => {
     return rows.map((r, idx) => {
       const isFilled = (r.productId !== null || r.itemCode.trim().length > 0) && r.qty > 0;
@@ -288,7 +292,7 @@ export default function PosSalePage() {
     setRowSearchQuery('');
   };
 
-  // Filtered autocomplete
+  // Autocomplete Products
   const autocompleteProducts = useMemo(() => {
     if (!rowSearchQuery.trim()) return products.slice(0, 12);
     const q = rowSearchQuery.trim().toLowerCase();
@@ -302,7 +306,7 @@ export default function PosSalePage() {
       .slice(0, 15);
   }, [products, rowSearchQuery]);
 
-  // Click outside listener for dropdown
+  // Click outside listener
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (searchDropdownRef.current && !searchDropdownRef.current.contains(e.target as Node)) {
@@ -474,7 +478,7 @@ export default function PosSalePage() {
     }
   };
 
-  // Submit & Save Sale
+  // Submit Sale
   const handleSaveAndSubmitSale = async () => {
     const filled = calculatedRows.filter((r) => r.isFilled);
     if (filled.length === 0) {
@@ -536,7 +540,7 @@ export default function PosSalePage() {
     }
   };
 
-  // Keyboard Shortcuts (F6: Hold, F7: Recall, Ctrl+S: Checkout, Esc: Close modals)
+  // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
@@ -567,27 +571,18 @@ export default function PosSalePage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showPaymentModal, showRecallModal, showNewCustomer, calculatedRows]);
 
-  // Window close handler (close tab if popup/tab, or fallback to router.push('/'))
-  const handleCloseWindow = () => {
-    if (typeof window !== 'undefined' && window.opener) {
-      window.close();
-    } else {
-      router.push('/');
-    }
-  };
-
-  // Minimized state dock tab
+  // Minimized dock tab
   if (isMinimized) {
     return (
       <div className="fixed bottom-4 right-4 z-50">
         <button
           type="button"
           onClick={() => setIsMinimized(false)}
-          className="flex cursor-pointer items-center gap-2 rounded-xl border border-amber-500 bg-[#4A1E05] px-4 py-2.5 text-xs font-black text-white shadow-2xl transition hover:bg-[#361304]"
+          className="flex cursor-pointer items-center gap-2 rounded-xl border border-emerald-500 bg-gradient-to-r from-[#091529] to-[#0e1f3d] px-4 py-2.5 text-xs font-black text-white shadow-2xl transition hover:brightness-110"
         >
-          <Keyboard className="h-4 w-4 text-amber-300" />
+          <span className="h-2 w-2 rounded-full bg-emerald-400 ring-4 ring-emerald-400/20" />
           <span>POS Sale: {generatedInvoiceNo}</span>
-          <Maximize2 className="ml-2 h-3.5 w-3.5 text-amber-300" />
+          <Maximize2 className="ml-2 h-3.5 w-3.5 text-emerald-400" />
         </button>
       </div>
     );
@@ -595,116 +590,119 @@ export default function PosSalePage() {
 
   return (
     <div
-      className={`mx-auto w-full transition-all duration-200 ${isMaximized
-          ? 'fixed inset-2 z-50 flex max-h-[98vh] flex-col overflow-hidden rounded-xl bg-white shadow-2xl ring-2 ring-amber-950/50'
-          : 'relative my-0.5 rounded-xl border-2 border-[#4A1E05] bg-white shadow-2xl overflow-hidden'
-        }`}
+      className={`mx-auto w-full transition-all duration-200 ${
+        isMaximized
+          ? 'fixed inset-2 z-50 flex max-h-[98vh] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-2 ring-emerald-600/40'
+          : 'relative my-0.5 rounded-2xl border border-slate-200/90 bg-white shadow-xl overflow-hidden'
+      }`}
     >
-      {/* 1. SOFTIFYX WINDOW TITLE BAR (Matching Screenshot 4 Desktop ERP Header) */}
-      <div className="flex select-none items-center justify-between border-b border-amber-950/80 bg-gradient-to-r from-[#4A1E05] via-[#542107] to-[#4A1E05] px-3.5 py-1.5 text-white shadow-sm">
-        {/* Left: Window Icon + Title */}
-        <div className="flex items-center gap-2">
-          <Keyboard className="h-4 w-4 text-amber-300" />
-          <span className="text-xs font-black tracking-wider uppercase text-amber-100">
-            POS Sale
-          </span>
-          <span className="rounded bg-black/30 px-2 py-0.5 text-[10px] font-bold text-amber-300">
-            {activeBranch?.name || 'Retail Outlet'}
+      {/* 1. SEASTONE EXECUTIVE TITLE BAR (Midnight Navy & Emerald Accent) */}
+      <div className="flex select-none items-center justify-between border-b-2 border-emerald-500/80 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] px-4 py-2 text-white shadow-sm">
+        {/* Left: Window Icon + Title + Live Store Badge */}
+        <div className="flex items-center gap-2.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 ring-4 ring-emerald-400/20" />
+          <ShoppingCart className="h-4 w-4 text-emerald-400" />
+          <h1 className="text-xs font-black tracking-wider uppercase text-white sm:text-sm">
+            POS Sale (New Bill)
+          </h1>
+          <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300 ring-1 ring-white/15">
+            {activeBranch?.code} • {activeBranch?.name}
           </span>
         </div>
 
-        {/* Right: Window Controls (Minimize, Maximize/Restore, Close) */}
-        <div className="flex items-center gap-1.5 text-amber-100">
-          {/* Minimize Button */}
+        {/* Right: Window Control Icons (Minimize, Maximize/Restore, Close back to Dashboard) */}
+        <div className="flex items-center gap-1.5 text-slate-300">
+          {/* Minimize */}
           <button
             type="button"
             onClick={() => setIsMinimized(true)}
             title="Minimize"
-            className="flex h-5 w-6 cursor-pointer items-center justify-center rounded hover:bg-white/20 hover:text-white transition"
+            className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-lg hover:bg-white/15 hover:text-white transition"
           >
             <Minus className="h-3.5 w-3.5" />
           </button>
 
-          {/* Maximize / Restore Button */}
+          {/* Maximize / Restore */}
           <button
             type="button"
             onClick={() => setIsMaximized((m) => !m)}
-            title={isMaximized ? 'Restore' : 'Maximize'}
-            className="flex h-5 w-6 cursor-pointer items-center justify-center rounded hover:bg-white/20 hover:text-white transition"
+            title={isMaximized ? 'Restore View' : 'Maximize View'}
+            className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-lg hover:bg-white/15 hover:text-white transition"
           >
             {isMaximized ? (
-              <Minimize2 className="h-3 w-3" />
+              <Minimize2 className="h-3.5 w-3.5 text-emerald-300" />
             ) : (
-              <Maximize2 className="h-3 w-3" />
+              <Maximize2 className="h-3.5 w-3.5" />
             )}
           </button>
 
-          {/* Close Button */}
+          {/* Close -> returns to Dashboard */}
           <button
             type="button"
-            onClick={handleCloseWindow}
-            title="Close Window (Return to Dashboard)"
-            className="flex h-5 w-6 cursor-pointer items-center justify-center rounded hover:bg-rose-600 hover:text-white transition"
+            onClick={() => router.push('/')}
+            title="Close Form (Return to Dashboard)"
+            className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-lg hover:bg-rose-600 hover:text-white transition"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
       </div>
 
       {/* 2. WINDOW BODY */}
-      <div className="flex-1 space-y-2.5 overflow-y-auto bg-[#FAF8F5] p-2.5 sm:p-3">
-        {/* Inner Top Bar: Title & 7 Fast Action Buttons (Exact Screenshot 4 colors) */}
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white p-2 shadow-2xs">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
-              <Keyboard className="h-4 w-4" />
-            </div>
-            <h2 className="text-sm font-black text-slate-900 tracking-tight">POS Sale</h2>
+      <div className="flex-1 space-y-2.5 overflow-y-auto bg-[#F8FAFC] p-3 sm:p-3.5">
+        {/* Fast Action Buttons Toolbar */}
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200/90 bg-white p-2.5 shadow-xs">
+          {/* Hotkey Helper Pill */}
+          <div className="hidden items-center gap-2 font-mono text-[11px] text-slate-500 sm:flex">
+            <span className="rounded bg-slate-100 px-1.5 py-0.5 font-bold text-slate-700">Ctrl+S</span> Pay
+            <span className="rounded bg-slate-100 px-1.5 py-0.5 font-bold text-slate-700">F6</span> Hold
+            <span className="rounded bg-slate-100 px-1.5 py-0.5 font-bold text-slate-700">F7</span> Recall
+            <span className="rounded bg-slate-100 px-1.5 py-0.5 font-bold text-slate-700">Esc</span> Clear
           </div>
 
-          {/* 7 Fast Action Buttons Row */}
+          {/* 7 Fast Action Buttons Row (Executive Styled) */}
           <div className="flex flex-wrap items-center gap-1.5">
-            {/* 1. Add Row (Navy Blue) */}
+            {/* 1. Add Row */}
             <button
               type="button"
               onClick={addEmptyRow}
-              className="inline-flex cursor-pointer items-center gap-1 rounded bg-[#1E3A8A] px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition hover:bg-blue-900 active:scale-95"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:from-blue-500 hover:to-indigo-500 active:scale-95"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>+ Add Row</span>
             </button>
 
-            {/* 2. Recall (Purple) */}
+            {/* 2. Recall (F7) */}
             <button
               type="button"
               onClick={() => void openRecallModal()}
-              className="inline-flex cursor-pointer items-center gap-1 rounded bg-[#4338CA] px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition hover:bg-indigo-800 active:scale-95"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:from-indigo-500 hover:to-purple-500 active:scale-95"
             >
               <RotateCcw className="h-3.5 w-3.5" />
               <span>Recall (F7)</span>
             </button>
 
-            {/* 3. Hold Sale (Gold/Amber) */}
+            {/* 3. Hold Sale (F6) */}
             <button
               type="button"
               onClick={() => void handleHoldSale()}
-              className="inline-flex cursor-pointer items-center gap-1 rounded bg-[#D97706] px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition hover:bg-amber-700 active:scale-95"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:from-amber-400 hover:to-orange-400 active:scale-95"
             >
               <PauseCircle className="h-3.5 w-3.5" />
               <span>Hold Sale (F6)</span>
             </button>
 
-            {/* 4. Save (Mahogany Brown) */}
+            {/* 4. Save & Checkout (Ctrl+S) - Executive Emerald */}
             <button
               type="button"
               onClick={() => setShowPaymentModal(true)}
-              className="inline-flex cursor-pointer items-center gap-1 rounded bg-[#4A1E05] px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition hover:bg-[#361304] active:scale-95"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-3.5 py-1.5 text-xs font-black text-white shadow-xs transition hover:from-emerald-500 hover:to-teal-500 active:scale-95"
             >
-              <Save className="h-3.5 w-3.5 text-amber-300" />
+              <Save className="h-3.5 w-3.5 text-emerald-200" />
               <span>Save (Ctrl+S)</span>
             </button>
 
-            {/* 5. Delete Row (Red) */}
+            {/* 5. Delete Row */}
             <button
               type="button"
               onClick={() => {
@@ -715,28 +713,28 @@ export default function PosSalePage() {
                   removeRow(rows[rows.length - 1].id);
                 }
               }}
-              className="inline-flex cursor-pointer items-center gap-1 rounded bg-[#DC2626] px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition hover:bg-red-700 active:scale-95"
-              title="Delete row"
+              className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 active:scale-95"
+              title="Delete last row"
             >
               <Trash2 className="h-3.5 w-3.5" />
               <span>Delete</span>
             </button>
 
-            {/* 6. Clear Sale (Slate) */}
+            {/* 6. Clear Sale */}
             <button
               type="button"
               onClick={clearAllRows}
-              className="inline-flex cursor-pointer items-center gap-1 rounded bg-[#475569] px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition hover:bg-slate-700 active:scale-95"
+              className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100 active:scale-95"
             >
               <RotateCcw className="h-3.5 w-3.5" />
-              <span>Clear Sale</span>
+              <span>Clear</span>
             </button>
 
-            {/* 7. Print (Dark Navy) */}
+            {/* 7. Print */}
             <button
               type="button"
               onClick={() => setShowPaymentModal(true)}
-              className="inline-flex cursor-pointer items-center gap-1 rounded bg-[#0F172A] px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition hover:bg-black active:scale-95"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#091529] px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-slate-900 active:scale-95"
             >
               <Printer className="h-3.5 w-3.5 text-slate-300" />
               <span>Print</span>
@@ -744,53 +742,57 @@ export default function PosSalePage() {
           </div>
         </div>
 
-        {/* 3. INVOICE META HEADER (Two Columns matching Screenshot 4) */}
-        <div className="grid grid-cols-1 gap-2.5 rounded-lg border border-slate-300 bg-white p-2.5 shadow-2xs lg:grid-cols-12">
+        {/* 3. INVOICE META HEADER (Executive White Card) */}
+        <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200/90 bg-white p-3 shadow-xs lg:grid-cols-12">
           {/* Left Column (6 cols): Invoice No / Date / Location */}
-          <div className="space-y-1.5 lg:col-span-6">
+          <div className="space-y-2 lg:col-span-6">
             <div className="flex items-center gap-2">
               <span className="w-28 shrink-0 text-xs font-bold text-slate-600">Invoice No</span>
-              <div className="rounded border border-blue-200 bg-[#EBF2F8] px-3 py-0.5 font-mono text-xs font-black text-blue-950 shadow-2xs">
+              <div className="rounded-lg border border-emerald-300 bg-emerald-50/80 px-3 py-1 font-mono text-xs font-black text-emerald-950 shadow-2xs">
                 {generatedInvoiceNo}
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <span className="w-28 shrink-0 text-xs font-bold text-slate-600">Date</span>
-              <div className="rounded border border-slate-200 bg-slate-50 px-3 py-0.5 text-xs font-bold text-slate-800">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-800">
                 {formatDisplayDate(getLocalIsoDate())}
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <span className="w-28 shrink-0 text-xs font-bold text-slate-600">Location / Branch</span>
-              <select
-                value={branchId}
-                onChange={(e) => {
-                  const id = Number(e.target.value);
-                  setBranchId(id);
-                  setActiveBranchId(id);
-                }}
-                className="flex-1 rounded border border-slate-300 bg-white px-2.5 py-0.5 text-xs font-bold text-slate-800 focus:border-amber-600 focus:outline-none"
-              >
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.code} - {b.name}
-                  </option>
-                ))}
-              </select>
+              <div className="flex flex-1 items-center gap-1.5">
+                <Store className="h-4 w-4 shrink-0 text-emerald-600" />
+                <select
+                  value={branchId}
+                  onChange={(e) => {
+                    const id = Number(e.target.value);
+                    setBranchId(id);
+                    setActiveBranchId(id);
+                  }}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                >
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.code} - {b.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
           {/* Right Column (6 cols): Customer / Address */}
-          <div className="space-y-1.5 lg:col-span-6">
+          <div className="space-y-2 lg:col-span-6">
             <div className="flex items-center gap-2">
               <span className="w-20 shrink-0 text-xs font-bold text-slate-600">Customer</span>
               <div className="flex flex-1 items-center gap-1.5">
+                <User className="h-4 w-4 shrink-0 text-slate-400" />
                 <select
                   value={selectedCustomerId ?? ''}
                   onChange={(e) => setSelectedCustomerId(Number(e.target.value))}
-                  className="w-full rounded border border-slate-300 bg-white px-2.5 py-0.5 text-xs font-bold text-slate-800 focus:border-amber-600 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 >
                   {customers.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -802,9 +804,9 @@ export default function PosSalePage() {
                   type="button"
                   onClick={() => setShowNewCustomer(true)}
                   title="Add New Customer"
-                  className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                  className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 shadow-2xs hover:bg-emerald-100"
                 >
-                  <UserPlus className="h-3 w-3" />
+                  <UserPlus className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
@@ -815,8 +817,8 @@ export default function PosSalePage() {
                 type="text"
                 value={customerAddress}
                 onChange={(e) => setCustomerAddress(e.target.value)}
-                placeholder="Customer Address..."
-                className="w-full rounded border border-slate-300 bg-white px-2.5 py-0.5 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:border-amber-600 focus:outline-none"
+                placeholder="Customer Address / Contact..."
+                className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
             </div>
           </div>
@@ -825,10 +827,11 @@ export default function PosSalePage() {
         {/* Message Banner */}
         {message && (
           <div
-            className={`flex items-center justify-between rounded border px-3 py-1.5 text-xs font-bold ${message.type === 'error'
+            className={`flex items-center justify-between rounded-xl border px-3.5 py-2 text-xs font-bold shadow-2xs ${
+              message.type === 'error'
                 ? 'border-rose-300 bg-rose-50 text-rose-700'
                 : 'border-emerald-300 bg-emerald-50 text-emerald-800'
-              }`}
+            }`}
           >
             <span>{message.text}</span>
             <button type="button" onClick={() => setMessage(null)} className="cursor-pointer">
@@ -837,45 +840,46 @@ export default function PosSalePage() {
           </div>
         )}
 
-        {/* 4. THE 12-COLUMN TABLE GRID (10 Rows Matching Screenshot 4) */}
-        <div className="relative overflow-x-auto rounded border border-slate-300 bg-white shadow-2xs">
+        {/* 4. THE 12-COLUMN TABLE GRID (Executive Midnight Navy & Emerald Table) */}
+        <div className="relative overflow-x-auto rounded-xl border border-slate-200/90 bg-white shadow-xs">
           <table className="w-full min-w-[1080px] border-collapse text-left text-xs">
             <thead>
-              <tr className="border-b border-amber-950/80 bg-[#4A1E05] text-[11px] font-extrabold uppercase tracking-wider text-white">
-                <th className="w-9 px-2 py-1.5 text-center border-r border-amber-900/40">#</th>
-                <th className="w-36 px-2 py-1.5 border-r border-amber-900/40">ITEM CODE</th>
-                <th className="w-28 px-2 py-1.5 border-r border-amber-900/40">HS CODE</th>
-                <th className="min-w-[220px] px-2 py-1.5 border-r border-amber-900/40">DESCRIPTION</th>
-                <th className="w-20 px-2 py-1.5 text-right border-r border-amber-900/40">PIECES</th>
-                <th className="w-20 px-2 py-1.5 text-right border-r border-amber-900/40">QTY</th>
-                <th className="w-16 px-1.5 py-1.5 text-center border-r border-amber-900/40">UNIT</th>
-                <th className="w-24 px-2 py-1.5 text-right border-r border-amber-900/40">RATE</th>
-                <th className="w-28 px-2 py-1.5 text-right border-r border-amber-900/40">VAL EXCL. TAX</th>
-                <th className="w-16 px-1.5 py-1.5 text-center border-r border-amber-900/40">S.T %</th>
-                <th className="w-24 px-2 py-1.5 text-right border-r border-amber-900/40">S.T AMT</th>
-                <th className="w-28 px-2 py-1.5 text-right border-r border-amber-900/40">VAL INCL. TAX</th>
-                <th className="w-10 px-1 py-1.5 text-center">
-                  <Trash2 className="mx-auto h-3 w-3 opacity-80" />
+              <tr className="border-b-2 border-emerald-500/80 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] text-[11px] font-extrabold uppercase tracking-wider text-slate-100">
+                <th className="w-9 px-2 py-2 text-center border-r border-white/10">#</th>
+                <th className="w-36 px-2 py-2 border-r border-white/10">ITEM CODE</th>
+                <th className="w-28 px-2 py-2 border-r border-white/10">HS CODE</th>
+                <th className="min-w-[220px] px-2 py-2 border-r border-white/10">DESCRIPTION</th>
+                <th className="w-20 px-2 py-2 text-right border-r border-white/10">PIECES</th>
+                <th className="w-20 px-2 py-2 text-right border-r border-white/10">QTY</th>
+                <th className="w-16 px-1.5 py-2 text-center border-r border-white/10">UNIT</th>
+                <th className="w-24 px-2 py-2 text-right border-r border-white/10">RATE</th>
+                <th className="w-28 px-2 py-2 text-right border-r border-white/10">VAL EXCL. TAX</th>
+                <th className="w-16 px-1.5 py-2 text-center border-r border-white/10">S.T %</th>
+                <th className="w-24 px-2 py-2 text-right border-r border-white/10">S.T AMT</th>
+                <th className="w-28 px-2 py-2 text-right border-r border-white/10">VAL INCL. TAX</th>
+                <th className="w-10 px-1 py-2 text-center">
+                  <Trash2 className="mx-auto h-3 w-3 opacity-70" />
                 </th>
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-slate-200/80">
               {calculatedRows.map((r, idx) => {
                 const isFilled = r.isFilled;
                 return (
                   <tr
                     key={r.id}
-                    className={`transition hover:bg-amber-50/20 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'
-                      }`}
+                    className={`transition hover:bg-emerald-50/30 ${
+                      idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
+                    }`}
                   >
                     {/* # */}
-                    <td className="border-r border-slate-200 px-1.5 py-1 text-center font-bold text-slate-500">
+                    <td className="border-r border-slate-200/80 px-1.5 py-1 text-center font-bold text-slate-400">
                       {idx + 1}
                     </td>
 
                     {/* ITEM CODE with Autocomplete Dropdown */}
-                    <td className="relative border-r border-slate-200 px-1.5 py-0.5">
+                    <td className="relative border-r border-slate-200/80 px-1.5 py-0.5">
                       <input
                         type="text"
                         value={r.itemCode}
@@ -899,31 +903,31 @@ export default function PosSalePage() {
                           }
                         }}
                         placeholder=""
-                        className="w-full rounded border border-slate-300 bg-white px-2 py-0.5 text-xs font-semibold text-slate-800 focus:border-amber-600 focus:outline-none"
+                        className="w-full rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
 
                       {/* Interactive Autocomplete Dropdown */}
                       {activeSearchRowId === r.id && autocompleteProducts.length > 0 && (
                         <div
                           ref={searchDropdownRef}
-                          className="absolute left-1.5 top-8 z-50 max-h-56 w-88 overflow-y-auto rounded-lg border border-slate-300 bg-white py-1 shadow-2xl"
+                          className="absolute left-1.5 top-8 z-50 max-h-56 w-88 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-2xl"
                         >
                           {autocompleteProducts.map((p) => (
                             <button
                               key={p.id}
                               type="button"
                               onMouseDown={() => selectProductIntoRow(r.id, p)}
-                              className="flex w-full cursor-pointer items-center justify-between px-3 py-1.5 text-left text-xs hover:bg-amber-50"
+                              className="flex w-full cursor-pointer items-center justify-between px-3 py-1.5 text-left text-xs hover:bg-emerald-50 transition"
                             >
                               <div>
-                                <span className="font-mono font-bold text-amber-800">{p.sku}</span>
+                                <span className="font-mono font-bold text-emerald-700">{p.sku}</span>
                                 <span className="ml-2 font-semibold text-slate-800">{p.name}</span>
                               </div>
                               <div className="text-right">
                                 <span className="font-bold text-slate-900">
                                   {formatCurrency(p.sale_price, settings.currency_symbol)}
                                 </span>
-                                <span className="block text-[10px] text-emerald-700 font-semibold">
+                                <span className="block text-[10px] text-emerald-600 font-semibold">
                                   Stock: {p.stock_qty ?? 0} {p.unit || 'Pcs'}
                                 </span>
                               </div>
@@ -934,17 +938,17 @@ export default function PosSalePage() {
                     </td>
 
                     {/* HS CODE */}
-                    <td className="border-r border-slate-200 px-1.5 py-0.5">
+                    <td className="border-r border-slate-200/80 px-1.5 py-0.5">
                       <input
                         type="text"
                         value={r.hsCode}
                         onChange={(e) => updateRow(r.id, { hsCode: e.target.value })}
-                        className="w-full rounded border border-slate-300 bg-white px-2 py-0.5 font-mono text-xs text-slate-700 focus:border-amber-600 focus:outline-none"
+                        className="w-full rounded-md border border-slate-200 bg-white px-2 py-0.5 font-mono text-xs text-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
                     </td>
 
                     {/* DESCRIPTION */}
-                    <td className="border-r border-slate-200 px-1.5 py-0.5">
+                    <td className="border-r border-slate-200/80 px-1.5 py-0.5">
                       <input
                         type="text"
                         value={r.description}
@@ -955,12 +959,12 @@ export default function PosSalePage() {
                           setActiveSearchRowId(r.id);
                         }}
                         placeholder=""
-                        className="w-full rounded border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-900 focus:border-amber-600 focus:outline-none"
+                        className="w-full rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
                     </td>
 
                     {/* PIECES */}
-                    <td className="border-r border-slate-200 px-1.5 py-0.5">
+                    <td className="border-r border-slate-200/80 px-1.5 py-0.5">
                       <input
                         type="number"
                         min={0}
@@ -969,12 +973,12 @@ export default function PosSalePage() {
                         onChange={(e) =>
                           updateRow(r.id, { pieces: Math.max(0, Number(e.target.value) || 0) })
                         }
-                        className="w-full rounded border border-slate-300 bg-white px-1.5 py-0.5 text-right font-mono text-xs font-bold text-slate-800 focus:border-amber-600 focus:outline-none"
+                        className="w-full rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-right font-mono text-xs font-bold text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
                     </td>
 
                     {/* QTY */}
-                    <td className="border-r border-slate-200 px-1.5 py-0.5">
+                    <td className="border-r border-slate-200/80 px-1.5 py-0.5">
                       <input
                         type="number"
                         min={0}
@@ -983,22 +987,22 @@ export default function PosSalePage() {
                         onChange={(e) =>
                           updateRow(r.id, { qty: Math.max(0, Number(e.target.value) || 0) })
                         }
-                        className="w-full rounded border border-slate-300 bg-white px-1.5 py-0.5 text-right font-mono text-xs font-bold text-slate-800 focus:border-amber-600 focus:outline-none"
+                        className="w-full rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-right font-mono text-xs font-bold text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
                     </td>
 
                     {/* UNIT */}
-                    <td className="border-r border-slate-200 px-1.5 py-0.5 text-center">
+                    <td className="border-r border-slate-200/80 px-1.5 py-0.5 text-center">
                       <input
                         type="text"
                         value={r.unit}
                         onChange={(e) => updateRow(r.id, { unit: e.target.value })}
-                        className="w-14 rounded border border-slate-300 bg-white py-0.5 text-center text-xs font-bold text-slate-700"
+                        className="w-14 rounded-md border border-slate-200 bg-white py-0.5 text-center text-xs font-bold text-slate-600 focus:border-emerald-500 focus:outline-none"
                       />
                     </td>
 
                     {/* RATE */}
-                    <td className="border-r border-slate-200 px-1.5 py-0.5">
+                    <td className="border-r border-slate-200/80 px-1.5 py-0.5">
                       <input
                         type="number"
                         min={0}
@@ -1007,27 +1011,27 @@ export default function PosSalePage() {
                         onChange={(e) =>
                           updateRow(r.id, { rate: Math.max(0, Number(e.target.value) || 0) })
                         }
-                        className="w-full rounded border border-slate-300 bg-white px-1.5 py-0.5 text-right font-mono text-xs font-bold text-slate-800 focus:border-amber-600 focus:outline-none"
+                        className="w-full rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-right font-mono text-xs font-bold text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
                     </td>
 
                     {/* VAL EXCL. TAX */}
-                    <td className="border-r border-slate-200 px-2 py-1 text-right font-mono text-xs font-bold text-slate-900">
+                    <td className="border-r border-slate-200/80 px-2 py-1 text-right font-mono text-xs font-bold text-slate-900">
                       {r.valExclTax.toFixed(2)}
                     </td>
 
                     {/* S.T % */}
-                    <td className="border-r border-slate-200 px-1.5 py-1 text-center font-mono text-xs font-bold text-slate-700">
+                    <td className="border-r border-slate-200/80 px-1.5 py-1 text-center font-mono text-xs font-bold text-slate-600">
                       {r.taxRate.toFixed(2)}
                     </td>
 
                     {/* S.T AMT */}
-                    <td className="border-r border-slate-200 px-2 py-1 text-right font-mono text-xs font-bold text-slate-900">
+                    <td className="border-r border-slate-200/80 px-2 py-1 text-right font-mono text-xs font-bold text-slate-900">
                       {r.taxAmt.toFixed(2)}
                     </td>
 
                     {/* VAL INCL. TAX */}
-                    <td className="border-r border-slate-200 px-2 py-1 text-right font-mono text-xs font-black text-amber-950">
+                    <td className="border-r border-slate-200/80 px-2 py-1 text-right font-mono text-xs font-black text-slate-950">
                       {r.valInclTax.toFixed(2)}
                     </td>
 
@@ -1036,7 +1040,7 @@ export default function PosSalePage() {
                       <button
                         type="button"
                         onClick={() => removeRow(r.id)}
-                        className="cursor-pointer rounded p-1 text-rose-500 transition hover:bg-rose-50 hover:text-rose-700"
+                        className="cursor-pointer rounded-md p-1 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
                         title="Delete row"
                       >
                         <Trash2 className="mx-auto h-3.5 w-3.5" />
@@ -1049,61 +1053,62 @@ export default function PosSalePage() {
 
             {/* Exactly Aligned Totals Footer */}
             <tfoot>
-              <tr className="border-t-2 border-slate-300 bg-[#F1F5F9] font-extrabold text-slate-900 text-xs">
-                <td colSpan={4} className="border-r border-slate-300 px-4 py-1.5 text-right uppercase tracking-wider">
+              <tr className="border-t-2 border-slate-300 bg-slate-100/90 font-extrabold text-slate-900 text-xs">
+                <td colSpan={4} className="border-r border-slate-300 px-4 py-2 text-right uppercase tracking-wider text-slate-700">
                   Totals:
                 </td>
-                <td className="border-r border-slate-300 px-2 py-1.5 text-right font-mono text-xs font-black">
+                <td className="border-r border-slate-300 px-2 py-2 text-right font-mono text-xs font-black text-slate-900">
                   {totals.pieces === 0 ? '0' : totals.pieces.toFixed(2)}
                 </td>
-                <td className="border-r border-slate-300 px-2 py-1.5 text-right font-mono text-xs font-black">
+                <td className="border-r border-slate-300 px-2 py-2 text-right font-mono text-xs font-black text-slate-900">
                   {totals.qty === 0 ? '0' : totals.qty.toFixed(2)}
                 </td>
-                <td className="border-r border-slate-300 px-1 py-1.5 text-center text-xs text-slate-400">-</td>
-                <td className="border-r border-slate-300 px-1 py-1.5 text-center text-xs text-slate-400">-</td>
-                <td className="border-r border-slate-300 px-2.5 py-1.5 text-right font-mono text-xs font-black text-slate-950">
+                <td className="border-r border-slate-300 px-1 py-2 text-center text-xs text-slate-400">-</td>
+                <td className="border-r border-slate-300 px-1 py-2 text-center text-xs text-slate-400">-</td>
+                <td className="border-r border-slate-300 px-2.5 py-2 text-right font-mono text-xs font-black text-slate-950">
                   {totals.subtotal.toFixed(2)}
                 </td>
-                <td className="border-r border-slate-300 px-1 py-1.5 text-center text-xs text-slate-400">-</td>
-                <td className="border-r border-slate-300 px-2.5 py-1.5 text-right font-mono text-xs font-black text-amber-900">
+                <td className="border-r border-slate-300 px-1 py-2 text-center text-xs text-slate-400">-</td>
+                <td className="border-r border-slate-300 px-2.5 py-2 text-right font-mono text-xs font-black text-amber-700">
                   {totals.taxTotal.toFixed(2)}
                 </td>
-                <td className="border-r border-slate-300 px-2.5 py-1.5 text-right font-mono text-xs font-black text-slate-950">
+                <td className="border-r border-slate-300 px-2.5 py-2 text-right font-mono text-xs font-black text-emerald-800">
                   {totals.grandTotal.toFixed(2)}
                 </td>
-                <td className="px-1 py-1.5" />
+                <td className="px-1 py-2" />
               </tr>
             </tfoot>
           </table>
         </div>
 
         {/* 5. BOTTOM SECTION: CASHIER ACTIONS (LEFT) VS FINANCIAL TOTALS (RIGHT) */}
-        <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-12">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
           {/* Left: Cashier Actions Box (8 Cols) */}
-          <div className="flex flex-col justify-between rounded-lg border border-slate-200/90 bg-white p-3 shadow-2xs lg:col-span-8">
+          <div className="flex flex-col justify-between rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-xs lg:col-span-8">
             <div>
-              <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                <span className="text-xs font-black tracking-wider text-amber-800 uppercase">
-                  ⚡ Cashier Actions
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <span className="flex items-center gap-1.5 text-xs font-black tracking-wider text-[#091529] uppercase">
+                  <Zap className="h-4 w-4 text-amber-500" />
+                  <span>Cashier Actions</span>
                 </span>
                 <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
-                  <span>Status:</span>
-                  <span className="text-sky-700">Ready for Sale</span>
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20" />
+                  <span className="text-emerald-700">Ready for Sale</span>
                 </span>
               </div>
 
-              {/* 4 Big Action Cards (Exact Screenshot 4 layout & colors) */}
-              <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {/* 4 Big Action Cards (Executive Seastone Palette) */}
+              <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                 {/* 1: Hold Sale (F6) */}
                 <button
                   type="button"
                   onClick={() => void handleHoldSale()}
-                  className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-amber-300 bg-[#FFFBEB] p-2.5 text-center shadow-2xs transition hover:-translate-y-0.5 hover:bg-amber-100 hover:shadow-xs active:scale-95"
+                  className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-center shadow-xs transition hover:-translate-y-0.5 hover:bg-amber-100 hover:shadow-sm active:scale-95"
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 text-white shadow-2xs">
-                    <PauseCircle className="h-4.5 w-4.5" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-500 text-white shadow-xs">
+                    <PauseCircle className="h-5 w-5" />
                   </div>
-                  <span className="mt-1.5 text-xs font-extrabold text-amber-950">Hold Sale</span>
+                  <span className="mt-2 text-xs font-extrabold text-amber-950">Hold Sale</span>
                   <span className="text-[10px] font-bold text-amber-700">F6</span>
                 </button>
 
@@ -1111,46 +1116,46 @@ export default function PosSalePage() {
                 <button
                   type="button"
                   onClick={() => void openRecallModal()}
-                  className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-blue-300 bg-[#EFF6FF] p-2.5 text-center shadow-2xs transition hover:-translate-y-0.5 hover:bg-blue-100 hover:shadow-xs active:scale-95"
+                  className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50/70 p-3 text-center shadow-xs transition hover:-translate-y-0.5 hover:bg-indigo-100 hover:shadow-sm active:scale-95"
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white shadow-2xs">
-                    <RotateCcw className="h-4.5 w-4.5" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 text-white shadow-xs">
+                    <RotateCcw className="h-5 w-5" />
                   </div>
-                  <span className="mt-1.5 text-xs font-extrabold text-blue-950">Recall Sale</span>
-                  <span className="text-[10px] font-bold text-blue-700">F7</span>
+                  <span className="mt-2 text-xs font-extrabold text-indigo-950">Recall Sale</span>
+                  <span className="text-[10px] font-bold text-indigo-700">F7</span>
                 </button>
 
-                {/* 3: Post to FBR */}
+                {/* 3: Post to FBR (Executive Midnight Navy) */}
                 <button
                   type="button"
                   disabled={submitting}
                   onClick={() => setShowPaymentModal(true)}
-                  className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-slate-900 bg-[#0F1B33] p-2.5 text-center text-white shadow-2xs transition hover:-translate-y-0.5 hover:bg-slate-900 hover:shadow-xs active:scale-95"
+                  className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-slate-900 bg-gradient-to-br from-[#091529] via-[#0e1f3d] to-[#132952] p-3 text-center text-white shadow-xs transition hover:-translate-y-0.5 hover:brightness-110 hover:shadow-sm active:scale-95"
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-500 text-white shadow-2xs">
-                    <CloudUpload className="h-4.5 w-4.5" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-slate-950 shadow-xs">
+                    <CloudUpload className="h-5 w-5" />
                   </div>
-                  <span className="mt-1.5 text-xs font-extrabold text-white">Post to FBR</span>
-                  <span className="text-[10px] font-bold text-sky-300">FBR Submit</span>
+                  <span className="mt-2 text-xs font-extrabold text-white">Post to FBR</span>
+                  <span className="text-[10px] font-bold text-emerald-300">FBR Submit</span>
                 </button>
 
                 {/* 4: Clear Sale (Esc) */}
                 <button
                   type="button"
                   onClick={clearAllRows}
-                  className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-rose-300 bg-[#FEF2F2] p-2.5 text-center shadow-2xs transition hover:-translate-y-0.5 hover:bg-rose-100 hover:shadow-xs active:scale-95"
+                  className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50/70 p-3 text-center shadow-xs transition hover:-translate-y-0.5 hover:bg-rose-100 hover:shadow-sm active:scale-95"
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-600 text-white shadow-2xs">
-                    <Trash2 className="h-4.5 w-4.5" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-600 text-white shadow-xs">
+                    <Trash2 className="h-5 w-5" />
                   </div>
-                  <span className="mt-1.5 text-xs font-extrabold text-rose-950">Clear Sale</span>
+                  <span className="mt-2 text-xs font-extrabold text-rose-950">Clear Sale</span>
                   <span className="text-[10px] font-bold text-rose-700">Esc</span>
                 </button>
               </div>
             </div>
 
             {/* Footer FBR Disclaimer */}
-            <div className="mt-2.5 flex items-center gap-2 border-t border-slate-100 pt-1.5 text-[11px] text-slate-500">
+            <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-2 text-[11px] text-slate-500">
               <span className="h-2 w-2 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20" />
               <span>
                 Saved sales are stored locally in ERP database and can be edited or deleted until submitted to <strong>FBR</strong>.
@@ -1159,16 +1164,16 @@ export default function PosSalePage() {
           </div>
 
           {/* Right: Financial Totals Box (4 Cols) */}
-          <div className="flex flex-col justify-between rounded-lg border border-slate-300 bg-white p-3.5 shadow-2xs lg:col-span-4">
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between text-slate-700">
+          <div className="flex flex-col justify-between rounded-xl border border-slate-200/90 bg-white p-4 shadow-xs lg:col-span-4">
+            <div className="space-y-2.5 text-xs">
+              <div className="flex items-center justify-between text-slate-600">
                 <span className="font-bold">Gross Amount</span>
                 <span className="font-mono text-sm font-extrabold text-slate-900">
                   {totals.subtotal.toFixed(2)}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between text-slate-700">
+              <div className="flex items-center justify-between text-slate-600">
                 <span className="font-bold">Discount Amount</span>
                 <input
                   type="number"
@@ -1176,40 +1181,42 @@ export default function PosSalePage() {
                   value={invoiceDiscount === 0 ? '' : invoiceDiscount}
                   placeholder="0.00"
                   onChange={(e) => setInvoiceDiscount(Math.max(0, Number(e.target.value) || 0))}
-                  className="w-28 rounded border border-slate-300 bg-white px-2 py-0.5 text-right font-mono text-xs font-extrabold text-slate-900 focus:border-amber-600 focus:outline-none"
+                  className="w-28 rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-right font-mono text-xs font-extrabold text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
 
-              <div className="flex items-center justify-between text-slate-700">
+              <div className="flex items-center justify-between text-slate-600">
                 <span className="font-bold">Total After Discount</span>
                 <span className="font-mono text-sm font-extrabold text-slate-900">
                   {totals.totalAfterDiscount.toFixed(2)}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between text-slate-700">
+              <div className="flex items-center justify-between text-slate-600">
                 <span className="font-bold">Sales Tax Amount</span>
-                <span className="font-mono text-sm font-black text-amber-700">
+                <span className="font-mono text-sm font-black text-amber-600">
                   {totals.taxTotal.toFixed(2)}
                 </span>
               </div>
 
-              <div className="border-t-2 border-slate-300 pt-1.5">
+              <div className="border-t-2 border-slate-200 pt-2">
                 <div className="flex items-baseline justify-between">
                   <span className="text-sm font-black text-slate-900 uppercase">Net Total</span>
-                  <span className="font-mono text-2xl font-black text-slate-950">
-                    {totals.grandTotal.toFixed(2)}
+                  <span className="font-mono text-2xl font-black text-emerald-700">
+                    {formatCurrency(totals.grandTotal, settings.currency_symbol)}
                   </span>
                 </div>
               </div>
             </div>
 
+            {/* Complete & Pay Button (Executive Emerald Gradient) */}
             <button
               type="button"
               onClick={() => setShowPaymentModal(true)}
-              className="mt-3 w-full cursor-pointer rounded-xl bg-[#4A1E05] py-2.5 text-center text-xs font-black tracking-wide text-white shadow-md transition hover:bg-[#361304] active:scale-98"
+              className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 py-3 text-center text-xs font-black tracking-wide text-white shadow-md transition hover:from-emerald-500 hover:to-teal-500 active:scale-98 uppercase"
             >
-              Checkout &amp; Print Bill (Ctrl+S / F12)
+              <CheckCircle2 className="h-4 w-4" />
+              <span>Checkout &amp; Print Bill (Ctrl+S / F12)</span>
             </button>
           </div>
         </div>
@@ -1234,9 +1241,9 @@ export default function PosSalePage() {
             </div>
 
             <div className="mt-4 space-y-4">
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-center">
-                <span className="text-xs font-bold text-slate-500 uppercase">Payable Net Total</span>
-                <div className="font-mono text-3xl font-black text-slate-950">
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3.5 text-center">
+                <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Payable Net Total</span>
+                <div className="font-mono text-3xl font-black text-emerald-950">
                   {formatCurrency(totals.grandTotal, settings.currency_symbol)}
                 </div>
               </div>
@@ -1257,10 +1264,11 @@ export default function PosSalePage() {
                       key={mode}
                       type="button"
                       onClick={() => setPaymentMode(mode)}
-                      className={`inline-flex cursor-pointer items-center justify-center gap-1 rounded-lg border py-2 text-xs font-bold transition ${paymentMode === mode
-                          ? 'border-amber-600 bg-[#4A1E05] text-white'
+                      className={`inline-flex cursor-pointer items-center justify-center gap-1 rounded-lg border py-2 text-xs font-bold transition ${
+                        paymentMode === mode
+                          ? 'border-emerald-600 bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xs'
                           : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                        }`}
+                      }`}
                     >
                       <Icon className="h-3.5 w-3.5" />
                       {label}
@@ -1279,7 +1287,7 @@ export default function PosSalePage() {
                       placeholder={String(totals.grandTotal)}
                       value={tenderedAmount}
                       onChange={(e) => setTenderedAmount(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 px-3 py-1.5 font-mono text-sm font-bold"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-1.5 font-mono text-sm font-bold focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
                   <div>
@@ -1300,7 +1308,7 @@ export default function PosSalePage() {
                       min={0}
                       value={splitCash}
                       onChange={(e) => setSplitCash(e.target.value)}
-                      className="w-full rounded border border-slate-300 px-2 py-1 text-xs font-bold"
+                      className="w-full rounded-lg border border-slate-300 px-2 py-1 text-xs font-bold focus:border-emerald-500"
                     />
                   </div>
                   <div>
@@ -1310,7 +1318,7 @@ export default function PosSalePage() {
                       min={0}
                       value={splitCard}
                       onChange={(e) => setSplitCard(e.target.value)}
-                      className="w-full rounded border border-slate-300 px-2 py-1 text-xs font-bold"
+                      className="w-full rounded-lg border border-slate-300 px-2 py-1 text-xs font-bold focus:border-emerald-500"
                     />
                   </div>
                   <div>
@@ -1320,7 +1328,7 @@ export default function PosSalePage() {
                       min={0}
                       value={splitBank}
                       onChange={(e) => setSplitBank(e.target.value)}
-                      className="w-full rounded border border-slate-300 px-2 py-1 text-xs font-bold"
+                      className="w-full rounded-lg border border-slate-300 px-2 py-1 text-xs font-bold focus:border-emerald-500"
                     />
                   </div>
                 </div>
@@ -1331,7 +1339,7 @@ export default function PosSalePage() {
                 placeholder="Optional invoice notes / remark..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs"
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"
               />
 
               <div className="flex gap-2 pt-2">
@@ -1346,7 +1354,7 @@ export default function PosSalePage() {
                   type="button"
                   disabled={submitting}
                   onClick={() => void handleSaveAndSubmitSale()}
-                  className="flex-1 cursor-pointer rounded-xl bg-[#4A1E05] py-2.5 text-xs font-black text-white shadow-md hover:bg-[#361304] disabled:opacity-50"
+                  className="flex-1 cursor-pointer rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2.5 text-xs font-black text-white shadow-md hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50"
                 >
                   {submitting ? 'Submitting...' : 'Confirm & Print Invoice'}
                 </button>
@@ -1447,7 +1455,7 @@ export default function PosSalePage() {
                   required
                   value={newCustName}
                   onChange={(e) => setNewCustName(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 font-semibold"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 font-semibold focus:border-emerald-500"
                   placeholder="e.g. Walk-in Customer / Business Name"
                 />
               </div>
@@ -1458,7 +1466,7 @@ export default function PosSalePage() {
                   type="text"
                   value={newCustPhone}
                   onChange={(e) => setNewCustPhone(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 font-semibold"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 font-semibold focus:border-emerald-500"
                   placeholder="0300-1234567"
                 />
               </div>
@@ -1469,7 +1477,7 @@ export default function PosSalePage() {
                   type="text"
                   value={newCustCnic}
                   onChange={(e) => setNewCustCnic(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 font-semibold"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 font-semibold focus:border-emerald-500"
                   placeholder="15302-..."
                 />
               </div>
@@ -1484,7 +1492,7 @@ export default function PosSalePage() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 cursor-pointer rounded-xl bg-[#4A1E05] py-2 text-xs font-black text-white hover:bg-[#361304]"
+                  className="flex-1 cursor-pointer rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2 text-xs font-black text-white hover:from-emerald-500 hover:to-teal-500"
                 >
                   Save &amp; Select
                 </button>
@@ -1501,9 +1509,5 @@ export default function PosSalePage() {
         onSynced={() => void loadCatalog()}
       />
     </div>
-  );
-}
-      />
-    </div >
   );
 }

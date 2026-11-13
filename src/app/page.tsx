@@ -792,8 +792,6 @@ export default function MainDashboardPage() {
             <div className="mt-2 grid grid-cols-2 gap-1.5">
               <Link
                 href="/sale"
-                target="_blank"
-                rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-1 rounded-lg bg-emerald-500 px-2 py-1.5 text-[11px] font-bold text-slate-950 transition hover:bg-emerald-400"
               >
                 <ShoppingCart className="h-3 w-3" />

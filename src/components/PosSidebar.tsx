@@ -28,11 +28,10 @@ interface SidebarItem {
   matchTab?: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  target?: string;
 }
 
 const RECORD_NEW_ITEMS: SidebarItem[] = [
-  { href: '/sale', matchPath: '/sale', label: 'POS Sale (New Bill)', icon: ShoppingCart, target: '_blank' },
+  { href: '/sale', matchPath: '/sale', label: 'POS Sale (New Bill)', icon: ShoppingCart },
   { href: '/returns', matchPath: '/returns', label: 'Sales Return', icon: Undo2 },
   { href: '/hold', matchPath: '/hold', label: 'Hold / Recall Bill', icon: PauseCircle },
   { href: '/closing', matchPath: '/closing', label: 'Day Closing', icon: DoorOpen },
@@ -94,8 +93,6 @@ function PosSidebarInner() {
       <Link
         key={item.href}
         href={item.href}
-        target={item.target}
-        rel={item.target === '_blank' ? 'noopener noreferrer' : undefined}
         title={collapsed ? item.label : undefined}
         className={`group flex items-center gap-2 rounded-lg px-2.5 py-1 text-[12.5px] font-semibold transition ${
           collapsed ? 'lg:justify-center lg:px-2' : ''
