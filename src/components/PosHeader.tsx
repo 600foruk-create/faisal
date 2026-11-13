@@ -178,7 +178,7 @@ export function PosHeader() {
   return (
     <div
       ref={barRef}
-      className="no-print relative z-30 w-full border-b border-slate-800 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#0b1830] text-white shadow-sm"
+      className="no-print relative z-30 w-full border-b border-amber-950/70 bg-gradient-to-r from-[#220D04] via-[#2F1306] to-[#220D04] text-white shadow-md"
     >
       <div className="mx-auto flex max-w-[1520px] flex-wrap items-center justify-between gap-2 px-4 py-1.5 sm:px-6">
         {/* LEFT SIDE: Administrator, Maintain, About */}
