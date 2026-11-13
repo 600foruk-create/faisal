@@ -38,7 +38,7 @@ import {
 import type { DashboardSummary, PeriodPreset } from '@/lib/types';
 
 export default function MainDashboardPage() {
-  const { branches, activeBranchId, activeUser, settings, refreshNonce } = usePosContext();
+  const { branches, activeBranchId, activeUser, settings, refreshNonce, openPosSale } = usePosContext();
 
   const initialRange = getDateRangeForPreset('month');
   const todayIso = getLocalIsoDate();
@@ -790,13 +790,14 @@ export default function MainDashboardPage() {
           <div className="rounded-xl bg-gradient-to-br from-[#091529] via-[#0e1f3d] to-[#132952] p-2.5 text-white">
             <h3 className="text-xs font-bold">Quick Counter Actions</h3>
             <div className="mt-2 grid grid-cols-2 gap-1.5">
-              <Link
-                href="/sale"
-                className="inline-flex items-center justify-center gap-1 rounded-lg bg-emerald-500 px-2 py-1.5 text-[11px] font-bold text-slate-950 transition hover:bg-emerald-400"
+              <button
+                type="button"
+                onClick={() => openPosSale()}
+                className="inline-flex cursor-pointer items-center justify-center gap-1 rounded-lg bg-emerald-500 px-2 py-1.5 text-[11px] font-bold text-slate-950 transition hover:bg-emerald-400 active:scale-95"
               >
                 <ShoppingCart className="h-3 w-3" />
                 POS Sale
-              </Link>
+              </button>
               <Link
                 href="/returns"
                 className="inline-flex items-center justify-center gap-1 rounded-lg bg-white/10 px-2 py-1.5 text-[11px] font-semibold text-white transition hover:bg-white/20"

@@ -5,8 +5,12 @@ import { AppFooter } from '@/components/AppFooter';
 import { PosHeader } from '@/components/PosHeader';
 import { PosSidebar } from '@/components/PosSidebar';
 import { TopBrandBar } from '@/components/TopBrandBar';
+import { usePosContext } from './PosContext';
+import { PosSaleModal } from './PosSaleModal';
 
 export function PosLayoutShell({ children }: { children: React.ReactNode }) {
+  const { isPosModalOpen } = usePosContext();
+
   return (
     <div className="flex min-h-screen flex-col bg-[#F3F5F8] text-slate-900 antialiased lg:h-screen lg:overflow-hidden">
       {/* Top Brand Bar & Navigation Subheader */}
@@ -25,6 +29,9 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
       <div className="shrink-0">
         <AppFooter />
       </div>
+
+      {/* FLOATING POS SALE FORM WINDOW (Executive Desktop ERP Dialog over Dashboard) */}
+      {isPosModalOpen && <PosSaleModal />}
     </div>
   );
 }

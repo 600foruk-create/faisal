@@ -13,6 +13,10 @@ interface PosContextValue {
   heldCount: number;
   loading: boolean;
   refreshNonce: number;
+  isPosModalOpen: boolean;
+  setIsPosModalOpen: (open: boolean) => void;
+  openPosSale: () => void;
+  closePosSale: () => void;
   setActiveBranchId: (branchId: number | null) => void;
   setActiveUser: (user: UserSummary | null) => void;
   triggerRefresh: () => void;
@@ -45,6 +49,10 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const [heldCount, setHeldCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshNonce, setRefreshNonce] = useState(0);
+  const [isPosModalOpen, setIsPosModalOpen] = useState(false);
+
+  const openPosSale = useCallback(() => setIsPosModalOpen(true), []);
+  const closePosSale = useCallback(() => setIsPosModalOpen(false), []);
 
   const refreshHeldCount = useCallback(async () => {
     try {
@@ -142,6 +150,10 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         heldCount,
         loading,
         refreshNonce,
+        isPosModalOpen,
+        setIsPosModalOpen,
+        openPosSale,
+        closePosSale,
         setActiveBranchId,
         setActiveUser,
         triggerRefresh,
