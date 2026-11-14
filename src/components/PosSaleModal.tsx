@@ -72,11 +72,11 @@ const createEmptyRow = (customId?: string): RowItem => ({
   id: customId || Math.random().toString(36).slice(2, 9),
   productId: null,
   itemCode: '',
-  hsCode: '3917.2300',
+  hsCode: '',
   description: '',
   pieces: 0,
   qty: 0,
-  unit: 'Pcs',
+  unit: '',
   rate: 0,
   taxRate: 18,
   discountAmount: 0,
@@ -298,8 +298,9 @@ export function PosSaleModal() {
     updateRow(rowId, {
       productId: p.id,
       itemCode: p.sku || p.barcode,
+      hsCode: (p as unknown as { hs_code?: string; hsCode?: string }).hs_code || (p as unknown as { hs_code?: string; hsCode?: string }).hsCode || '3917.2390',
       description: p.name,
-      unit: p.unit || 'Pcs',
+      unit: p.unit || '',
       rate: p.sale_price,
       taxRate: p.tax_rate ?? 18,
       qty: 1,
@@ -484,19 +485,24 @@ export function PosSaleModal() {
 
         const c = data.cart;
         if (c.items && c.items.length > 0) {
-          const newRows: RowItem[] = c.items.map((it) => ({
-            id: Math.random().toString(36).slice(2, 9),
-            productId: it.product_id,
-            itemCode: it.sku,
-            hsCode: '3917.2300',
-            description: it.name,
-            pieces: it.quantity,
-            qty: it.quantity,
-            unit: 'Pcs',
-            rate: it.unit_price,
-            taxRate: it.tax_rate ?? 18,
-            discountAmount: it.discount_amount ?? 0,
-          }));
+          const newRows: RowItem[] = c.items.map((it) => {
+            const matched = products.find((p) => p.id === it.product_id || p.sku === it.sku);
+            return {
+              id: Math.random().toString(36).slice(2, 9),
+              productId: it.product_id,
+              itemCode: it.sku,
+              hsCode:
+                (matched as unknown as { hs_code?: string; hsCode?: string })?.hs_code ||
+                '3917.2390',
+              description: it.name,
+              pieces: it.quantity,
+              qty: it.quantity,
+              unit: matched?.unit || '',
+              rate: it.unit_price,
+              taxRate: it.tax_rate ?? 18,
+              discountAmount: it.discount_amount ?? 0,
+            };
+          });
 
           while (newRows.length < DEFAULT_ROW_COUNT) {
             newRows.push(createEmptyRow());
@@ -928,41 +934,41 @@ export function PosSaleModal() {
               {/* Sticky Table Header - BOLD UPPERCASE */}
               <thead className="sticky top-0 z-20 shadow-xs">
                 <tr className="bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] text-[10.5px] font-bold uppercase tracking-wider text-slate-100">
-                  <th className="w-8 px-1.5 py-1 text-center border-b-2 border-emerald-500 border-r border-white/10 bg-[#091529]">#</th>
-                  <th className="w-32 px-1.5 py-1 border-b-2 border-emerald-500 border-r border-white/10 bg-[#0a182e]">ITEM CODE</th>
-                  <th className="w-24 px-1.5 py-1 border-b-2 border-emerald-500 border-r border-white/10 bg-[#0c1c36]">HS CODE</th>
-                  <th className="min-w-[200px] px-2 py-1 border-b-2 border-emerald-500 border-r border-white/10 bg-[#0e1f3d]">DESCRIPTION</th>
-                  <th className="w-18 px-1.5 py-1 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#0f2243]">PIECES</th>
-                  <th className="w-18 px-1.5 py-1 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#10254a]">QTY</th>
-                  <th className="w-14 px-1 py-1 text-center border-b-2 border-emerald-500 border-r border-white/10 bg-[#11264c]">UNIT</th>
-                  <th className="w-20 px-1.5 py-1 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#12274e]">RATE</th>
-                  <th className="w-24 px-1.5 py-1 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#132952]">VAL EXCL. TAX</th>
-                  <th className="w-14 px-1 py-1 text-center border-b-2 border-emerald-500 border-r border-white/10 bg-[#132952]">S.T %</th>
-                  <th className="w-20 px-1.5 py-1 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#132952]">S.T AMT</th>
-                  <th className="w-24 px-1.5 py-1 text-right border-b-2 border-emerald-500 border-r border-white/10 bg-[#132952]">VAL INCL. TAX</th>
-                  <th className="w-8 px-1 py-1 text-center border-b-2 border-emerald-500 bg-[#132952]">
+                  <th className="w-9 px-1.5 py-1.5 text-center border-b-2 border-emerald-500 border-r border-white/30 bg-[#091529]">#</th>
+                  <th className="w-32 px-2 py-1.5 border-b-2 border-emerald-500 border-r border-white/30 bg-[#0a182e]">ITEM CODE</th>
+                  <th className="w-24 px-2 py-1.5 border-b-2 border-emerald-500 border-r border-white/30 bg-[#0c1c36]">HS CODE</th>
+                  <th className="min-w-[220px] px-2 py-1.5 border-b-2 border-emerald-500 border-r border-white/30 bg-[#0e1f3d]">DESCRIPTION</th>
+                  <th className="w-20 px-2 py-1.5 text-right border-b-2 border-emerald-500 border-r border-white/30 bg-[#0f2243]">PIECES</th>
+                  <th className="w-20 px-2 py-1.5 text-right border-b-2 border-emerald-500 border-r border-white/30 bg-[#10254a]">QTY</th>
+                  <th className="w-16 px-1.5 py-1.5 text-center border-b-2 border-emerald-500 border-r border-white/30 bg-[#11264c]">UNIT</th>
+                  <th className="w-24 px-2 py-1.5 text-right border-b-2 border-emerald-500 border-r border-white/30 bg-[#12274e]">RATE</th>
+                  <th className="w-28 px-2 py-1.5 text-right border-b-2 border-emerald-500 border-r border-white/30 bg-[#132952]">VAL EXCL. TAX</th>
+                  <th className="w-16 px-1.5 py-1.5 text-center border-b-2 border-emerald-500 border-r border-white/30 bg-[#132952]">S.T %</th>
+                  <th className="w-24 px-2 py-1.5 text-right border-b-2 border-emerald-500 border-r border-white/30 bg-[#132952]">S.T AMT</th>
+                  <th className="w-28 px-2 py-1.5 text-right border-b-2 border-emerald-500 border-r border-white/30 bg-[#132952]">VAL INCL. TAX</th>
+                  <th className="w-10 px-1 py-1.5 text-center border-b-2 border-emerald-500 bg-[#132952]">
                     <Trash2 className="mx-auto h-3 w-3 opacity-70" />
                   </th>
                 </tr>
               </thead>
 
               {/* Scrollable Table Rows (Compact Flat ERP Rows - Clean Seamless Table) */}
-              <tbody className="divide-y divide-slate-200/80">
+              <tbody className="divide-y divide-slate-200">
                 {calculatedRows.map((r, idx) => {
                   return (
                     <tr
                       key={r.id}
                       className={`h-7 transition-colors hover:bg-emerald-50/25 ${
-                        idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
+                        idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'
                       }`}
                     >
                       {/* # (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-1.5 py-1 text-center font-normal text-slate-500 tabular-nums text-xs">
+                      <td className="border-b border-r border-slate-300 px-1.5 py-1 text-center font-normal text-slate-500 tabular-nums text-xs">
                         {idx + 1}
                       </td>
 
                       {/* ITEM CODE with Autocomplete Dropdown (Seamless Table Cell) */}
-                      <td className="relative border-b border-r border-slate-200/80 p-0">
+                      <td className="relative border-b border-r border-slate-300 p-0">
                         <input
                           type="text"
                           value={r.itemCode}
@@ -986,7 +992,7 @@ export function PosSaleModal() {
                             }
                           }}
                           placeholder=""
-                          className="h-7 w-full border-0 bg-transparent px-2 text-xs font-medium text-slate-800 outline-none ring-0 focus:bg-emerald-50/50 focus:ring-1 focus:ring-inset focus:ring-emerald-500 transition-colors"
+                          className="h-7 w-full border-0 bg-transparent px-2 text-xs font-medium text-slate-800 outline-none ring-0 focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 transition-colors"
                         />
 
                         {/* Interactive Autocomplete Dropdown */}
@@ -1011,7 +1017,7 @@ export function PosSaleModal() {
                                     {formatCurrency(p.sale_price, settings.currency_symbol)}
                                   </span>
                                   <span className="block text-[10px] text-emerald-600 font-normal">
-                                    Stock: {p.stock_qty ?? 0} {p.unit || 'Pcs'}
+                                    Stock: {p.stock_qty ?? 0} {p.unit || ''}
                                   </span>
                                 </div>
                               </button>
@@ -1021,17 +1027,18 @@ export function PosSaleModal() {
                       </td>
 
                       {/* HS CODE (Seamless Table Cell) */}
-                      <td className="border-b border-r border-slate-200/80 p-0">
+                      <td className="border-b border-r border-slate-300 p-0">
                         <input
                           type="text"
                           value={r.hsCode}
                           onChange={(e) => updateRow(r.id, { hsCode: e.target.value })}
-                          className="h-7 w-full border-0 bg-transparent px-2 text-xs font-normal text-slate-600 outline-none ring-0 focus:bg-emerald-50/50 focus:ring-1 focus:ring-inset focus:ring-emerald-500 transition-colors"
+                          placeholder=""
+                          className="h-7 w-full border-0 bg-transparent px-2 text-xs font-normal text-slate-600 outline-none ring-0 focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 transition-colors"
                         />
                       </td>
 
                       {/* DESCRIPTION (Seamless Table Cell) */}
-                      <td className="border-b border-r border-slate-200/80 p-0">
+                      <td className="border-b border-r border-slate-300 p-0">
                         <input
                           type="text"
                           value={r.description}
@@ -1042,12 +1049,12 @@ export function PosSaleModal() {
                             setActiveSearchRowId(r.id);
                           }}
                           placeholder=""
-                          className="h-7 w-full border-0 bg-transparent px-2 text-xs font-normal text-slate-900 outline-none ring-0 focus:bg-emerald-50/50 focus:ring-1 focus:ring-inset focus:ring-emerald-500 transition-colors"
+                          className="h-7 w-full border-0 bg-transparent px-2 text-xs font-normal text-slate-900 outline-none ring-0 focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 transition-colors"
                         />
                       </td>
 
                       {/* PIECES (Seamless Table Cell) */}
-                      <td className="border-b border-r border-slate-200/80 p-0">
+                      <td className="border-b border-r border-slate-300 p-0">
                         <input
                           type="number"
                           min={0}
@@ -1056,12 +1063,12 @@ export function PosSaleModal() {
                           onChange={(e) =>
                             updateRow(r.id, { pieces: Math.max(0, Number(e.target.value) || 0) })
                           }
-                          className="h-7 w-full border-0 bg-transparent px-2 text-right text-xs font-normal text-slate-700 tabular-nums outline-none ring-0 focus:bg-emerald-50/50 focus:ring-1 focus:ring-inset focus:ring-emerald-500 placeholder:text-slate-400 transition-colors"
+                          className="h-7 w-full border-0 bg-transparent px-2 text-right text-xs font-normal text-slate-700 tabular-nums outline-none ring-0 focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 placeholder:text-slate-400 transition-colors"
                         />
                       </td>
 
                       {/* QTY (Seamless Table Cell) */}
-                      <td className="border-b border-r border-slate-200/80 p-0">
+                      <td className="border-b border-r border-slate-300 p-0">
                         <input
                           type="number"
                           min={0}
@@ -1070,22 +1077,23 @@ export function PosSaleModal() {
                           onChange={(e) =>
                             updateRow(r.id, { qty: Math.max(0, Number(e.target.value) || 0) })
                           }
-                          className="h-7 w-full border-0 bg-transparent px-2 text-right text-xs font-normal text-slate-700 tabular-nums outline-none ring-0 focus:bg-emerald-50/50 focus:ring-1 focus:ring-inset focus:ring-emerald-500 placeholder:text-slate-400 transition-colors"
+                          className="h-7 w-full border-0 bg-transparent px-2 text-right text-xs font-normal text-slate-700 tabular-nums outline-none ring-0 focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 placeholder:text-slate-400 transition-colors"
                         />
                       </td>
 
                       {/* UNIT (Seamless Table Cell) */}
-                      <td className="border-b border-r border-slate-200/80 p-0 text-center">
+                      <td className="border-b border-r border-slate-300 p-0 text-center">
                         <input
                           type="text"
                           value={r.unit}
                           onChange={(e) => updateRow(r.id, { unit: e.target.value })}
-                          className="h-7 w-full border-0 bg-transparent px-1 text-center text-xs font-normal text-slate-600 outline-none ring-0 focus:bg-emerald-50/50 focus:ring-1 focus:ring-inset focus:ring-emerald-500 transition-colors"
+                          placeholder=""
+                          className="h-7 w-full border-0 bg-transparent px-1 text-center text-xs font-medium text-slate-700 outline-none ring-0 focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 transition-colors"
                         />
                       </td>
 
                       {/* RATE (Seamless Table Cell) */}
-                      <td className="border-b border-r border-slate-200/80 p-0">
+                      <td className="border-b border-r border-slate-300 p-0">
                         <input
                           type="number"
                           min={0}
@@ -1094,36 +1102,36 @@ export function PosSaleModal() {
                           onChange={(e) =>
                             updateRow(r.id, { rate: Math.max(0, Number(e.target.value) || 0) })
                           }
-                          className="h-7 w-full border-0 bg-transparent px-2 text-right text-xs font-normal text-slate-700 tabular-nums outline-none ring-0 focus:bg-emerald-50/50 focus:ring-1 focus:ring-inset focus:ring-emerald-500 placeholder:text-slate-400 transition-colors"
+                          className="h-7 w-full border-0 bg-transparent px-2 text-right text-xs font-normal text-slate-700 tabular-nums outline-none ring-0 focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 placeholder:text-slate-400 transition-colors"
                         />
                       </td>
 
                       {/* VAL EXCL. TAX (BOLD as in Screenshot!) */}
-                      <td className="border-b border-r border-slate-200/80 px-2 py-1 text-right tabular-nums text-xs font-bold text-slate-900">
+                      <td className="border-b border-r border-slate-300 px-2 py-1 text-right tabular-nums text-xs font-bold text-slate-900">
                         {r.valExclTax.toFixed(2)}
                       </td>
 
                       {/* S.T % (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-1 py-1 text-center tabular-nums text-xs font-normal text-slate-600">
+                      <td className="border-b border-r border-slate-300 px-1.5 py-1 text-center tabular-nums text-xs font-normal text-slate-600">
                         {r.taxRate.toFixed(2)}
                       </td>
 
                       {/* S.T AMT (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-2 py-1 text-right tabular-nums text-xs font-normal text-slate-800">
+                      <td className="border-b border-r border-slate-300 px-2 py-1 text-right tabular-nums text-xs font-normal text-slate-800">
                         {r.taxAmt.toFixed(2)}
                       </td>
 
                       {/* VAL INCL. TAX (BOLD AMBER as in Screenshot!) */}
-                      <td className="border-b border-r border-slate-200/80 px-2 py-1 text-right tabular-nums text-xs font-bold text-amber-700">
+                      <td className="border-b border-r border-slate-300 px-2 py-1 text-right tabular-nums text-xs font-bold text-amber-700">
                         {r.valInclTax.toFixed(2)}
                       </td>
 
                       {/* Action Delete */}
-                      <td className="border-b border-slate-200/80 p-0 text-center">
+                      <td className="border-b border-slate-300 p-0 text-center">
                         <button
                           type="button"
                           onClick={() => removeRow(r.id)}
-                          className="flex h-7 w-full cursor-pointer items-center justify-center text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                          className="flex h-5 w-5 mx-auto items-center justify-center rounded border border-rose-300 bg-rose-50/60 text-rose-600 transition hover:bg-rose-100 hover:text-rose-700 active:scale-90"
                           title="Delete row"
                         >
                           <Trash2 className="mx-auto h-3 w-3" />
@@ -1140,22 +1148,22 @@ export function PosSaleModal() {
                   <td colSpan={4} className="border-t-2 border-r border-slate-300 px-3 py-1 text-right uppercase tracking-wider text-slate-800 font-bold bg-slate-100">
                     Totals:
                   </td>
-                  <td className="border-t-2 border-r border-slate-300 px-1.5 py-1 text-right tabular-nums text-xs font-bold text-slate-900 bg-slate-100">
+                  <td className="border-t-2 border-r border-slate-300 px-2 py-1 text-right tabular-nums text-xs font-bold text-slate-900 bg-slate-100">
                     {totals.pieces === 0 ? '0' : totals.pieces.toFixed(2)}
                   </td>
-                  <td className="border-t-2 border-r border-slate-300 px-1.5 py-1 text-right tabular-nums text-xs font-bold text-slate-900 bg-slate-100">
+                  <td className="border-t-2 border-r border-slate-300 px-2 py-1 text-right tabular-nums text-xs font-bold text-slate-900 bg-slate-100">
                     {totals.qty === 0 ? '0' : totals.qty.toFixed(2)}
                   </td>
-                  <td className="border-t-2 border-r border-slate-300 px-1 py-1 text-center text-xs text-slate-400 font-normal bg-slate-100">-</td>
-                  <td className="border-t-2 border-r border-slate-300 px-1 py-1 text-center text-xs text-slate-400 font-normal bg-slate-100">-</td>
-                  <td className="border-t-2 border-r border-slate-300 px-1.5 py-1 text-right tabular-nums text-xs font-bold text-slate-950 bg-slate-100">
+                  <td className="border-t-2 border-r border-slate-300 px-1 py-1 text-center text-xs text-slate-400 font-normal bg-slate-100" />
+                  <td className="border-t-2 border-r border-slate-300 px-1 py-1 text-center text-xs text-slate-400 font-normal bg-slate-100" />
+                  <td className="border-t-2 border-r border-slate-300 px-2 py-1 text-right tabular-nums text-xs font-bold text-slate-950 bg-slate-100">
                     {totals.subtotal.toFixed(2)}
                   </td>
-                  <td className="border-t-2 border-r border-slate-300 px-1 py-1 text-center text-xs text-slate-400 font-normal bg-slate-100">-</td>
-                  <td className="border-t-2 border-r border-slate-300 px-1.5 py-1 text-right tabular-nums text-xs font-bold text-amber-700 bg-slate-100">
+                  <td className="border-t-2 border-r border-slate-300 px-1 py-1 text-center text-xs text-slate-400 font-normal bg-slate-100" />
+                  <td className="border-t-2 border-r border-slate-300 px-2 py-1 text-right tabular-nums text-xs font-bold text-amber-700 bg-slate-100">
                     {totals.taxTotal.toFixed(2)}
                   </td>
-                  <td className="border-t-2 border-r border-slate-300 px-1.5 py-1 text-right tabular-nums text-xs font-bold text-amber-700 bg-slate-100">
+                  <td className="border-t-2 border-r border-slate-300 px-2 py-1 text-right tabular-nums text-xs font-bold text-amber-700 bg-slate-100">
                     {totals.grandTotal.toFixed(2)}
                   </td>
                   <td className="border-t-2 border-slate-300 px-1 py-1 bg-slate-100" />

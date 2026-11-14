@@ -1473,13 +1473,27 @@ function SettingsContent() {
                 onChange={(e) => setPCategory(e.target.value)}
                 className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
               />
-              <input
-                type="text"
-                placeholder="Unit (Box/Pcs)"
-                value={pUnit}
-                onChange={(e) => setPUnit(e.target.value)}
-                className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
-              />
+              <div>
+                <input
+                  type="text"
+                  list="inventory-unit-options"
+                  placeholder="Unit (e.g. Kgs, Pcs, Box, Bag)"
+                  value={pUnit}
+                  onChange={(e) => setPUnit(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
+                />
+                <datalist id="inventory-unit-options">
+                  <option value="Kgs" />
+                  <option value="Pcs" />
+                  <option value="Box" />
+                  <option value="Bag" />
+                  <option value="Bundle" />
+                  <option value="Ft" />
+                  <option value="Mtr" />
+                  <option value="Set" />
+                  <option value="Pack" />
+                </datalist>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <input
