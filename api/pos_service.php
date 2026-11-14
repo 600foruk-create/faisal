@@ -42,6 +42,8 @@ function cast_customer(array $r): array
     $r['id'] = (int)$r['id'];
     $r['branch_id'] = $r['branch_id'] !== null ? (int)$r['branch_id'] : null;
     $r['is_walk_in'] = (int)$r['is_walk_in'];
+    $r['city'] = (string)($r['city'] ?? '');
+    $r['address'] = (string)($r['address'] ?? '');
     return $r;
 }
 
@@ -423,11 +425,28 @@ function mysql_save_product(PDO $pdo, array $input): array
     throw new RuntimeException('Failed to load saved product');
 }
 
+function mysql_ensure_customer_schema(PDO $pdo): void
+{
+    static $done = false;
+    if ($done) return;
+    try {
+        $cols = $pdo->query('SHOW COLUMNS FROM customers')->fetchAll(PDO::FETCH_COLUMN);
+        if (!in_array('city', $cols, true)) {
+            $pdo->exec("ALTER TABLE customers ADD COLUMN city VARCHAR(100) NOT NULL DEFAULT ''");
+        }
+        if (!in_array('address', $cols, true)) {
+            $pdo->exec("ALTER TABLE customers ADD COLUMN address VARCHAR(255) NOT NULL DEFAULT ''");
+        }
+    } catch (\Throwable $e) {}
+    $done = true;
+}
+
 function mysql_get_customers(PDO $pdo, ?int $branchId = null): array
 {
+    mysql_ensure_customer_schema($pdo);
     if ($branchId) {
         $stmt = $pdo->prepare(
-            'SELECT id, branch_id, name, phone, cnic, ntn, is_walk_in
+            'SELECT id, branch_id, name, phone, cnic, ntn, city, address, is_walk_in
              FROM customers
              WHERE branch_id IS NULL OR branch_id = ?
              ORDER BY is_walk_in DESC, name ASC'
@@ -436,7 +455,7 @@ function mysql_get_customers(PDO $pdo, ?int $branchId = null): array
         return array_map('cast_customer', $stmt->fetchAll());
     }
     $rows = $pdo->query(
-        'SELECT id, branch_id, name, phone, cnic, ntn, is_walk_in
+        'SELECT id, branch_id, name, phone, cnic, ntn, city, address, is_walk_in
          FROM customers
          ORDER BY is_walk_in DESC, name ASC'
     )->fetchAll();
@@ -445,10 +464,11 @@ function mysql_get_customers(PDO $pdo, ?int $branchId = null): array
 
 function mysql_create_customer(PDO $pdo, array $input): array
 {
+    mysql_ensure_customer_schema($pdo);
     $now = date('Y-m-d H:i:s');
     $stmt = $pdo->prepare(
-        'INSERT INTO customers (branch_id, name, phone, cnic, ntn, is_walk_in, created_at)
-         VALUES (?, ?, ?, ?, ?, 0, ?)'
+        'INSERT INTO customers (branch_id, name, phone, cnic, ntn, city, address, is_walk_in, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)'
     );
     $stmt->execute([
         !empty($input['branch_id']) ? (int)$input['branch_id'] : null,
@@ -456,19 +476,22 @@ function mysql_create_customer(PDO $pdo, array $input): array
         trim((string)($input['phone'] ?? '')),
         trim((string)($input['cnic'] ?? '')),
         trim((string)($input['ntn'] ?? '')),
+        trim((string)($input['city'] ?? '')),
+        trim((string)($input['address'] ?? '')),
         $now,
     ]);
     $id = (int)$pdo->lastInsertId();
-    $row = $pdo->prepare('SELECT id, branch_id, name, phone, cnic, ntn, is_walk_in FROM customers WHERE id = ?');
+    $row = $pdo->prepare('SELECT id, branch_id, name, phone, cnic, ntn, city, address, is_walk_in FROM customers WHERE id = ?');
     $row->execute([$id]);
     return cast_customer($row->fetch());
 }
 
 function mysql_update_customer(PDO $pdo, int $id, array $input): array
 {
+    mysql_ensure_customer_schema($pdo);
     $stmt = $pdo->prepare(
         'UPDATE customers
-         SET branch_id = ?, name = ?, phone = ?, cnic = ?, ntn = ?
+         SET branch_id = ?, name = ?, phone = ?, cnic = ?, ntn = ?, city = ?, address = ?
          WHERE id = ?'
     );
     $stmt->execute([
@@ -477,10 +500,14 @@ function mysql_update_customer(PDO $pdo, int $id, array $input): array
         trim((string)($input['phone'] ?? '')),
         trim((string)($input['cnic'] ?? '')),
         trim((string)($input['ntn'] ?? '')),
+        trim((string)($input['city'] ?? '')),
+        trim((string)($input['address'] ?? '')),
         $id,
     ]);
-    $row = $pdo->prepare('SELECT id, branch_id, name, phone, cnic, ntn, is_walk_in FROM customers WHERE id = ?');
+    $row = $pdo->prepare('SELECT id, branch_id, name, phone, cnic, ntn, city, address, is_walk_in FROM customers WHERE id = ?');
     $row->execute([$id]);
+    return cast_customer($row->fetch());
+}
     return cast_customer($row->fetch());
 }
 

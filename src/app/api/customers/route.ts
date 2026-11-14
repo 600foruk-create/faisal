@@ -22,6 +22,8 @@ export async function POST(req: NextRequest) {
       phone?: string;
       cnic?: string;
       ntn?: string;
+      city?: string;
+      address?: string;
     };
     if (!body.name?.trim()) {
       return jsonError(new Error('Customer name is required'), 400);
@@ -43,6 +45,8 @@ export async function PUT(req: NextRequest) {
       phone?: string;
       cnic?: string;
       ntn?: string;
+      city?: string;
+      address?: string;
     };
     if (!body.id || !body.name?.trim()) {
       return jsonError(new Error('Customer ID and name are required'), 400);

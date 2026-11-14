@@ -66,6 +66,8 @@ CREATE TABLE IF NOT EXISTS customers (
   phone TEXT NOT NULL DEFAULT '',
   cnic TEXT NOT NULL DEFAULT '',
   ntn TEXT NOT NULL DEFAULT '',
+  city TEXT NOT NULL DEFAULT '',
+  address TEXT NOT NULL DEFAULT '',
   is_walk_in INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
@@ -183,6 +185,12 @@ export function initDatabase(db: DatabaseSync, options?: { seed?: boolean }): Da
   db.exec('PRAGMA journal_mode = WAL;');
   db.exec('PRAGMA foreign_keys = ON;');
   db.exec(SCHEMA_SQL);
+  try {
+    db.exec("ALTER TABLE customers ADD COLUMN city TEXT NOT NULL DEFAULT ''");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE customers ADD COLUMN address TEXT NOT NULL DEFAULT ''");
+  } catch {}
   if (options?.seed !== false) {
     seedInitialData(db);
   }

@@ -210,7 +210,7 @@ export function getCustomers(db: DatabaseSync, branchId?: number | null): Custom
   if (branchId) {
     return db
       .prepare(
-        `SELECT id, branch_id, name, phone, cnic, ntn, is_walk_in
+        `SELECT id, branch_id, name, phone, cnic, ntn, city, address, is_walk_in
          FROM customers
          WHERE branch_id IS NULL OR branch_id = ?
          ORDER BY is_walk_in DESC, name ASC`
@@ -219,7 +219,7 @@ export function getCustomers(db: DatabaseSync, branchId?: number | null): Custom
   }
   return db
     .prepare(
-      `SELECT id, branch_id, name, phone, cnic, ntn, is_walk_in
+      `SELECT id, branch_id, name, phone, cnic, ntn, city, address, is_walk_in
        FROM customers
        ORDER BY is_walk_in DESC, name ASC`
     )
@@ -228,13 +228,21 @@ export function getCustomers(db: DatabaseSync, branchId?: number | null): Custom
 
 export function createCustomer(
   db: DatabaseSync,
-  input: { branch_id?: number | null; name: string; phone?: string; cnic?: string; ntn?: string }
+  input: {
+    branch_id?: number | null;
+    name: string;
+    phone?: string;
+    cnic?: string;
+    ntn?: string;
+    city?: string;
+    address?: string;
+  }
 ): Customer {
   const now = getLocalIsoDateTime();
   const res = db
     .prepare(
-      `INSERT INTO customers (branch_id, name, phone, cnic, ntn, is_walk_in, created_at)
-       VALUES (?, ?, ?, ?, ?, 0, ?)`
+      `INSERT INTO customers (branch_id, name, phone, cnic, ntn, city, address, is_walk_in, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)`
     )
     .run(
       input.branch_id ?? null,
@@ -242,21 +250,33 @@ export function createCustomer(
       (input.phone ?? '').trim(),
       (input.cnic ?? '').trim(),
       (input.ntn ?? '').trim(),
+      (input.city ?? '').trim(),
+      (input.address ?? '').trim(),
       now
     );
   return db
-    .prepare('SELECT id, branch_id, name, phone, cnic, ntn, is_walk_in FROM customers WHERE id = ?')
+    .prepare(
+      'SELECT id, branch_id, name, phone, cnic, ntn, city, address, is_walk_in FROM customers WHERE id = ?'
+    )
     .get(Number(res.lastInsertRowid)) as unknown as Customer;
 }
 
 export function updateCustomer(
   db: DatabaseSync,
   id: number,
-  input: { branch_id?: number | null; name: string; phone?: string; cnic?: string; ntn?: string }
+  input: {
+    branch_id?: number | null;
+    name: string;
+    phone?: string;
+    cnic?: string;
+    ntn?: string;
+    city?: string;
+    address?: string;
+  }
 ): Customer {
   db.prepare(
     `UPDATE customers
-     SET branch_id = ?, name = ?, phone = ?, cnic = ?, ntn = ?
+     SET branch_id = ?, name = ?, phone = ?, cnic = ?, ntn = ?, city = ?, address = ?
      WHERE id = ?`
   ).run(
     input.branch_id ?? null,
@@ -264,10 +284,14 @@ export function updateCustomer(
     (input.phone ?? '').trim(),
     (input.cnic ?? '').trim(),
     (input.ntn ?? '').trim(),
+    (input.city ?? '').trim(),
+    (input.address ?? '').trim(),
     id
   );
   return db
-    .prepare('SELECT id, branch_id, name, phone, cnic, ntn, is_walk_in FROM customers WHERE id = ?')
+    .prepare(
+      'SELECT id, branch_id, name, phone, cnic, ntn, city, address, is_walk_in FROM customers WHERE id = ?'
+    )
     .get(id) as unknown as Customer;
 }
 
