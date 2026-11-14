@@ -1059,11 +1059,11 @@ export function PosSaleModal() {
                           type="number"
                           min={0}
                           value={r.pieces === 0 ? '' : r.pieces}
-                          placeholder="0.00"
+                          placeholder=""
                           onChange={(e) =>
                             updateRow(r.id, { pieces: Math.max(0, Number(e.target.value) || 0) })
                           }
-                          className="h-7 w-full border-0 bg-transparent px-2 text-right text-xs font-normal text-slate-700 tabular-nums outline-none ring-0 focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 placeholder:text-slate-400 transition-colors"
+                          className="h-7 w-full border-0 bg-transparent px-2 text-right text-xs font-normal text-slate-800 tabular-nums outline-none ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 transition-colors"
                         />
                       </td>
 
@@ -1077,7 +1077,7 @@ export function PosSaleModal() {
                           onChange={(e) =>
                             updateRow(r.id, { qty: Math.max(0, Number(e.target.value) || 0) })
                           }
-                          className="h-7 w-full border-0 bg-transparent px-2 text-right text-xs font-normal text-slate-700 tabular-nums outline-none ring-0 focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 placeholder:text-slate-400 transition-colors"
+                          className="h-7 w-full border-0 bg-transparent px-2 text-right text-xs font-normal text-slate-800 tabular-nums outline-none ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 placeholder:text-slate-400 transition-colors"
                         />
                       </td>
 
@@ -1088,7 +1088,7 @@ export function PosSaleModal() {
                           value={r.unit}
                           onChange={(e) => updateRow(r.id, { unit: e.target.value })}
                           placeholder=""
-                          className="h-7 w-full border-0 bg-transparent px-1 text-center text-xs font-medium text-slate-700 outline-none ring-0 focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 transition-colors"
+                          className="h-7 w-full border-0 bg-transparent px-1 text-center text-xs font-medium text-slate-800 outline-none ring-0 focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 transition-colors"
                         />
                       </td>
 
@@ -1102,7 +1102,7 @@ export function PosSaleModal() {
                           onChange={(e) =>
                             updateRow(r.id, { rate: Math.max(0, Number(e.target.value) || 0) })
                           }
-                          className="h-7 w-full border-0 bg-transparent px-2 text-right text-xs font-normal text-slate-700 tabular-nums outline-none ring-0 focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 placeholder:text-slate-400 transition-colors"
+                          className="h-7 w-full border-0 bg-transparent px-2 text-right text-xs font-normal text-slate-800 tabular-nums outline-none ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 placeholder:text-slate-400 transition-colors"
                         />
                       </td>
 

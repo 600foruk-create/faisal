@@ -14,6 +14,18 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Remove spin button / arrow stepper icons from number inputs */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+
 @media print {
   body * {
     visibility: hidden !important;
