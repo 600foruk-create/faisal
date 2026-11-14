@@ -114,6 +114,26 @@ try {
             $cust = mysql_create_customer($pdo, $body);
             json_out(['customer' => $cust], 201);
         }
+        if ($method === 'PUT') {
+            $body = read_json_body();
+            $id = parse_opt_int($body['id'] ?? null);
+            if (!$id || empty($body['name'])) {
+                json_out(['error' => 'Customer ID and name are required'], 400);
+            }
+            $cust = mysql_update_customer($pdo, $id, $body);
+            json_out(['customer' => $cust]);
+        }
+        if ($method === 'DELETE') {
+            $id = parse_opt_int($_GET['id'] ?? null);
+            if (!$id) {
+                json_out(['error' => 'Customer ID is required'], 400);
+            }
+            $ok = mysql_delete_customer($pdo, $id);
+            if (!$ok) {
+                json_out(['error' => 'Cannot delete walk-in or default customer'], 400);
+            }
+            json_out(['success' => true]);
+        }
     }
 
     if ($route === 'sales') {

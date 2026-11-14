@@ -17,6 +17,14 @@ interface PosContextValue {
   setIsPosModalOpen: (open: boolean) => void;
   openPosSale: () => void;
   closePosSale: () => void;
+  isCustomerModalOpen: boolean;
+  setIsCustomerModalOpen: (open: boolean) => void;
+  openCustomerModal: () => void;
+  closeCustomerModal: () => void;
+  selectedCustomerId: number | null;
+  setSelectedCustomerId: (id: number | null) => void;
+  customerRefreshNonce: number;
+  triggerCustomerRefresh: () => void;
   setActiveBranchId: (branchId: number | null) => void;
   setActiveUser: (user: UserSummary | null) => void;
   triggerRefresh: () => void;
@@ -50,9 +58,15 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [refreshNonce, setRefreshNonce] = useState(0);
   const [isPosModalOpen, setIsPosModalOpen] = useState(false);
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
+  const [customerRefreshNonce, setCustomerRefreshNonce] = useState(0);
 
   const openPosSale = useCallback(() => setIsPosModalOpen(true), []);
   const closePosSale = useCallback(() => setIsPosModalOpen(false), []);
+  const openCustomerModal = useCallback(() => setIsCustomerModalOpen(true), []);
+  const closeCustomerModal = useCallback(() => setIsCustomerModalOpen(false), []);
+  const triggerCustomerRefresh = useCallback(() => setCustomerRefreshNonce((n) => n + 1), []);
 
   const refreshHeldCount = useCallback(async () => {
     try {
@@ -154,6 +168,14 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         setIsPosModalOpen,
         openPosSale,
         closePosSale,
+        isCustomerModalOpen,
+        setIsCustomerModalOpen,
+        openCustomerModal,
+        closeCustomerModal,
+        selectedCustomerId,
+        setSelectedCustomerId,
+        customerRefreshNonce,
+        triggerCustomerRefresh,
         setActiveBranchId,
         setActiveUser,
         triggerRefresh,

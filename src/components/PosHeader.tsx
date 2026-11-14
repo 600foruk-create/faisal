@@ -28,7 +28,12 @@ import {
 } from 'lucide-react';
 import { usePosContext } from './PosContext';
 
-type MenuAction = 'backup' | 'about_software' | 'about_license' | 'about_contact';
+type MenuAction =
+  | 'backup'
+  | 'about_software'
+  | 'about_license'
+  | 'about_contact'
+  | 'open_customers_modal';
 type AboutSection = 'software' | 'license' | 'contact';
 
 interface DropdownItem {
@@ -68,7 +73,7 @@ const ADMIN_SUBHEADER_MENUS: DropdownGroup[] = [
     label: 'Maintain',
     adminOnly: true,
     items: [
-      { label: 'Customers', href: '/settings?tab=customers', icon: Users },
+      { label: 'Customers', action: 'open_customers_modal', icon: Users },
       { label: 'Chart Of Inventory', href: '/settings?tab=products', icon: Package },
       { label: 'Inventory Opening Balances', href: '/settings?tab=stock_opening', icon: Boxes },
       { label: 'Item Price Settings', href: '/settings?tab=pricing', icon: Tag },
@@ -96,6 +101,7 @@ export function PosHeader() {
     setActiveBranchId,
     setActiveUser,
     triggerRefresh,
+    openCustomerModal,
   } = usePosContext();
 
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -225,6 +231,22 @@ export function PosHeader() {
                             type="button"
                             onClick={() => void handleDownloadBackup()}
                             className="flex w-full cursor-pointer items-center gap-2.5 border-t border-slate-100 px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700"
+                          >
+                            <Icon className="h-3.5 w-3.5 text-emerald-600" />
+                            <span>{item.label}</span>
+                          </button>
+                        );
+                      }
+                      if (item.action === 'open_customers_modal') {
+                        return (
+                          <button
+                            key={item.label}
+                            type="button"
+                            onClick={() => {
+                              setOpenMenu(null);
+                              openCustomerModal();
+                            }}
+                            className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700"
                           >
                             <Icon className="h-3.5 w-3.5 text-emerald-600" />
                             <span>{item.label}</span>

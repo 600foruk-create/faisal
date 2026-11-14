@@ -464,6 +464,39 @@ function mysql_create_customer(PDO $pdo, array $input): array
     return cast_customer($row->fetch());
 }
 
+function mysql_update_customer(PDO $pdo, int $id, array $input): array
+{
+    $stmt = $pdo->prepare(
+        'UPDATE customers
+         SET branch_id = ?, name = ?, phone = ?, cnic = ?, ntn = ?
+         WHERE id = ?'
+    );
+    $stmt->execute([
+        !empty($input['branch_id']) ? (int)$input['branch_id'] : null,
+        trim((string)$input['name']),
+        trim((string)($input['phone'] ?? '')),
+        trim((string)($input['cnic'] ?? '')),
+        trim((string)($input['ntn'] ?? '')),
+        $id,
+    ]);
+    $row = $pdo->prepare('SELECT id, branch_id, name, phone, cnic, ntn, is_walk_in FROM customers WHERE id = ?');
+    $row->execute([$id]);
+    return cast_customer($row->fetch());
+}
+
+function mysql_delete_customer(PDO $pdo, int $id): bool
+{
+    $stmt = $pdo->prepare('SELECT is_walk_in FROM customers WHERE id = ?');
+    $stmt->execute([$id]);
+    $cust = $stmt->fetch();
+    if (!$cust || (int)$cust['is_walk_in'] === 1) {
+        return false;
+    }
+    $del = $pdo->prepare('DELETE FROM customers WHERE id = ?');
+    $del->execute([$id]);
+    return true;
+}
+
 function mysql_get_dashboard_summary(PDO $pdo, ?int $branchId, string $fromDate, string $toDate, int $limit = 15): array
 {
     $where = ['i.invoice_date >= ?', 'i.invoice_date <= ?'];

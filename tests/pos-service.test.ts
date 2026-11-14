@@ -4,11 +4,15 @@ import { createInMemoryDb } from '../src/lib/db.ts';
 import { getLocalIsoDate } from '../src/lib/format.ts';
 import {
   authenticateUser,
+  clearAllTransactions,
+  createCustomer,
   createSale,
   createSalesReturn,
+  deleteCustomer,
   exportSystemBackup,
   getBranchesWithTerminals,
   getBusinessSettings,
+  getCustomers,
   getDashboardSummary,
   getDayClosingPreview,
   getInvoiceDetail,
@@ -19,8 +23,8 @@ import {
   submitDayClosing,
   syncPendingFbrInvoices,
   updateBusinessSettings,
+  updateCustomer,
   updateUser,
-  clearAllTransactions,
 } from '../src/lib/pos-service.ts';
 
 describe('Multi-Branch POS & FBR Integration Service', () => {
@@ -265,6 +269,48 @@ describe('Multi-Branch POS & FBR Integration Service', () => {
     assert.equal(after.held_carts_count, 0);
     assert.equal(getUsers(db).length >= 3, true);
     assert.equal(getProducts(db, { includeInactive: true }).length > 0, true);
+  });
+
+  it('creates, updates, and deletes customers while protecting walk-in profile', () => {
+    const db = createInMemoryDb(true);
+    const initial = getCustomers(db);
+    const walkIn = initial.find((c) => c.is_walk_in === 1)!;
+    assert.ok(walkIn);
+
+    // Walk-in deletion should fail
+    const cannotDeleteWalkIn = deleteCustomer(db, walkIn.id);
+    assert.equal(cannotDeleteWalkIn, false);
+
+    // Create new customer
+    const created = createCustomer(db, {
+      branch_id: 1,
+      name: 'Haji Usman Hardware',
+      phone: '0300-9876543',
+      cnic: '13302-1234567-1',
+      ntn: '1234567-8',
+    });
+    assert.equal(created.name, 'Haji Usman Hardware');
+    assert.equal(created.phone, '0300-9876543');
+    assert.equal(created.is_walk_in, 0);
+
+    // Update customer
+    const updated = updateCustomer(db, created.id, {
+      branch_id: 2,
+      name: 'Haji Usman Hardware & Sanitary',
+      phone: '0300-9876544',
+      cnic: '13302-1234567-1',
+      ntn: '9999999-9',
+    });
+    assert.equal(updated.name, 'Haji Usman Hardware & Sanitary');
+    assert.equal(updated.phone, '0300-9876544');
+    assert.equal(updated.branch_id, 2);
+
+    // Delete customer
+    const deleted = deleteCustomer(db, created.id);
+    assert.equal(deleted, true);
+
+    const remaining = getCustomers(db);
+    assert.equal(remaining.some((c) => c.id === created.id), false);
   });
 });
 

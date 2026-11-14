@@ -249,6 +249,37 @@ export function createCustomer(
     .get(Number(res.lastInsertRowid)) as unknown as Customer;
 }
 
+export function updateCustomer(
+  db: DatabaseSync,
+  id: number,
+  input: { branch_id?: number | null; name: string; phone?: string; cnic?: string; ntn?: string }
+): Customer {
+  db.prepare(
+    `UPDATE customers
+     SET branch_id = ?, name = ?, phone = ?, cnic = ?, ntn = ?
+     WHERE id = ?`
+  ).run(
+    input.branch_id ?? null,
+    input.name.trim(),
+    (input.phone ?? '').trim(),
+    (input.cnic ?? '').trim(),
+    (input.ntn ?? '').trim(),
+    id
+  );
+  return db
+    .prepare('SELECT id, branch_id, name, phone, cnic, ntn, is_walk_in FROM customers WHERE id = ?')
+    .get(id) as unknown as Customer;
+}
+
+export function deleteCustomer(db: DatabaseSync, id: number): boolean {
+  const cust = db.prepare('SELECT is_walk_in FROM customers WHERE id = ?').get(id) as
+    | { is_walk_in: number }
+    | undefined;
+  if (!cust || cust.is_walk_in === 1) return false;
+  db.prepare('DELETE FROM customers WHERE id = ?').run(id);
+  return true;
+}
+
 export function getUsers(db: DatabaseSync): UserSummary[] {
   return db
     .prepare(

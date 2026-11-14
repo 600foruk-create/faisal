@@ -93,6 +93,9 @@ export function PosSaleModal() {
     refreshHeldCount,
     refreshNonce,
     closePosSale,
+    openCustomerModal,
+    selectedCustomerId: contextCustomerId,
+    customerRefreshNonce,
   } = usePosContext();
 
   const router = useRouter();
@@ -195,13 +198,19 @@ export function PosSaleModal() {
 
   useEffect(() => {
     void loadCatalog();
-  }, [loadCatalog, refreshNonce]);
+  }, [loadCatalog, refreshNonce, customerRefreshNonce]);
+
+  useEffect(() => {
+    if (contextCustomerId) {
+      setSelectedCustomerId(contextCustomerId);
+    }
+  }, [contextCustomerId]);
 
   useEffect(() => {
     if (selectedCustomerId) {
       const c = customers.find((cust) => cust.id === selectedCustomerId);
       if (c) {
-        setCustomerAddress(c.phone || c.name || 'Haripur');
+        setCustomerAddress(c.address || c.phone || c.name || 'Haripur');
       }
     }
   }, [selectedCustomerId, customers]);
@@ -888,8 +897,8 @@ export function PosSaleModal() {
                   </select>
                   <button
                     type="button"
-                    onClick={() => setShowNewCustomer(true)}
-                    title="Add New Customer"
+                    onClick={openCustomerModal}
+                    title="Open Customers Directory (F2 / Maintain)"
                     className="flex h-5.5 w-5.5 shrink-0 cursor-pointer items-center justify-center rounded border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
                   >
                     <UserPlus className="h-3 w-3" />

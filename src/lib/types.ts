@@ -64,6 +64,8 @@ export interface Customer {
   phone: string;
   cnic: string;
   ntn: string;
+  address?: string;
+  city?: string;
   is_walk_in: number;
 }
 

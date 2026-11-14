@@ -7,9 +7,10 @@ import { PosSidebar } from '@/components/PosSidebar';
 import { TopBrandBar } from '@/components/TopBrandBar';
 import { usePosContext } from './PosContext';
 import { PosSaleModal } from './PosSaleModal';
+import { CustomerModal } from './CustomerModal';
 
 export function PosLayoutShell({ children }: { children: React.ReactNode }) {
-  const { isPosModalOpen } = usePosContext();
+  const { isPosModalOpen, isCustomerModalOpen } = usePosContext();
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F3F5F8] text-slate-900 antialiased lg:h-screen lg:overflow-hidden">
@@ -32,6 +33,9 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
 
       {/* FLOATING POS SALE FORM WINDOW (Executive Desktop ERP Dialog over Dashboard) */}
       {isPosModalOpen && <PosSaleModal />}
+
+      {/* FLOATING CUSTOMER DIRECTORY MODAL (Maintain Module) */}
+      {isCustomerModalOpen && <CustomerModal />}
     </div>
   );
 }
