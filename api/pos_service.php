@@ -30,10 +30,25 @@ function cast_product(array $r): array
 {
     $r['id'] = (int)$r['id'];
     $r['sale_price'] = (float)$r['sale_price'];
-    $r['cost_price'] = (float)$r['cost_price'];
-    $r['tax_rate'] = (float)$r['tax_rate'];
-    $r['stock_qty'] = (float)$r['stock_qty'];
+    $r['cost_price'] = (float)($r['cost_price'] ?? 0);
+    $r['wholesale_price'] = (float)($r['wholesale_price'] ?? ($r['sale_price'] > 0 ? round($r['sale_price'] * 0.9, 2) : 0));
+    $r['tax_rate'] = (float)($r['tax_rate'] ?? 18);
+    $r['stock_qty'] = (float)($r['stock_qty'] ?? 0);
     $r['is_active'] = (int)$r['is_active'];
+    $r['hs_code'] = (string)($r['hs_code'] ?? '3917.2390');
+
+    $cat = (string)($r['category'] ?? '');
+    if (!empty($r['main_category'])) {
+        $r['main_category'] = (string)$r['main_category'];
+        $r['sub_category'] = (string)($r['sub_category'] ?? '');
+    } elseif (strpos($cat, '>') !== false) {
+        $parts = explode('>', $cat, 2);
+        $r['main_category'] = trim($parts[0]);
+        $r['sub_category'] = trim($parts[1]);
+    } else {
+        $r['main_category'] = $cat ?: 'General';
+        $r['sub_category'] = $cat ?: 'General';
+    }
     return $r;
 }
 
@@ -348,6 +363,14 @@ function mysql_get_products(PDO $pdo, array $options = []): array
 function mysql_save_product(PDO $pdo, array $input): array
 {
     $now = date('Y-m-d H:i:s');
+    $mainCat = trim((string)($input['main_category'] ?? ''));
+    $subCat = trim((string)($input['sub_category'] ?? ''));
+    if ($subCat && $mainCat) {
+        $cat = "{$mainCat} > {$subCat}";
+    } else {
+        $cat = $subCat ?: ($mainCat ?: (trim((string)($input['category'] ?? 'General')) ?: 'General'));
+    }
+
     $pdo->beginTransaction();
     try {
         $productId = !empty($input['id']) ? (int)$input['id'] : null;
@@ -362,7 +385,7 @@ function mysql_save_product(PDO $pdo, array $input): array
                 trim((string)$input['sku']),
                 trim((string)($input['barcode'] ?? '')),
                 trim((string)$input['name']),
-                trim((string)($input['category'] ?? 'General')) ?: 'General',
+                $cat,
                 trim((string)($input['unit'] ?? 'Pcs')) ?: 'Pcs',
                 round_money((float)$input['sale_price']),
                 round_money((float)($input['cost_price'] ?? 0)),
@@ -379,7 +402,7 @@ function mysql_save_product(PDO $pdo, array $input): array
                 trim((string)$input['sku']),
                 trim((string)($input['barcode'] ?? '')),
                 trim((string)$input['name']),
-                trim((string)($input['category'] ?? 'General')) ?: 'General',
+                $cat,
                 trim((string)($input['unit'] ?? 'Pcs')) ?: 'Pcs',
                 round_money((float)$input['sale_price']),
                 round_money((float)($input['cost_price'] ?? 0)),

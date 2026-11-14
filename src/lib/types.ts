@@ -49,10 +49,13 @@ export interface ProductWithStock {
   barcode: string;
   name: string;
   category: string;
+  main_category?: string;
+  sub_category?: string;
   unit: string;
   hs_code?: string;
   sale_price: number;
   cost_price: number;
+  wholesale_price?: number;
   tax_rate: number;
   stock_qty: number;
   is_active: number;

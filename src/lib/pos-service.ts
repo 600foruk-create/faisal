@@ -108,7 +108,21 @@ export function getProducts(
       ${whereClause}
       ORDER BY p.category ASC, p.name ASC
     `;
-    return db.prepare(sql).all(branchId, ...params) as unknown as ProductWithStock[];
+    const rows = db.prepare(sql).all(branchId, ...params) as unknown as ProductWithStock[];
+    return rows.map((r) => {
+      const c = r.category || '';
+      if (c.includes('>')) {
+        const [m, s] = c.split('>');
+        r.main_category = m.trim();
+        r.sub_category = s.trim();
+      } else {
+        r.main_category = c || 'General';
+        r.sub_category = c || 'General';
+      }
+      r.wholesale_price = r.wholesale_price || (r.sale_price > 0 ? roundMoney(r.sale_price * 0.9) : 0);
+      r.hs_code = r.hs_code || '3917.2390';
+      return r;
+    });
   }
 
   const sql = `
@@ -121,7 +135,21 @@ export function getProducts(
     GROUP BY p.id
     ORDER BY p.category ASC, p.name ASC
   `;
-  return db.prepare(sql).all(...params) as unknown as ProductWithStock[];
+  const rows = db.prepare(sql).all(...params) as unknown as ProductWithStock[];
+  return rows.map((r) => {
+    const c = r.category || '';
+    if (c.includes('>')) {
+      const [m, s] = c.split('>');
+      r.main_category = m.trim();
+      r.sub_category = s.trim();
+    } else {
+      r.main_category = c || 'General';
+      r.sub_category = c || 'General';
+    }
+    r.wholesale_price = r.wholesale_price || (r.sale_price > 0 ? roundMoney(r.sale_price * 0.9) : 0);
+    r.hs_code = r.hs_code || '3917.2390';
+    return r;
+  });
 }
 
 export function saveProduct(
@@ -131,10 +159,14 @@ export function saveProduct(
     sku: string;
     barcode?: string;
     name: string;
-    category: string;
+    category?: string;
+    main_category?: string;
+    sub_category?: string;
     unit: string;
+    hs_code?: string;
     sale_price: number;
     cost_price?: number;
+    wholesale_price?: number;
     tax_rate: number;
     branch_id?: number;
     stock_qty?: number;
@@ -142,6 +174,12 @@ export function saveProduct(
   }
 ): ProductWithStock {
   const now = getLocalIsoDateTime();
+  const cat = (
+    input.sub_category && input.main_category
+      ? `${input.main_category} > ${input.sub_category}`
+      : input.sub_category || input.main_category || input.category || 'General'
+  ).trim();
+
   return withTransaction(db, () => {
     let productId = input.id;
     if (productId) {
@@ -154,7 +192,7 @@ export function saveProduct(
         input.sku.trim(),
         (input.barcode ?? '').trim(),
         input.name.trim(),
-        input.category.trim() || 'General',
+        cat,
         input.unit.trim() || 'Pcs',
         roundMoney(input.sale_price),
         roundMoney(input.cost_price ?? 0),
@@ -172,7 +210,7 @@ export function saveProduct(
           input.sku.trim(),
           (input.barcode ?? '').trim(),
           input.name.trim(),
-          input.category.trim() || 'General',
+          cat,
           input.unit.trim() || 'Pcs',
           roundMoney(input.sale_price),
           roundMoney(input.cost_price ?? 0),

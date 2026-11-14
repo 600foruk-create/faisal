@@ -640,6 +640,10 @@ export function PosSaleModal() {
         e.preventDefault();
         setShowPaymentModal(true);
       }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        setShowPaymentModal(true);
+      }
       if (e.key === 'F2') {
         e.preventDefault();
         barcodeInputRef.current?.focus();
@@ -693,10 +697,10 @@ export function PosSaleModal() {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-1 sm:p-1.5 bg-slate-950/45 backdrop-blur-[2px] transition-all font-sans overflow-y-auto">
       {/* FLOATING WINDOW CONTAINER - EXACT ERP PROPORTIONS MATCHING SCREENSHOT */}
       <div
-        className={`flex w-full flex-col overflow-hidden rounded-xl bg-[#F8FAFC] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.55)] border border-slate-300 transition-all duration-200 ${
+        className={`flex w-full flex-col rounded-xl bg-[#F8FAFC] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.55)] border border-slate-300 transition-all duration-200 ${
           isMaximized
-            ? 'fixed inset-2 z-50 h-[calc(100vh-16px)] max-h-none'
-            : 'w-[96vw] max-w-[1240px] max-h-[96vh] my-auto'
+            ? 'fixed inset-2 z-50 h-[calc(100vh-16px)] max-h-none overflow-hidden'
+            : 'w-[96vw] max-w-[1240px] max-h-[96vh] my-auto overflow-y-auto'
         }`}
       >
         {/* 1. SEASTONE EXECUTIVE TITLE BAR (SLIM ERP TITLE BAR) */}
@@ -974,24 +978,24 @@ export function PosSaleModal() {
 
         {/* 4. TABLE SECTION (10 ROWS - COMPACT PROPORTION MATCHING ERP) */}
         <div className="px-3 py-0.5">
-          <div className="overflow-x-auto rounded-lg border border-slate-300 bg-white shadow-2xs max-h-[295px] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400 [&::-webkit-scrollbar-track]:bg-slate-100">
+          <div className="overflow-x-auto rounded-lg border border-slate-300 bg-white shadow-2xs max-h-[245px] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400 [&::-webkit-scrollbar-track]:bg-slate-100">
             <table className="w-full min-w-[1060px] border-separate border-spacing-0 text-left text-xs">
               {/* Sticky Table Header - BOLD UPPERCASE */}
               <thead className="sticky top-0 z-20 shadow-xs">
                 <tr className="bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] text-[10px] font-bold uppercase tracking-wider text-slate-100">
-                  <th className="w-8 px-1 py-1 text-center border-b-2 border-emerald-500 border-r border-white/20 bg-[#091529]">#</th>
-                  <th className="w-32 px-1.5 py-1 border-b-2 border-emerald-500 border-r border-white/20 bg-[#0a182e]">ITEM CODE</th>
-                  <th className="w-24 px-1.5 py-1 border-b-2 border-emerald-500 border-r border-white/20 bg-[#0c1c36]">HS CODE</th>
-                  <th className="min-w-[220px] px-1.5 py-1 border-b-2 border-emerald-500 border-r border-white/20 bg-[#0e1f3d]">DESCRIPTION</th>
-                  <th className="w-20 px-1.5 py-1 text-right border-b-2 border-emerald-500 border-r border-white/20 bg-[#0f2243]">PIECES</th>
-                  <th className="w-20 px-1.5 py-1 text-right border-b-2 border-emerald-500 border-r border-white/20 bg-[#10254a]">QTY</th>
-                  <th className="w-16 px-1 py-1 text-center border-b-2 border-emerald-500 border-r border-white/20 bg-[#11264c]">UNIT</th>
-                  <th className="w-24 px-1.5 py-1 text-right border-b-2 border-emerald-500 border-r border-white/20 bg-[#12274e]">RATE</th>
-                  <th className="w-28 px-1.5 py-1 text-right border-b-2 border-emerald-500 border-r border-white/20 bg-[#132952]">VAL EXCL. TAX</th>
-                  <th className="w-16 px-1 py-1 text-center border-b-2 border-emerald-500 border-r border-white/20 bg-[#132952]">S.T %</th>
-                  <th className="w-24 px-1.5 py-1 text-right border-b-2 border-emerald-500 border-r border-white/20 bg-[#132952]">S.T AMT</th>
-                  <th className="w-28 px-1.5 py-1 text-right border-b-2 border-emerald-500 border-r border-white/20 bg-[#132952]">VAL INCL. TAX</th>
-                  <th className="w-10 px-1 py-1 text-center border-b-2 border-emerald-500 bg-[#132952]">
+                  <th className="w-8 px-1 py-0.5 text-center border-b-2 border-emerald-500 border-r border-white/20 bg-[#091529]">#</th>
+                  <th className="w-32 px-1.5 py-0.5 border-b-2 border-emerald-500 border-r border-white/20 bg-[#0a182e]">ITEM CODE</th>
+                  <th className="w-24 px-1.5 py-0.5 border-b-2 border-emerald-500 border-r border-white/20 bg-[#0c1c36]">HS CODE</th>
+                  <th className="min-w-[220px] px-1.5 py-0.5 border-b-2 border-emerald-500 border-r border-white/20 bg-[#0e1f3d]">DESCRIPTION</th>
+                  <th className="w-20 px-1.5 py-0.5 text-right border-b-2 border-emerald-500 border-r border-white/20 bg-[#0f2243]">PIECES</th>
+                  <th className="w-20 px-1.5 py-0.5 text-right border-b-2 border-emerald-500 border-r border-white/20 bg-[#10254a]">QTY</th>
+                  <th className="w-16 px-1 py-0.5 text-center border-b-2 border-emerald-500 border-r border-white/20 bg-[#11264c]">UNIT</th>
+                  <th className="w-24 px-1.5 py-0.5 text-right border-b-2 border-emerald-500 border-r border-white/20 bg-[#12274e]">RATE</th>
+                  <th className="w-28 px-1.5 py-0.5 text-right border-b-2 border-emerald-500 border-r border-white/20 bg-[#132952]">VAL EXCL. TAX</th>
+                  <th className="w-16 px-1 py-0.5 text-center border-b-2 border-emerald-500 border-r border-white/20 bg-[#132952]">S.T %</th>
+                  <th className="w-24 px-1.5 py-0.5 text-right border-b-2 border-emerald-500 border-r border-white/20 bg-[#132952]">S.T AMT</th>
+                  <th className="w-28 px-1.5 py-0.5 text-right border-b-2 border-emerald-500 border-r border-white/20 bg-[#132952]">VAL INCL. TAX</th>
+                  <th className="w-10 px-1 py-0.5 text-center border-b-2 border-emerald-500 bg-[#132952]">
                     <Trash2 className="mx-auto h-3 w-3 opacity-70" />
                   </th>
                 </tr>
@@ -1003,12 +1007,12 @@ export function PosSaleModal() {
                   return (
                     <tr
                       key={r.id}
-                      className={`h-5.5 transition-colors hover:bg-sky-50/50 ${
+                      className={`h-5 transition-colors hover:bg-sky-50/50 ${
                         idx % 2 === 0 ? 'bg-white' : 'bg-[#fcfdfd]'
                       }`}
                     >
                       {/* # (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/90 px-1 py-0 text-center font-normal text-slate-500 tabular-nums text-[11px]">
+                      <td className="border-b border-r border-slate-200/90 px-1 py-0 text-center font-normal text-slate-500 tabular-nums text-[10.5px]">
                         {idx + 1}
                       </td>
 
@@ -1037,14 +1041,14 @@ export function PosSaleModal() {
                             }
                           }}
                           placeholder=""
-                          className="h-5.5 w-full border-0 bg-transparent px-1.5 py-0 text-[11px] font-normal text-slate-800 outline-none ring-0 focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 transition-colors"
+                          className="h-5 w-full border-0 bg-transparent px-1.5 py-0 text-[10.5px] font-normal text-slate-800 outline-none ring-0 focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 transition-colors"
                         />
 
                         {/* Interactive Autocomplete Dropdown */}
                         {activeSearchRowId === r.id && autocompleteProducts.length > 0 && (
                           <div
                             ref={searchDropdownRef}
-                            className="absolute left-0 top-6 z-50 max-h-52 w-80 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-2xl"
+                            className="absolute left-0 top-5.5 z-50 max-h-52 w-80 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-2xl"
                           >
                             {autocompleteProducts.map((p) => (
                               <button
@@ -1078,7 +1082,7 @@ export function PosSaleModal() {
                           value={r.hsCode}
                           onChange={(e) => updateRow(r.id, { hsCode: e.target.value })}
                           placeholder=""
-                          className="h-5.5 w-full border-0 bg-transparent px-1.5 py-0 text-[11px] font-normal text-slate-600 outline-none ring-0 focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 transition-colors"
+                          className="h-5 w-full border-0 bg-transparent px-1.5 py-0 text-[10.5px] font-normal text-slate-600 outline-none ring-0 focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 transition-colors"
                         />
                       </td>
 
@@ -1094,7 +1098,7 @@ export function PosSaleModal() {
                             setActiveSearchRowId(r.id);
                           }}
                           placeholder=""
-                          className="h-5.5 w-full border-0 bg-transparent px-1.5 py-0 text-[11px] font-normal text-slate-900 outline-none ring-0 focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 transition-colors"
+                          className="h-5 w-full border-0 bg-transparent px-1.5 py-0 text-[10.5px] font-normal text-slate-900 outline-none ring-0 focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 transition-colors"
                         />
                       </td>
 
@@ -1108,7 +1112,7 @@ export function PosSaleModal() {
                           onChange={(e) =>
                             updateRow(r.id, { pieces: Math.max(0, Number(e.target.value) || 0) })
                           }
-                          className="h-5.5 w-full border-0 bg-transparent px-1.5 py-0 text-right text-[11px] font-normal text-slate-800 tabular-nums outline-none ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 placeholder:text-slate-400 transition-colors"
+                          className="h-5 w-full border-0 bg-transparent px-1.5 py-0 text-right text-[10.5px] font-normal text-slate-800 tabular-nums outline-none ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 placeholder:text-slate-400 transition-colors"
                         />
                       </td>
 
@@ -1122,7 +1126,7 @@ export function PosSaleModal() {
                           onChange={(e) =>
                             updateRow(r.id, { qty: Math.max(0, Number(e.target.value) || 0) })
                           }
-                          className="h-5.5 w-full border-0 bg-transparent px-1.5 py-0 text-right text-[11px] font-normal text-slate-800 tabular-nums outline-none ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 placeholder:text-slate-400 transition-colors"
+                          className="h-5 w-full border-0 bg-transparent px-1.5 py-0 text-right text-[10.5px] font-normal text-slate-800 tabular-nums outline-none ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 placeholder:text-slate-400 transition-colors"
                         />
                       </td>
 
@@ -1133,7 +1137,7 @@ export function PosSaleModal() {
                           value={r.unit}
                           onChange={(e) => updateRow(r.id, { unit: e.target.value })}
                           placeholder=""
-                          className="h-5.5 w-full border-0 bg-transparent px-1 py-0 text-center text-[11px] font-medium text-slate-800 outline-none ring-0 focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 transition-colors"
+                          className="h-5 w-full border-0 bg-transparent px-1 py-0 text-center text-[10.5px] font-medium text-slate-800 outline-none ring-0 focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 transition-colors"
                         />
                       </td>
 
@@ -1147,27 +1151,27 @@ export function PosSaleModal() {
                           onChange={(e) =>
                             updateRow(r.id, { rate: Math.max(0, Number(e.target.value) || 0) })
                           }
-                          className="h-5.5 w-full border-0 bg-transparent px-1.5 py-0 text-right text-[11px] font-normal text-slate-800 tabular-nums outline-none ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 placeholder:text-slate-400 transition-colors"
+                          className="h-5 w-full border-0 bg-transparent px-1.5 py-0 text-right text-[10.5px] font-normal text-slate-800 tabular-nums outline-none ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:bg-sky-100/70 focus:ring-1 focus:ring-inset focus:ring-sky-500 placeholder:text-slate-400 transition-colors"
                         />
                       </td>
 
                       {/* VAL EXCL. TAX (BOLD as in Screenshot!) */}
-                      <td className="border-b border-r border-slate-200/90 px-1.5 py-0 text-right tabular-nums text-[11px] font-bold text-slate-900">
+                      <td className="border-b border-r border-slate-200/90 px-1.5 py-0 text-right tabular-nums text-[10.5px] font-bold text-slate-900">
                         {r.valExclTax.toFixed(2)}
                       </td>
 
                       {/* S.T % (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/90 px-1 py-0 text-center tabular-nums text-[11px] font-normal text-slate-600">
+                      <td className="border-b border-r border-slate-200/90 px-1 py-0 text-center tabular-nums text-[10.5px] font-normal text-slate-600">
                         {r.taxRate.toFixed(2)}
                       </td>
 
                       {/* S.T AMT (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/90 px-1.5 py-0 text-right tabular-nums text-[11px] font-normal text-slate-800">
+                      <td className="border-b border-r border-slate-200/90 px-1.5 py-0 text-right tabular-nums text-[10.5px] font-normal text-slate-800">
                         {r.taxAmt.toFixed(2)}
                       </td>
 
                       {/* VAL INCL. TAX (BOLD AMBER as in Screenshot!) */}
-                      <td className="border-b border-r border-slate-200/90 px-1.5 py-0 text-right tabular-nums text-[11px] font-bold text-amber-700">
+                      <td className="border-b border-r border-slate-200/90 px-1.5 py-0 text-right tabular-nums text-[10.5px] font-bold text-amber-700">
                         {r.valInclTax.toFixed(2)}
                       </td>
 
@@ -1176,7 +1180,7 @@ export function PosSaleModal() {
                         <button
                           type="button"
                           onClick={() => removeRow(r.id)}
-                          className="flex h-4.5 w-4.5 mx-auto items-center justify-center rounded border border-rose-200 bg-rose-50 text-rose-600 transition hover:bg-rose-100 hover:text-rose-700 active:scale-90"
+                          className="flex h-4 w-4 mx-auto items-center justify-center rounded border border-rose-200 bg-rose-50 text-rose-600 transition hover:bg-rose-100 hover:text-rose-700 active:scale-90"
                           title="Delete row"
                         >
                           <Trash2 className="mx-auto h-2.5 w-2.5" />
@@ -1189,7 +1193,7 @@ export function PosSaleModal() {
 
               {/* Sticky Table Totals Footer (BOLD TOTALS - PINNED AT BOTTOM OF TABLE) */}
               <tfoot className="sticky bottom-0 z-20 shadow-xs">
-                <tr className="bg-slate-100/98 text-slate-900 text-[11px] h-6">
+                <tr className="bg-slate-100/98 text-slate-900 text-[10.5px] h-5.5">
                   <td colSpan={4} className="border-t-2 border-r border-slate-300 px-2 py-0.5 text-right uppercase tracking-wider text-slate-800 font-bold bg-slate-100">
                     Totals:
                   </td>
@@ -1241,14 +1245,14 @@ export function PosSaleModal() {
                   <button
                     type="button"
                     onClick={() => void handleHoldSale()}
-                    className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-amber-200 bg-[#fffdf5] p-1.5 text-left shadow-2xs transition hover:bg-amber-100/70 active:scale-95"
+                    className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-amber-200 bg-[#fffdf5] p-1 text-left shadow-2xs transition hover:bg-amber-100/70 active:scale-95"
                   >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white shadow-2xs">
-                      <PauseCircle className="h-3.5 w-3.5" />
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white shadow-2xs">
+                      <PauseCircle className="h-3 w-3" />
                     </div>
                     <div>
-                      <span className="block text-[11px] font-bold text-amber-950">Hold Sale</span>
-                      <span className="text-[9.5px] font-normal text-amber-700">F6</span>
+                      <span className="block text-[10.5px] font-bold text-amber-950">Hold Sale</span>
+                      <span className="text-[9px] font-normal text-amber-700">F6</span>
                     </div>
                   </button>
 
@@ -1256,14 +1260,14 @@ export function PosSaleModal() {
                   <button
                     type="button"
                     onClick={() => void openRecallModal()}
-                    className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-indigo-200 bg-[#f8f9ff] p-1.5 text-left shadow-2xs transition hover:bg-indigo-100/70 active:scale-95"
+                    className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-indigo-200 bg-[#f8f9ff] p-1 text-left shadow-2xs transition hover:bg-indigo-100/70 active:scale-95"
                   >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white shadow-2xs">
-                      <RotateCcw className="h-3.5 w-3.5" />
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white shadow-2xs">
+                      <RotateCcw className="h-3 w-3" />
                     </div>
                     <div>
-                      <span className="block text-[11px] font-bold text-indigo-950">Recall Sale</span>
-                      <span className="text-[9.5px] font-normal text-indigo-700">F7</span>
+                      <span className="block text-[10.5px] font-bold text-indigo-950">Recall Sale</span>
+                      <span className="text-[9px] font-normal text-indigo-700">F7</span>
                     </div>
                   </button>
 
@@ -1272,14 +1276,14 @@ export function PosSaleModal() {
                     type="button"
                     disabled={submitting}
                     onClick={() => setShowPaymentModal(true)}
-                    className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-900 bg-[#091529] p-1.5 text-left text-white shadow-2xs transition hover:brightness-110 active:scale-95"
+                    className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-900 bg-[#091529] p-1 text-left text-white shadow-2xs transition hover:brightness-110 active:scale-95"
                   >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white shadow-2xs">
-                      <CloudUpload className="h-3.5 w-3.5" />
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white shadow-2xs">
+                      <CloudUpload className="h-3 w-3" />
                     </div>
                     <div>
-                      <span className="block text-[11px] font-bold text-white">Post to FBR</span>
-                      <span className="text-[9.5px] font-normal text-sky-300">FBR Submit</span>
+                      <span className="block text-[10.5px] font-bold text-white">Post to FBR</span>
+                      <span className="text-[9px] font-normal text-sky-300">FBR Submit</span>
                     </div>
                   </button>
 
@@ -1287,14 +1291,14 @@ export function PosSaleModal() {
                   <button
                     type="button"
                     onClick={clearAllRows}
-                    className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-rose-200 bg-[#fff8f8] p-1.5 text-left shadow-2xs transition hover:bg-rose-100/70 active:scale-95"
+                    className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-rose-200 bg-[#fff8f8] p-1 text-left shadow-2xs transition hover:bg-rose-100/70 active:scale-95"
                   >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-600 text-white shadow-2xs">
-                      <Trash2 className="h-3.5 w-3.5" />
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-600 text-white shadow-2xs">
+                      <Trash2 className="h-3 w-3" />
                     </div>
                     <div>
-                      <span className="block text-[11px] font-bold text-rose-950">Clear Sale</span>
-                      <span className="text-[9.5px] font-normal text-rose-700">Esc</span>
+                      <span className="block text-[10.5px] font-bold text-rose-950">Clear Sale</span>
+                      <span className="text-[9px] font-normal text-rose-700">Esc</span>
                     </div>
                   </button>
                 </div>
@@ -1362,7 +1366,7 @@ export function PosSaleModal() {
                 className="mt-1 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded bg-emerald-600 py-1 text-center text-xs font-bold text-white shadow-2xs hover:bg-emerald-500 active:scale-95 transition"
               >
                 <Printer className="h-3.5 w-3.5" />
-                <span>Save &amp; Print (Ctrl+S)</span>
+                <span>Save &amp; Print (Ctrl+P / Ctrl+S)</span>
               </button>
             </div>
           </div>
