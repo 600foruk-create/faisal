@@ -8,6 +8,7 @@ import {
   Building2,
   Check,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
   Coins,
   DollarSign,
@@ -17,8 +18,12 @@ import {
   Eye,
   FileSpreadsheet,
   Filter,
+  Folder,
   FolderOpen,
+  FolderPlus,
   FolderTree,
+  Hash,
+  HelpCircle,
   Layers,
   Maximize2,
   Minimize2,
@@ -51,6 +56,17 @@ export const QUICK_SIZES = ['1/2"', '3/4"', '1"', '1.25"', '1.5"', '2"', '2.5"',
 export const QUICK_SPECS = ["X 13'", "X 10'", '2.00 KG', '2.50 KG', '3.00 KG', '3.50 KG', '4.00 KG', 'Class B', 'Class D', 'Heavy Duty'];
 export const COMMON_UNITS = ['Pcs', 'Kgs', 'Mtr', 'Feet', 'Bundle', 'Bags', 'Box', 'Coil', 'Set'];
 export const CATEGORY_TYPES = ['Finish Goods', 'Raw Material', 'Trading Goods', 'Services', 'Assets', 'None'];
+export const STANDARD_HS_CODES = [
+  { code: '3917.2390', label: '3917.2390 - U-PVC Pipes & Rigid Conduits' },
+  { code: '3917.4000', label: '3917.4000 - Plastic Fittings (Elbows, Tees, Sockets)' },
+  { code: '6910.1000', label: '6910.1000 - Ceramic Sanitary Fixtures & Basins' },
+  { code: '6907.2100', label: '6907.2100 - Glazed Ceramic & Porcelain Tiles' },
+  { code: '3506.9100', label: '3506.9100 - Adhesives & Tile Bond Cement' },
+  { code: '8302.4100', label: '8302.4100 - Hardware & Mounting Accessories' },
+];
+export const BRANDS = ['SEASTONE', 'MASTER', 'POPULAR', 'IIL', 'ALPHA', 'CUSTOM', 'None'];
+
+type ActiveTabMode = 'CATALOG_TREE' | 'MAIN_CATEGORIES' | 'SUB_CATEGORIES';
 
 export function InventoryModal() {
   const {
@@ -64,21 +80,23 @@ export function InventoryModal() {
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
 
-  // Active Navigation Tab: 'ITEMS' | 'MAINS' | 'SUBS'
-  const [activeTab, setActiveTab] = useState<'ITEMS' | 'MAINS' | 'SUBS'>('ITEMS');
+  // Active top view tab
+  const [activeTab, setActiveTab] = useState<ActiveTabMode>('CATALOG_TREE');
 
   // Data states
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [savingItem, setSavingItem] = useState(false);
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [products, setProducts] = useState<ProductWithStock[]>([]);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Table filters for Items Tab
-  const [branchFilter, setBranchFilter] = useState('ALL');
-  const [selectedMainFilter, setSelectedMainFilter] = useState('ALL');
-  const [selectedSubFilter, setSelectedSubFilter] = useState('ALL');
+  // Tree & Filter states for CATALOG_TREE view
+  const [selectedMainCode, setSelectedMainCode] = useState<string>('ALL');
+  const [selectedSubCode, setSelectedSubCode] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedMains, setExpandedMains] = useState<Record<string, boolean>>({});
+  const [branchFilter, setBranchFilter] = useState('ALL');
+
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // ==========================================
@@ -86,38 +104,45 @@ export function InventoryModal() {
   // ==========================================
   const [showItemModal, setShowItemModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductWithStock | null>(null);
-  const [itemSku, setItemSku] = useState('');
-  const [itemBarcode, setItemBarcode] = useState('');
-  const [itemName, setItemName] = useState('');
-  const [itemMainCat, setItemMainCat] = useState('');
-  const [itemSubCat, setItemSubCat] = useState('');
-  const [itemUnit, setItemUnit] = useState('Pcs');
-  const [itemCostPrice, setItemCostPrice] = useState<number>(0);
-  const [itemSalePrice, setItemSalePrice] = useState<number>(0);
-  const [itemWholesalePrice, setItemWholesalePrice] = useState<number>(0);
-  const [itemTaxRate, setItemTaxRate] = useState<number>(18);
-  const [itemHsCode, setItemHsCode] = useState('3917.2390');
-  const [itemStockQty, setItemStockQty] = useState<number>(0);
-  const [itemError, setItemError] = useState<string | null>(null);
 
-  // Inline Quick Add Category Modal (Inside Item Popup)
-  const [showInlineCatModal, setShowInlineCatModal] = useState(false);
-  const [inlineCatTarget, setInlineCatTarget] = useState<'MAIN' | 'SUB'>('MAIN');
-  const [inlineCatName, setInlineCatName] = useState('');
+  const [formSku, setFormSku] = useState('');
+  const [formBarcode, setFormBarcode] = useState('');
+  const [formName, setFormName] = useState('');
+  const [formMainCat, setFormMainCat] = useState('FINISH GOODS');
+  const [formSubCat, setFormSubCat] = useState('U-PVC PRESSURE PIPES');
+  const [formUnit, setFormUnit] = useState('Pcs');
+  const [formBrand, setFormBrand] = useState('SEASTONE');
+  const [formRackNo, setFormRackNo] = useState('Rack A-01');
+  const [formCostPrice, setFormCostPrice] = useState<number>(0);
+  const [formSalePrice, setFormSalePrice] = useState<number>(0);
+  const [formWholesalePrice, setFormWholesalePrice] = useState<number>(0);
+  const [formTaxRate, setFormTaxRate] = useState<number>(18);
+  const [formHsCode, setFormHsCode] = useState('3917.2390');
+  const [formStockQty, setFormStockQty] = useState<number>(0);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // ==========================================
-  // Tab 2: Main Category Management States
+  // Dedicated Main Category Modal States
   // ==========================================
-  const [newMainName, setNewMainName] = useState('');
-  const [newMainCode, setNewMainCode] = useState('');
-  const [newMainType, setNewMainType] = useState('Finish Goods');
+  const [showMainCatModal, setShowMainCatModal] = useState(false);
+  const [editingMainCat, setEditingMainCat] = useState<InventoryCategory | null>(null);
+  const [mainCatCode, setMainCatCode] = useState('');
+  const [mainCatName, setMainCatName] = useState('');
+  const [mainCatType, setMainCatType] = useState('Finish Goods');
+  const [mainCatError, setMainCatError] = useState<string | null>(null);
+  const [savingMainCat, setSavingMainCat] = useState(false);
 
   // ==========================================
-  // Tab 3: Sub Category Management States
+  // Dedicated Sub-Category Modal States
   // ==========================================
-  const [newSubParent, setNewSubParent] = useState('');
-  const [newSubName, setNewSubName] = useState('');
-  const [newSubCode, setNewSubCode] = useState('');
+  const [showSubCatModal, setShowSubCatModal] = useState(false);
+  const [editingSubCat, setEditingSubCat] = useState<InventoryCategory | null>(null);
+  const [subCatParentCode, setSubCatParentCode] = useState('FG-1');
+  const [subCatCode, setSubCatCode] = useState('');
+  const [subCatName, setSubCatName] = useState('');
+  const [subCatType, setSubCatType] = useState('Finish Goods');
+  const [subCatError, setSubCatError] = useState<string | null>(null);
+  const [savingSubCat, setSavingSubCat] = useState(false);
 
   // Load all categories and products
   const loadData = useCallback(async () => {
@@ -136,7 +161,6 @@ export function InventoryModal() {
         // Fallback
       }
 
-      // If empty, supply default seed
       if (cats.length === 0) {
         cats = [
           { id: 1, code: 'FG-1', name: 'FINISH GOODS', category_type: 'Finish Goods', parent_code: null },
@@ -173,11 +197,12 @@ export function InventoryModal() {
       }
       setCategories(cats);
 
-      // Default selections
-      if (cats.length > 0 && !newSubParent) {
-        const firstMain = cats.find((c) => !c.parent_code);
-        if (firstMain) setNewSubParent(firstMain.code);
-      }
+      // Expand first main category by default
+      const defaultExpand: Record<string, boolean> = {};
+      cats.filter((c) => !c.parent_code).forEach((m, idx) => {
+        defaultExpand[m.code] = idx === 0;
+      });
+      setExpandedMains(defaultExpand);
 
       // 2. Fetch products
       const prodRes = await fetch('/api/products?includeInactive=true');
@@ -187,17 +212,17 @@ export function InventoryModal() {
       }
     } catch (e) {
       console.error('Error loading inventory data:', e);
-      setStatusMessage({ type: 'error', text: 'Error loading inventory catalog.' });
+      setStatusMessage({ type: 'error', text: 'Error connecting to database to load inventory catalog.' });
     } finally {
       setLoading(false);
     }
-  }, [newSubParent]);
+  }, []);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // Derived Main Categories & Subcategories
+  // Main Categories & Subcategories Memo
   const mainCategories = useMemo(() => {
     return categories.filter((c) => !c.parent_code);
   }, [categories]);
@@ -206,44 +231,71 @@ export function InventoryModal() {
     return categories.filter((c) => Boolean(c.parent_code));
   }, [categories]);
 
-  // Subcategories for active item popup selection
-  const subCategoriesForItemForm = useMemo(() => {
-    if (!itemMainCat) return [];
-    const main = mainCategories.find(
-      (m) => m.name.toLowerCase() === itemMainCat.toLowerCase() || m.code === itemMainCat
-    );
-    if (!main) return [];
-    return categories.filter((c) => c.parent_code === main.code);
-  }, [categories, mainCategories, itemMainCat]);
+  // Map of subcategories grouped by parent_code
+  const subCategoriesByParent = useMemo(() => {
+    const map: Record<string, InventoryCategory[]> = {};
+    for (const sub of subCategories) {
+      if (sub.parent_code) {
+        if (!map[sub.parent_code]) map[sub.parent_code] = [];
+        map[sub.parent_code].push(sub);
+      }
+    }
+    return map;
+  }, [subCategories]);
 
-  // Subcategories for the active filter on Items tab
-  const subCategoriesForActiveFilter = useMemo(() => {
-    if (selectedMainFilter === 'ALL') return [];
-    const main = mainCategories.find((m) => m.name.toLowerCase() === selectedMainFilter.toLowerCase());
-    if (!main) return [];
-    return categories.filter((c) => c.parent_code === main.code);
-  }, [categories, mainCategories, selectedMainFilter]);
+  // Map of products count per category
+  const productCountBySubName = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const p of products) {
+      const sub = (p.sub_category || '').toLowerCase();
+      if (sub) {
+        counts[sub] = (counts[sub] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [products]);
 
-  // Filtered Products List
+  const productCountByMainName = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const p of products) {
+      const main = (p.main_category || p.category || '').toLowerCase();
+      if (main) {
+        counts[main] = (counts[main] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [products]);
+
+  // Filtered Products for the table
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
-      // Main Category filter
-      if (selectedMainFilter !== 'ALL') {
-        const pMain = (p.main_category || '').toLowerCase();
-        const pCat = (p.category || '').toLowerCase();
-        const m = selectedMainFilter.toLowerCase();
-        if (!pMain.includes(m) && !pCat.includes(m)) return false;
+      // Main filter
+      if (selectedMainCode !== 'ALL') {
+        const mainObj = mainCategories.find((m) => m.code === selectedMainCode);
+        if (mainObj) {
+          const pMain = (p.main_category || '').toLowerCase();
+          const pCat = (p.category || '').toLowerCase();
+          const target = mainObj.name.toLowerCase();
+          if (!pMain.includes(target) && !pCat.includes(target)) {
+            return false;
+          }
+        }
       }
 
-      // Sub Category filter
-      if (selectedSubFilter !== 'ALL') {
-        const pSub = (p.sub_category || '').toLowerCase();
-        const pCat = (p.category || '').toLowerCase();
-        const s = selectedSubFilter.toLowerCase();
-        if (!pSub.includes(s) && !pCat.includes(s)) return false;
+      // Sub filter
+      if (selectedSubCode !== 'ALL') {
+        const subObj = subCategories.find((s) => s.code === selectedSubCode);
+        if (subObj) {
+          const pSub = (p.sub_category || '').toLowerCase();
+          const pCat = (p.category || '').toLowerCase();
+          const target = subObj.name.toLowerCase();
+          if (!pSub.includes(target) && !pCat.includes(target)) {
+            return false;
+          }
+        }
       }
 
-      // Search Query
+      // Search query
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
       return (
@@ -252,70 +304,110 @@ export function InventoryModal() {
         p.name.toLowerCase().includes(q) ||
         (p.main_category && p.main_category.toLowerCase().includes(q)) ||
         (p.sub_category && p.sub_category.toLowerCase().includes(q)) ||
-        (p.unit && p.unit.toLowerCase().includes(q))
+        (p.unit && p.unit.toLowerCase().includes(q)) ||
+        (p.hs_code && p.hs_code.toLowerCase().includes(q))
       );
     });
-  }, [products, selectedMainFilter, selectedSubFilter, searchQuery]);
+  }, [products, selectedMainCode, selectedSubCode, searchQuery, mainCategories, subCategories]);
+
+  // Active breadcrumb label
+  const activeBreadcrumb = useMemo(() => {
+    if (selectedMainCode === 'ALL') {
+      return { main: 'All Categories', sub: 'All Sub-Categories' };
+    }
+    const mainObj = mainCategories.find((m) => m.code === selectedMainCode);
+    const mainName = mainObj?.name || selectedMainCode;
+    if (selectedSubCode === 'ALL') {
+      return { main: mainName, sub: 'All Sub-Categories' };
+    }
+    const subObj = subCategories.find((s) => s.code === selectedSubCode);
+    return { main: mainName, sub: subObj?.name || selectedSubCode };
+  }, [selectedMainCode, selectedSubCode, mainCategories, subCategories]);
 
   // KPI Calculations
   const totalItemCount = products.length;
-  const inStockCount = products.filter((p) => p.stock_qty > 0).length;
   const totalValuation = useMemo(() => {
     return products.reduce((acc, p) => acc + (p.stock_qty || 0) * (p.sale_price || 0), 0);
   }, [products]);
 
-  // Form Profit Margin
+  // Live Profit Margin Calculation
   const calculatedMargin = useMemo(() => {
-    if (itemCostPrice <= 0 || itemSalePrice <= 0) return 0;
-    return (((itemSalePrice - itemCostPrice) / itemCostPrice) * 100).toFixed(0);
-  }, [itemCostPrice, itemSalePrice]);
+    if (formCostPrice <= 0 || formSalePrice <= 0) return 0;
+    return (((formSalePrice - formCostPrice) / formCostPrice) * 100).toFixed(1);
+  }, [formCostPrice, formSalePrice]);
+
+  const netGainAmount = useMemo(() => {
+    if (formSalePrice <= 0 || formCostPrice <= 0) return 0;
+    return (formSalePrice - formCostPrice).toFixed(2);
+  }, [formCostPrice, formSalePrice]);
+
+  // Toggle tree accordion
+  const toggleMainExpand = (code: string) => {
+    setExpandedMains((prev) => ({ ...prev, [code]: !prev[code] }));
+  };
+
+  // Select a category in the tree
+  const handleSelectTreeCategory = (mainCode: string, subCode: string = 'ALL') => {
+    setSelectedMainCode(mainCode);
+    setSelectedSubCode(subCode);
+    if (mainCode !== 'ALL') {
+      setExpandedMains((prev) => ({ ...prev, [mainCode]: true }));
+    }
+  };
 
   // ==========================================
-  // HANDLERS: TAB 1 (ADD / EDIT / DELETE ITEMS)
+  // HANDLERS: ADD / EDIT ITEM
   // ==========================================
-  const handleOpenAddItem = () => {
+  const handleOpenAddItem = (prefilledMain?: string, prefilledSub?: string) => {
     const nextRandom = Math.floor(100000 + Math.random() * 900000);
-    const defaultMain = mainCategories[0]?.name || 'FINISH GOODS';
+    const defaultMain = prefilledMain || mainCategories[0]?.name || 'FINISH GOODS';
+    const mainObj = mainCategories.find((m) => m.name.toLowerCase() === defaultMain.toLowerCase());
     const firstSub =
-      categories.find((c) => c.parent_code === mainCategories[0]?.code)?.name || 'U-PVC PRESSURE PIPES';
+      prefilledSub ||
+      (mainObj ? subCategoriesByParent[mainObj.code]?.[0]?.name : 'U-PVC PRESSURE PIPES') ||
+      'General';
 
     setEditingProduct(null);
-    setItemSku(`FG-${nextRandom}`);
-    setItemBarcode(`8969${nextRandom}123`);
-    setItemName('');
-    setItemMainCat(defaultMain);
-    setItemSubCat(firstSub);
-    setItemUnit('Pcs');
-    setItemCostPrice(0);
-    setItemSalePrice(0);
-    setItemWholesalePrice(0);
-    setItemTaxRate(18);
-    setItemHsCode('3917.2390');
-    setItemStockQty(0);
-    setItemError(null);
+    setFormSku(`FG-${nextRandom}`);
+    setFormBarcode(`8969${nextRandom}123`);
+    setFormName('');
+    setFormMainCat(defaultMain);
+    setFormSubCat(firstSub);
+    setFormUnit('Pcs');
+    setFormBrand('SEASTONE');
+    setFormRackNo('Rack A-01');
+    setFormCostPrice(0);
+    setFormSalePrice(0);
+    setFormWholesalePrice(0);
+    setFormTaxRate(18);
+    setFormHsCode('3917.2390');
+    setFormStockQty(0);
+    setFormError(null);
     setShowItemModal(true);
   };
 
   const handleOpenEditItem = (prod: ProductWithStock) => {
     setEditingProduct(prod);
-    setItemSku(prod.sku);
-    setItemBarcode(prod.barcode || '');
-    setItemName(prod.name);
-    setItemMainCat(prod.main_category || mainCategories[0]?.name || 'FINISH GOODS');
-    setItemSubCat(prod.sub_category || 'General');
-    setItemUnit(prod.unit || 'Pcs');
-    setItemCostPrice(prod.cost_price || 0);
-    setItemSalePrice(prod.sale_price || 0);
-    setItemWholesalePrice(prod.wholesale_price || Math.round(prod.sale_price * 0.9));
-    setItemTaxRate(prod.tax_rate ?? 18);
-    setItemHsCode(prod.hs_code || '3917.2390');
-    setItemStockQty(prod.stock_qty || 0);
-    setItemError(null);
+    setFormSku(prod.sku);
+    setFormBarcode(prod.barcode || '');
+    setFormName(prod.name);
+    setFormMainCat(prod.main_category || mainCategories[0]?.name || 'FINISH GOODS');
+    setFormSubCat(prod.sub_category || 'General');
+    setFormUnit(prod.unit || 'Pcs');
+    setFormBrand(prod.brand || 'SEASTONE');
+    setFormRackNo(prod.rack_no || 'Rack A-01');
+    setFormCostPrice(prod.cost_price || 0);
+    setFormSalePrice(prod.sale_price || 0);
+    setFormWholesalePrice(prod.wholesale_price || Math.round(prod.sale_price * 0.9));
+    setFormTaxRate(prod.tax_rate ?? 18);
+    setFormHsCode(prod.hs_code || '3917.2390');
+    setFormStockQty(prod.stock_qty || 0);
+    setFormError(null);
     setShowItemModal(true);
   };
 
   const handleAppendSpec = (chip: string) => {
-    setItemName((prev) => {
+    setFormName((prev) => {
       if (!prev) return chip;
       if (prev.includes(chip)) return prev;
       return `${prev} ${chip}`.trim();
@@ -324,41 +416,43 @@ export function InventoryModal() {
 
   const handleSaveItemSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setItemError(null);
+    setFormError(null);
 
-    if (!itemSku.trim()) {
-      setItemError('Item Code / SKU is required.');
+    if (!formSku.trim()) {
+      setFormError('Item Code / SKU is required.');
       return;
     }
-    if (!itemName.trim()) {
-      setItemError('Item Name is required.');
+    if (!formName.trim()) {
+      setFormError('Product Name / Description is required.');
       return;
     }
-    if (itemSalePrice <= 0) {
-      setItemError('Retail Sale Price must be greater than 0.');
+    if (formSalePrice <= 0) {
+      setFormError('Retail Sale Price must be greater than 0.');
       return;
     }
 
-    setSaving(true);
+    setSavingItem(true);
     try {
-      const fullCategory = `${itemMainCat} > ${itemSubCat || itemMainCat}`;
+      const fullCategory = `${formMainCat} > ${formSubCat || formMainCat}`;
       const payload = {
         id: editingProduct?.id,
-        sku: itemSku.trim().toUpperCase(),
-        barcode: itemBarcode.trim(),
-        name: itemName.trim(),
-        description: itemName.trim(),
+        sku: formSku.trim().toUpperCase(),
+        barcode: formBarcode.trim(),
+        name: formName.trim(),
+        description: formName.trim(),
         category: fullCategory,
-        main_category: itemMainCat,
-        sub_category: itemSubCat || itemMainCat,
-        unit: itemUnit.trim() || 'Pcs',
-        hs_code: itemHsCode.trim() || '3917.2390',
-        cost_price: Number(itemCostPrice) || 0,
-        sale_price: Number(itemSalePrice) || 0,
-        wholesale_price: Number(itemWholesalePrice) || Math.round(Number(itemSalePrice) * 0.9),
-        tax_rate: Number(itemTaxRate) || 18,
+        main_category: formMainCat,
+        sub_category: formSubCat || formMainCat,
+        unit: formUnit.trim() || 'Pcs',
+        hs_code: formHsCode.trim() || '3917.2390',
+        brand: formBrand,
+        rack_no: formRackNo,
+        cost_price: Number(formCostPrice) || 0,
+        sale_price: Number(formSalePrice) || 0,
+        wholesale_price: Number(formWholesalePrice) || Math.round(Number(formSalePrice) * 0.9),
+        tax_rate: Number(formTaxRate) || 18,
         branch_id: branches[0]?.id || 1,
-        stock_qty: Number(itemStockQty) || 0,
+        stock_qty: Number(formStockQty) || 0,
         is_active: 1,
       };
 
@@ -374,20 +468,29 @@ export function InventoryModal() {
         await loadData();
         setStatusMessage({
           type: 'success',
-          text: `Product [${payload.sku}] saved successfully!`,
+          text: `Finished Good [${payload.sku}] saved successfully!`,
         });
       } else {
         const err = await res.json();
-        setItemError(err.error || 'Failed to save product.');
+        setFormError(err.error || 'Failed to save product.');
       }
     } catch {
-      setItemError('Network error saving product.');
+      setFormError('Network error connecting to database.');
     } finally {
-      setSaving(false);
+      setSavingItem(false);
     }
   };
 
-  const handleDeleteItem = async (prod: ProductWithStock) => {
+  const handleSaveAndBill = async (e: React.FormEvent) => {
+    await handleSaveItemSubmit(e);
+    const exact = products.find((p) => p.sku === formSku.trim().toUpperCase());
+    if (exact) {
+      setSelectedProductIdForPos(exact.id);
+      closeInventoryModal();
+    }
+  };
+
+  const handleDeleteProduct = async (prod: ProductWithStock) => {
     if (!confirm(`Are you sure you want to delete [${prod.sku}] - ${prod.name}?`)) return;
 
     try {
@@ -395,7 +498,7 @@ export function InventoryModal() {
       if (res.ok) {
         triggerInventoryRefresh();
         await loadData();
-        setStatusMessage({ type: 'success', text: `Item [${prod.sku}] deleted.` });
+        setStatusMessage({ type: 'success', text: `Item [${prod.sku}] removed.` });
       } else {
         setStatusMessage({ type: 'error', text: 'Failed to delete product.' });
       }
@@ -409,65 +512,47 @@ export function InventoryModal() {
     closeInventoryModal();
   };
 
-  // Inline Quick Category Add inside Item Modal
-  const handleSaveInlineCategory = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inlineCatName.trim()) return;
-
-    try {
-      const isMain = inlineCatTarget === 'MAIN';
-      const code = isMain
-        ? `CAT-${mainCategories.length + 1}`
-        : `${categories.find((c) => c.name === itemMainCat)?.code || 'FG'}-${100 + subCategories.length + 1}`;
-
-      const payload = {
-        code,
-        name: inlineCatName.trim().toUpperCase(),
-        category_type: 'Finish Goods',
-        parent_code: isMain ? null : categories.find((c) => c.name === itemMainCat)?.code || 'FG-1',
-      };
-
-      const res = await fetch('/api/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        await loadData();
-        if (isMain) {
-          setItemMainCat(payload.name);
-        } else {
-          setItemSubCat(payload.name);
-        }
-        setShowInlineCatModal(false);
-        setInlineCatName('');
-      }
-    } catch {
-      alert('Error saving category');
-    }
+  // ==========================================
+  // HANDLERS: MAIN CATEGORIES (TIER 1)
+  // ==========================================
+  const handleOpenAddMainCat = () => {
+    setEditingMainCat(null);
+    setMainCatCode(`CAT-${mainCategories.length + 1}`);
+    setMainCatName('');
+    setMainCatType('Finish Goods');
+    setMainCatError(null);
+    setShowMainCatModal(true);
   };
 
-  // ==========================================
-  // HANDLERS: TAB 2 (ADD / DELETE MAIN CATEGORY)
-  // ==========================================
-  const handleSaveMainCategory = async (e: React.FormEvent) => {
+  const handleOpenEditMainCat = (cat: InventoryCategory) => {
+    setEditingMainCat(cat);
+    setMainCatCode(cat.code);
+    setMainCatName(cat.name);
+    setMainCatType(cat.category_type || 'Finish Goods');
+    setMainCatError(null);
+    setShowMainCatModal(true);
+  };
+
+  const handleSaveMainCat = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMainName.trim()) {
-      alert('Please enter Category Name');
+    if (!mainCatName.trim()) {
+      setMainCatError('Category Name is required.');
+      return;
+    }
+    if (!mainCatCode.trim()) {
+      setMainCatError('Category Code is required.');
       return;
     }
 
-    setSaving(true);
-    try {
-      const code = newMainCode.trim()
-        ? newMainCode.trim().toUpperCase()
-        : `CAT-${mainCategories.length + 1}`;
+    setSavingMainCat(true);
+    setMainCatError(null);
 
+    try {
       const payload = {
-        code,
-        name: newMainName.trim().toUpperCase(),
-        category_type: newMainType,
+        id: editingMainCat?.id,
+        code: mainCatCode.trim().toUpperCase(),
+        name: mainCatName.trim().toUpperCase(),
+        category_type: mainCatType,
         parent_code: null,
       };
 
@@ -478,60 +563,68 @@ export function InventoryModal() {
       });
 
       if (res.ok) {
-        setNewMainName('');
-        setNewMainCode('');
+        setShowMainCatModal(false);
         await loadData();
-        setStatusMessage({ type: 'success', text: `Main Category [${payload.name}] added successfully!` });
+        setStatusMessage({
+          type: 'success',
+          text: `Main Category [${payload.name}] saved successfully!`,
+        });
       } else {
         const err = await res.json();
-        alert(err.error || 'Failed to save main category');
+        setMainCatError(err.error || 'Failed to save Main Category.');
       }
     } catch {
-      alert('Network error saving main category');
+      setMainCatError('Network error connecting to database.');
     } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDeleteCategory = async (code: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete category [${name}]?`)) return;
-
-    try {
-      const res = await fetch(`/api/categories?code=${encodeURIComponent(code)}`, {
-        method: 'DELETE',
-      });
-      if (res.ok) {
-        await loadData();
-        setStatusMessage({ type: 'success', text: `Category [${name}] deleted.` });
-      } else {
-        alert('Could not delete category');
-      }
-    } catch {
-      alert('Network error deleting category');
+      setSavingMainCat(false);
     }
   };
 
   // ==========================================
-  // HANDLERS: TAB 3 (ADD / DELETE SUB CATEGORY)
+  // HANDLERS: SUB CATEGORIES (TIER 2)
   // ==========================================
-  const handleSaveSubCategory = async (e: React.FormEvent) => {
+  const handleOpenAddSubCat = (parentCode?: string) => {
+    const parent = parentCode || mainCategories[0]?.code || 'FG-1';
+    setEditingSubCat(null);
+    setSubCatParentCode(parent);
+    setSubCatCode(`${parent}-${100 + subCategories.length + 1}`);
+    setSubCatName('');
+    setSubCatType('Finish Goods');
+    setSubCatError(null);
+    setShowSubCatModal(true);
+  };
+
+  const handleOpenEditSubCat = (sub: InventoryCategory) => {
+    setEditingSubCat(sub);
+    setSubCatParentCode(sub.parent_code || mainCategories[0]?.code || 'FG-1');
+    setSubCatCode(sub.code);
+    setSubCatName(sub.name);
+    setSubCatType(sub.category_type || 'Finish Goods');
+    setSubCatError(null);
+    setShowSubCatModal(true);
+  };
+
+  const handleSaveSubCat = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSubParent || !newSubName.trim()) {
-      alert('Please select Main Category and enter Sub-Category Name');
+    if (!subCatName.trim()) {
+      setSubCatError('Sub-Category Name is required.');
+      return;
+    }
+    if (!subCatCode.trim()) {
+      setSubCatError('Sub-Category Code is required.');
       return;
     }
 
-    setSaving(true);
-    try {
-      const code = newSubCode.trim()
-        ? newSubCode.trim().toUpperCase()
-        : `${newSubParent}-${100 + subCategories.length + 1}`;
+    setSavingSubCat(true);
+    setSubCatError(null);
 
+    try {
       const payload = {
-        code,
-        name: newSubName.trim().toUpperCase(),
-        category_type: 'Finish Goods',
-        parent_code: newSubParent,
+        id: editingSubCat?.id,
+        code: subCatCode.trim().toUpperCase(),
+        name: subCatName.trim().toUpperCase(),
+        category_type: subCatType,
+        parent_code: subCatParentCode,
       };
 
       const res = await fetch('/api/categories', {
@@ -541,18 +634,49 @@ export function InventoryModal() {
       });
 
       if (res.ok) {
-        setNewSubName('');
-        setNewSubCode('');
+        setShowSubCatModal(false);
         await loadData();
-        setStatusMessage({ type: 'success', text: `Sub-Category [${payload.name}] added successfully!` });
+        setStatusMessage({
+          type: 'success',
+          text: `Sub-Category [${payload.name}] saved successfully!`,
+        });
       } else {
         const err = await res.json();
-        alert(err.error || 'Failed to save sub-category');
+        setSubCatError(err.error || 'Failed to save Sub-Category.');
       }
     } catch {
-      alert('Network error saving sub-category');
+      setSubCatError('Network error connecting to database.');
     } finally {
-      setSaving(false);
+      setSavingSubCat(false);
+    }
+  };
+
+  // Delete Category
+  const handleDeleteCategory = async (cat: InventoryCategory) => {
+    const isMain = !cat.parent_code;
+    const confirmed = confirm(
+      `Are you sure you want to delete ${isMain ? 'Main Category' : 'Sub-Category'} [${cat.name}]?\n` +
+        (isMain
+          ? 'Warning: Any sub-categories under this category will need re-assignment.'
+          : 'Warning: Products assigned to this sub-category will lose their sub-category tag.')
+    );
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`/api/categories?code=${encodeURIComponent(cat.code)}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        await loadData();
+        setStatusMessage({
+          type: 'success',
+          text: `Category [${cat.name}] deleted successfully.`,
+        });
+      } else {
+        alert('Could not delete category.');
+      }
+    } catch {
+      alert('Network error deleting category.');
     }
   };
 
@@ -565,8 +689,10 @@ export function InventoryModal() {
       'Product Name',
       'Unit',
       'Cost Price',
-      'Sale Price',
+      'Wholesale Price',
+      'Retail Price',
       'Stock Qty',
+      'HS Code',
     ];
     const rows = products.map((p) => [
       `"${p.main_category || 'General'}"`,
@@ -575,8 +701,10 @@ export function InventoryModal() {
       `"${p.name.replace(/"/g, '""')}"`,
       `"${p.unit || 'Pcs'}"`,
       p.cost_price,
+      p.wholesale_price || Math.round(p.sale_price * 0.9),
       p.sale_price,
       p.stock_qty || 0,
+      `"${p.hs_code || '3917.2390'}"`,
     ]);
 
     const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
@@ -590,7 +718,7 @@ export function InventoryModal() {
     document.body.removeChild(link);
   };
 
-  // Keyboard Shortcuts (F2: add item, Esc: close)
+  // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'F2') {
@@ -598,14 +726,15 @@ export function InventoryModal() {
         handleOpenAddItem();
       }
       if (e.key === 'Escape') {
-        if (showInlineCatModal) setShowInlineCatModal(false);
-        else if (showItemModal) setShowItemModal(false);
+        if (showItemModal) setShowItemModal(false);
+        else if (showMainCatModal) setShowMainCatModal(false);
+        else if (showSubCatModal) setShowSubCatModal(false);
         else closeInventoryModal();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showInlineCatModal, showItemModal, closeInventoryModal]);
+  }, [showItemModal, showMainCatModal, showSubCatModal, closeInventoryModal]);
 
   // Minimized dock pill
   if (isMinimized) {
@@ -622,7 +751,7 @@ export function InventoryModal() {
           <div className="text-left">
             <p className="text-[10px] uppercase tracking-wider text-emerald-400 font-bold">Chart Of Inventory</p>
             <p className="text-xs font-bold text-white">
-              {mainCategories.length} Categories • {products.length} Items Active
+              {mainCategories.length} Mains • {subCategories.length} Subs • {products.length} Items
             </p>
           </div>
         </button>
@@ -650,10 +779,10 @@ export function InventoryModal() {
             </div>
             <div>
               <span className="text-xs font-bold tracking-wide uppercase">
-                Maintain Module • Chart Of Inventory
+                Chart Of Inventory &bull; Multi-Tenant Hierarchy Master
               </span>
-              <span className="hidden sm:inline-block ml-2 text-[10px] text-slate-400 font-normal">
-                (Categories, Sub-Categories &amp; Finished Goods Master)
+              <span className="hidden sm:inline-block ml-2 text-[10px] text-slate-300 font-normal">
+                (Tier 1: Main Category ➔ Tier 2: Sub-Category ➔ Tier 3: Item Master)
               </span>
             </div>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-950/60 px-2 py-0.5 text-[10px] font-medium text-emerald-300">
@@ -692,57 +821,51 @@ export function InventoryModal() {
         </div>
 
         {/* ========================================================= */}
-        {/* 2. THREE CRYSTAL-CLEAR NAVIGATION TABS                    */}
+        {/* 2. EXECUTIVE METRIC SUMMARY CARDS BAR                     */}
         {/* ========================================================= */}
-        <div className="shrink-0 flex items-center justify-between border-b border-slate-200 bg-slate-100/90 px-3 py-1.5">
-          <div className="flex items-center gap-2 select-none">
-            <button
-              type="button"
-              onClick={() => setActiveTab('ITEMS')}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
-                activeTab === 'ITEMS'
-                  ? 'bg-slate-900 text-white shadow-sm'
-                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              <Package className="h-4 w-4 text-emerald-400" />
-              <span>1. Items / Finished Goods ({products.length})</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('MAINS')}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
-                activeTab === 'MAINS'
-                  ? 'bg-slate-900 text-white shadow-sm'
-                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              <Layers className="h-4 w-4 text-sky-400" />
-              <span>2. Main Categories ({mainCategories.length})</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('SUBS')}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
-                activeTab === 'SUBS'
-                  ? 'bg-slate-900 text-white shadow-sm'
-                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              <FolderOpen className="h-4 w-4 text-amber-400" />
-              <span>3. Sub-Categories ({subCategories.length})</span>
-            </button>
+        <div className="shrink-0 grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-slate-100/90 p-2.5 border-b border-slate-200">
+          <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-2 shadow-2xs">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600 border border-sky-200">
+              <Package className="h-4.5 w-4.5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Catalog Finished Goods</p>
+              <p className="text-sm font-extrabold text-slate-900">{totalItemCount} SKUs Active</p>
+            </div>
           </div>
 
-          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 font-medium">
-            <span>Asset Valuation:</span>
-            <strong className="text-emerald-700 font-extrabold">{formatCurrency(totalValuation)}</strong>
+          <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-2 shadow-2xs">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200">
+              <Coins className="h-4.5 w-4.5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Estimated Inventory Value</p>
+              <p className="text-sm font-extrabold text-emerald-700">{formatCurrency(totalValuation)}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-2 shadow-2xs">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600 border border-teal-200">
+              <Layers className="h-4.5 w-4.5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Main Categories (Tier 1)</p>
+              <p className="text-sm font-extrabold text-slate-900">{mainCategories.length} Registered</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-2 shadow-2xs">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-200">
+              <FolderTree className="h-4.5 w-4.5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Sub-Categories (Tier 2)</p>
+              <p className="text-sm font-extrabold text-slate-900">{subCategories.length} Configured</p>
+            </div>
           </div>
         </div>
 
-        {/* Status notification banner */}
+        {/* Status notification banner (if any) */}
         {statusMessage && (
           <div
             className={`shrink-0 flex items-center justify-between px-3 py-1.5 text-xs font-semibold border-b ${
@@ -763,334 +886,1238 @@ export function InventoryModal() {
         )}
 
         {/* ========================================================= */}
-        {/* 3. TAB CONTENT VIEWS                                      */}
+        {/* 3. 3-TIER NAVIGATION TABS & PRIMARY ACTION BAR           */}
+        {/* ========================================================= */}
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-3 py-2">
+          {/* Left: 3 Main View Tabs */}
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <button
+              type="button"
+              onClick={() => setActiveTab('CATALOG_TREE')}
+              className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
+                activeTab === 'CATALOG_TREE'
+                  ? 'bg-gradient-to-r from-[#091529] to-[#132952] text-white shadow-xs'
+                  : 'text-slate-700 hover:bg-white hover:text-slate-900'
+              }`}
+            >
+              <Boxes className="h-3.5 w-3.5 text-emerald-400" />
+              <span>1. Inventory Catalog (Tree &amp; Items)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('MAIN_CATEGORIES')}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
+                activeTab === 'MAIN_CATEGORIES'
+                  ? 'bg-gradient-to-r from-[#091529] to-[#132952] text-white shadow-xs'
+                  : 'text-slate-700 hover:bg-white hover:text-slate-900'
+              }`}
+            >
+              <Layers className="h-3.5 w-3.5 text-sky-400" />
+              <span>2. Main Categories ({mainCategories.length})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('SUB_CATEGORIES')}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
+                activeTab === 'SUB_CATEGORIES'
+                  ? 'bg-gradient-to-r from-[#091529] to-[#132952] text-white shadow-xs'
+                  : 'text-slate-700 hover:bg-white hover:text-slate-900'
+              }`}
+            >
+              <FolderTree className="h-3.5 w-3.5 text-teal-400" />
+              <span>3. Sub-Categories ({subCategories.length})</span>
+            </button>
+          </div>
+
+          {/* Right: Primary Action Buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleOpenAddItem()}
+              className="flex h-8 cursor-pointer items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-3.5 text-xs font-bold text-white shadow-sm hover:from-emerald-700 hover:to-teal-700 active:scale-95 transition"
+            >
+              <PackagePlus className="h-4 w-4" />
+              <span>+ Register New Item (F2)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleOpenAddMainCat()}
+              className="flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 active:scale-95"
+            >
+              <Plus className="h-3.5 w-3.5 text-sky-600" />
+              <span>+ Main Category</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleOpenAddSubCat()}
+              className="flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 active:scale-95"
+            >
+              <Plus className="h-3.5 w-3.5 text-teal-600" />
+              <span>+ Sub-Category</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => window.print()}
+              title="Print Catalog"
+              className="flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+            >
+              <Printer className="h-3.5 w-3.5 text-slate-600" />
+              <span className="hidden sm:inline">Print</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              title="Export Excel (CSV)"
+              className="flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5 text-slate-600" />
+              <span className="hidden sm:inline">Excel</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={loadData}
+              title="Refresh Products Catalog"
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-slate-50 text-slate-600 hover:bg-slate-100"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+        </div>
+
+        {/* ========================================================= */}
+        {/* 4. MAIN CONTENT AREA (BASED ON ACTIVE TAB)                */}
         {/* ========================================================= */}
 
-        {/* --------------------------------------------------------- */}
-        {/* TAB 1: ITEMS / FINISHED GOODS LIST & BILLING              */}
-        {/* --------------------------------------------------------- */}
-        {activeTab === 'ITEMS' && (
-          <div className="flex-1 min-h-0 flex flex-col bg-white">
-            {/* Action Bar */}
-            <div className="shrink-0 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-3 py-2">
-              <div className="flex items-center gap-2">
+        {/* TAB 1: SPLIT MASTER-DETAIL VIEW (TREE ON LEFT, TABLE ON RIGHT) */}
+        {activeTab === 'CATALOG_TREE' && (
+          <div className="flex flex-1 min-h-0 overflow-hidden">
+            {/* 4A. LEFT SIDEBAR: CATEGORY HIERARCHY TREE */}
+            <div className="w-72 shrink-0 border-r border-slate-200 bg-slate-50 flex flex-col min-h-0">
+              {/* Sidebar Header */}
+              <div className="p-2.5 border-b border-slate-200 bg-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FolderTree className="h-4 w-4 text-emerald-600" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                    Hierarchy Tree
+                  </span>
+                </div>
                 <button
                   type="button"
-                  onClick={handleOpenAddItem}
-                  className="flex h-8 cursor-pointer items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-3.5 text-xs font-bold text-white shadow-sm hover:from-emerald-700 hover:to-teal-700 active:scale-95 transition"
+                  onClick={() => handleOpenAddMainCat()}
+                  title="Add New Main Category"
+                  className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-300 hover:bg-emerald-100"
                 >
-                  <PackagePlus className="h-4 w-4" />
-                  <span>+ Add New Item (F2)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  className="flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-100 active:scale-95"
-                >
-                  <Printer className="h-3.5 w-3.5 text-slate-600" />
-                  <span>Print Catalog</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleExportCsv}
-                  className="flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-100 active:scale-95"
-                >
-                  <FileSpreadsheet className="h-3.5 w-3.5 text-slate-600" />
-                  <span>Export Excel</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={loadData}
-                  title="Refresh"
-                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-slate-50 text-slate-600 hover:bg-slate-100"
-                >
-                  <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+                  <Plus className="h-3 w-3" />
+                  <span>Main</span>
                 </button>
               </div>
 
-              {/* Omni-search */}
-              <div className="relative min-w-[240px]">
-                <Search className="pointer-events-none absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search SKU, name, category, unit..."
-                  className="h-8 w-full rounded-lg border border-slate-300 bg-[#f8fafc] pl-8 pr-7 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:outline-none"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 text-xs"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Quick Category Filter Pills */}
-            <div className="shrink-0 border-b border-slate-200 bg-slate-50 px-3 py-1.5 space-y-1">
-              <div className="flex items-center gap-1.5 overflow-x-auto text-xs select-none">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
-                  Category:
-                </span>
+              {/* Tree Container */}
+              <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                {/* "ALL PRODUCTS" Button */}
                 <button
                   type="button"
-                  onClick={() => {
-                    setSelectedMainFilter('ALL');
-                    setSelectedSubFilter('ALL');
-                  }}
-                  className={`shrink-0 rounded-md px-2.5 py-0.5 text-xs font-bold transition ${
-                    selectedMainFilter === 'ALL'
-                      ? 'bg-slate-900 text-white'
-                      : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+                  onClick={() => handleSelectTreeCategory('ALL', 'ALL')}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer text-left ${
+                    selectedMainCode === 'ALL'
+                      ? 'bg-gradient-to-r from-[#091529] to-[#132952] text-white shadow-xs'
+                      : 'text-slate-700 hover:bg-slate-200/70'
                   }`}
                 >
-                  All ({products.length})
-                </button>
-                {mainCategories.map((m) => (
-                  <button
-                    key={m.code}
-                    type="button"
-                    onClick={() => {
-                      setSelectedMainFilter(m.name);
-                      setSelectedSubFilter('ALL');
-                    }}
-                    className={`shrink-0 rounded-md px-2.5 py-0.5 text-xs font-bold transition ${
-                      selectedMainFilter.toLowerCase() === m.name.toLowerCase()
-                        ? 'bg-emerald-600 text-white shadow-2xs'
-                        : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+                  <div className="flex items-center gap-2">
+                    <Boxes className="h-4 w-4 text-emerald-400" />
+                    <span>All Inventory Items</span>
+                  </div>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${
+                      selectedMainCode === 'ALL'
+                        ? 'bg-emerald-500 text-slate-900 font-extrabold'
+                        : 'bg-slate-200 text-slate-700'
                     }`}
                   >
-                    {m.name}
-                  </button>
-                ))}
-              </div>
-
-              {/* Sub-Category chips if a main category is selected */}
-              {subCategoriesForActiveFilter.length > 0 && (
-                <div className="flex items-center gap-1.5 overflow-x-auto pt-0.5 text-[11px] select-none border-t border-slate-200/60">
-                  <span className="text-[10px] font-bold text-emerald-700 uppercase shrink-0 mr-1">
-                    ↳ Sub-Category:
+                    {totalItemCount}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedSubFilter('ALL')}
-                    className={`shrink-0 rounded px-2 py-0.2 font-semibold transition ${
-                      selectedSubFilter === 'ALL'
-                        ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                        : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
-                    }`}
-                  >
-                    All Subcategories
-                  </button>
-                  {subCategoriesForActiveFilter.map((s) => (
-                    <button
-                      key={s.code}
-                      type="button"
-                      onClick={() => setSelectedSubFilter(s.name)}
-                      className={`shrink-0 rounded px-2 py-0.2 font-semibold transition ${
-                        selectedSubFilter === s.name
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      {s.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+                </button>
 
-            {/* Clean Products Table */}
-            <div className="flex-1 min-h-0 overflow-auto">
-              <table className="w-full min-w-[1000px] border-collapse text-left text-xs">
-                <thead className="sticky top-0 z-10 shadow-2xs">
-                  <tr className="bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] text-[10.5px] font-bold uppercase tracking-wider text-slate-100">
-                    <th className="w-10 px-2 py-2 text-center border-b-2 border-emerald-500">#</th>
-                    <th className="w-32 px-2.5 py-2 border-b-2 border-emerald-500">Item Code / SKU</th>
-                    <th className="min-w-[220px] px-2.5 py-2 border-b-2 border-emerald-500">Product Name</th>
-                    <th className="w-36 px-2.5 py-2 border-b-2 border-emerald-500">Main Category</th>
-                    <th className="w-36 px-2.5 py-2 border-b-2 border-emerald-500">Sub-Category</th>
-                    <th className="w-16 px-2 py-2 text-center border-b-2 border-emerald-500">Unit</th>
-                    <th className="w-24 px-2.5 py-2 text-right border-b-2 border-emerald-500">Cost Price</th>
-                    <th className="w-28 px-2.5 py-2 text-right border-b-2 border-emerald-500">Sale Price</th>
-                    <th className="w-20 px-2 py-2 text-right border-b-2 border-emerald-500">Stock Qty</th>
-                    <th className="w-36 px-2.5 py-2 text-center border-b-2 border-emerald-500">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 bg-white">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={10} className="p-8 text-center text-slate-500">
-                        <RefreshCw className="mx-auto h-6 w-6 animate-spin text-emerald-600 mb-2" />
-                        <span>Loading items...</span>
-                      </td>
-                    </tr>
-                  ) : filteredProducts.length === 0 ? (
-                    <tr>
-                      <td colSpan={10} className="p-8 text-center text-slate-500">
-                        <Package className="mx-auto h-8 w-8 text-slate-300 mb-2" />
-                        <p className="font-semibold text-slate-700">No items found</p>
-                        <p className="text-xs text-slate-400 mt-1">
-                          Click &quot;+ Add New Item (F2)&quot; to create your first finished good.
-                        </p>
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredProducts.map((p, idx) => (
-                      <tr
-                        key={p.id}
-                        className={`h-9 hover:bg-sky-50/60 transition ${
-                          idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'
+                <div className="my-1.5 border-t border-slate-200" />
+
+                {/* Main Categories Accordion Tree */}
+                {mainCategories.map((main) => {
+                  const isMainSelected = selectedMainCode === main.code && selectedSubCode === 'ALL';
+                  const isExpanded = expandedMains[main.code] ?? false;
+                  const subs = subCategoriesByParent[main.code] || [];
+                  const mainProductCount = productCountByMainName[main.name.toLowerCase()] || 0;
+
+                  return (
+                    <div key={main.code} className="space-y-0.5">
+                      {/* Main Category Header Row */}
+                      <div
+                        className={`group flex items-center justify-between px-2 py-1.5 rounded-lg text-xs transition cursor-pointer ${
+                          isMainSelected
+                            ? 'bg-emerald-600 text-white font-bold shadow-xs'
+                            : selectedMainCode === main.code
+                            ? 'bg-slate-200/80 text-slate-900 font-bold'
+                            : 'text-slate-700 hover:bg-slate-200/60 font-semibold'
                         }`}
+                        onClick={() => handleSelectTreeCategory(main.code, 'ALL')}
                       >
-                        <td className="px-2 py-1 text-center font-normal text-slate-400 text-[11px] tabular-nums">
-                          {idx + 1}
-                        </td>
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleMainExpand(main.code);
+                            }}
+                            className="p-0.5 hover:bg-black/10 rounded"
+                          >
+                            {isExpanded ? (
+                              <ChevronDown className="h-3.5 w-3.5" />
+                            ) : (
+                              <ChevronRight className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                          <Folder className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                          <span className="truncate">{main.name}</span>
+                        </div>
 
-                        <td className="px-2.5 py-1 font-mono font-bold text-slate-900 text-xs">
-                          <span className="rounded bg-slate-100 px-1.5 py-0.5 border border-slate-200">
-                            {p.sku}
-                          </span>
-                        </td>
-
-                        <td className="px-2.5 py-1">
-                          <p className="font-bold text-slate-900 text-xs truncate max-w-sm">{p.name}</p>
-                          {p.barcode && (
-                            <span className="text-[10px] text-slate-500 font-mono flex items-center gap-1">
-                              <Barcode className="h-3 w-3" />
-                              {p.barcode}
-                            </span>
-                          )}
-                        </td>
-
-                        <td className="px-2.5 py-1 text-xs font-semibold text-slate-800">
-                          {p.main_category || 'General'}
-                        </td>
-
-                        <td className="px-2.5 py-1 text-xs font-medium text-emerald-700">
-                          {p.sub_category || 'General'}
-                        </td>
-
-                        <td className="px-2 py-1 text-center font-semibold text-slate-700 text-xs">
-                          {p.unit || 'Pcs'}
-                        </td>
-
-                        <td className="px-2.5 py-1 text-right tabular-nums text-slate-700 text-xs">
-                          {formatCurrency(p.cost_price)}
-                        </td>
-
-                        <td className="px-2.5 py-1 text-right tabular-nums font-extrabold text-emerald-800 text-xs">
-                          {formatCurrency(p.sale_price)}
-                        </td>
-
-                        <td className="px-2.5 py-1 text-right tabular-nums text-xs">
+                        <div className="flex items-center gap-1 shrink-0 ml-1">
                           <span
-                            className={`font-bold ${
-                              p.stock_qty <= 0
-                                ? 'text-rose-600'
-                                : p.stock_qty < 10
-                                ? 'text-amber-600'
-                                : 'text-emerald-700'
+                            className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
+                              isMainSelected
+                                ? 'bg-white/20 text-white'
+                                : 'bg-slate-200 text-slate-600'
                             }`}
                           >
-                            {p.stock_qty || 0}
+                            {subs.length} subs
                           </span>
-                        </td>
+                        </div>
+                      </div>
 
-                        <td className="px-2.5 py-1 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleBillInPos(p)}
-                              title="Load into active POS Sale screen"
-                              className="flex h-6 items-center gap-1 rounded bg-emerald-600 px-2 text-[10.5px] font-bold text-white hover:bg-emerald-500 shadow-2xs active:scale-95 transition"
-                            >
-                              <Zap className="h-3 w-3 text-amber-300" />
-                              <span>Bill in POS</span>
-                            </button>
+                      {/* Sub-Categories (Indented List when Expanded) */}
+                      {isExpanded && (
+                        <div className="ml-4 pl-2 border-l-2 border-emerald-300 space-y-0.5 py-0.5">
+                          {subs.map((sub) => {
+                            const isSubSelected =
+                              selectedMainCode === main.code && selectedSubCode === sub.code;
+                            const subProductCount =
+                              productCountBySubName[sub.name.toLowerCase()] || 0;
 
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEditItem(p)}
-                              title="Edit Item"
-                              className="flex h-6 w-6 items-center justify-center rounded border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 shadow-2xs"
-                            >
-                              <Edit className="h-3 w-3" />
-                            </button>
+                            return (
+                              <div
+                                key={sub.code}
+                                onClick={() => handleSelectTreeCategory(main.code, sub.code)}
+                                className={`flex items-center justify-between px-2 py-1 rounded text-[11px] transition cursor-pointer ${
+                                  isSubSelected
+                                    ? 'bg-emerald-600 text-white font-bold shadow-xs'
+                                    : 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900 font-medium'
+                                }`}
+                              >
+                                <span className="truncate">↳ {sub.name}</span>
+                                <span
+                                  className={`text-[9.5px] px-1 py-0.2 rounded font-mono ${
+                                    isSubSelected
+                                      ? 'bg-white/20 text-white'
+                                      : 'bg-slate-200 text-slate-500'
+                                  }`}
+                                >
+                                  {subProductCount}
+                                </span>
+                              </div>
+                            );
+                          })}
 
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteItem(p)}
-                              title="Delete Item"
-                              className="flex h-6 w-6 items-center justify-center rounded border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 shadow-2xs"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
-                          </div>
+                          {/* Quick "+ Add Sub under this Main" Button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenAddSubCat(main.code);
+                            }}
+                            className="flex items-center gap-1 text-[10.5px] font-semibold text-emerald-700 hover:text-emerald-800 hover:underline px-2 py-0.5"
+                          >
+                            <Plus className="h-3 w-3" />
+                            <span>Add sub under {main.name.split(' ')[0]}...</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Bottom Quick Category Actions */}
+              <div className="p-2 border-t border-slate-200 bg-white grid grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleOpenAddMainCat()}
+                  className="flex items-center justify-center gap-1 py-1 px-2 rounded border border-slate-300 bg-slate-50 text-[11px] font-bold text-slate-700 hover:bg-slate-100"
+                >
+                  <Plus className="h-3 w-3 text-sky-600" />
+                  <span>+ New Main</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenAddSubCat(selectedMainCode !== 'ALL' ? selectedMainCode : undefined)}
+                  className="flex items-center justify-center gap-1 py-1 px-2 rounded border border-slate-300 bg-slate-50 text-[11px] font-bold text-slate-700 hover:bg-slate-100"
+                >
+                  <Plus className="h-3 w-3 text-teal-600" />
+                  <span>+ New Sub</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 4B. RIGHT MAIN AREA: FINISHED GOODS DATA TABLE */}
+            <div className="flex-1 flex flex-col min-w-0 bg-white">
+              {/* Table Top Controls & Breadcrumbs */}
+              <div className="p-2.5 border-b border-slate-200 bg-slate-50/80 flex flex-wrap items-center justify-between gap-2">
+                {/* Active Breadcrumb Path */}
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="font-bold text-slate-500 uppercase tracking-wider">Viewing:</span>
+                  <div className="flex items-center gap-1.5 font-bold text-slate-800 bg-white px-2.5 py-1 rounded-md border border-slate-200 shadow-2xs">
+                    <Folder className="h-3.5 w-3.5 text-amber-500" />
+                    <span className="text-emerald-700">{activeBreadcrumb.main}</span>
+                    <span className="text-slate-400">❯</span>
+                    <span className="text-teal-700">{activeBreadcrumb.sub}</span>
+                    <span className="ml-1 text-[11px] font-normal text-slate-500">
+                      ({filteredProducts.length} items listed)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Omni Search & Branch Filter */}
+                <div className="flex items-center gap-2">
+                  <div className="relative w-64">
+                    <Search className="pointer-events-none absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search SKU, name, dimensions..."
+                      className="h-7.5 w-full rounded-lg border border-slate-300 bg-white pl-8 pr-7 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-2 top-1.5 text-slate-400 hover:text-slate-600 text-xs"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  <select
+                    value={branchFilter}
+                    onChange={(e) => setBranchFilter(e.target.value)}
+                    className="h-7.5 rounded-lg border border-slate-300 bg-white px-2 text-xs font-semibold text-slate-700 focus:border-emerald-500 focus:outline-none"
+                  >
+                    <option value="ALL">All Branches</option>
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.code} - {b.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Data Table */}
+              <div className="flex-1 min-h-0 overflow-auto bg-slate-50/40">
+                <table className="w-full min-w-[980px] border-collapse text-left text-xs">
+                  <thead className="sticky top-0 z-10 shadow-2xs">
+                    <tr className="bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] text-[10.5px] font-bold uppercase tracking-wider text-slate-100">
+                      <th className="w-10 px-2 py-2 text-center border-b-2 border-emerald-500">#</th>
+                      <th className="w-36 px-2.5 py-2 border-b-2 border-emerald-500">Classification</th>
+                      <th className="w-32 px-2.5 py-2 border-b-2 border-emerald-500">SKU / Code</th>
+                      <th className="min-w-[200px] px-2.5 py-2 border-b-2 border-emerald-500">Product Name &amp; Specs</th>
+                      <th className="w-16 px-2 py-2 text-center border-b-2 border-emerald-500">UOM</th>
+                      <th className="w-24 px-2.5 py-2 text-right border-b-2 border-emerald-500">Cost (Rs.)</th>
+                      <th className="w-24 px-2.5 py-2 text-right border-b-2 border-emerald-500">Wholesale</th>
+                      <th className="w-28 px-2.5 py-2 text-right border-b-2 border-emerald-500">Retail Price</th>
+                      <th className="w-20 px-2 py-2 text-center border-b-2 border-emerald-500">Margin</th>
+                      <th className="w-24 px-2.5 py-2 text-right border-b-2 border-emerald-500">Stock Qty</th>
+                      <th className="w-24 px-2.5 py-2 text-center border-b-2 border-emerald-500">HS Code</th>
+                      <th className="w-36 px-2.5 py-2 text-center border-b-2 border-emerald-500">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 bg-white">
+                    {loading ? (
+                      <tr>
+                        <td colSpan={12} className="p-8 text-center text-slate-500">
+                          <RefreshCw className="mx-auto h-6 w-6 animate-spin text-emerald-600 mb-2" />
+                          <span>Loading inventory catalog...</span>
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : filteredProducts.length === 0 ? (
+                      <tr>
+                        <td colSpan={12} className="p-8 text-center text-slate-500">
+                          <Package className="mx-auto h-8 w-8 text-slate-300 mb-2" />
+                          <p className="font-semibold text-slate-700">No items in this category or search filter</p>
+                          <p className="text-xs text-slate-400 mt-1">
+                            Click &quot;+ Register New Item (F2)&quot; to add a new product under this classification.
+                          </p>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredProducts.map((p, idx) => {
+                        const marginPct =
+                          p.cost_price > 0 && p.sale_price > 0
+                            ? (((p.sale_price - p.cost_price) / p.cost_price) * 100).toFixed(0)
+                            : null;
+
+                        return (
+                          <tr
+                            key={p.id}
+                            className="hover:bg-emerald-50/40 transition group cursor-pointer"
+                            onDoubleClick={() => handleOpenEditItem(p)}
+                          >
+                            <td className="px-2 py-2 text-center font-mono text-[11px] text-slate-400">
+                              {idx + 1}
+                            </td>
+                            <td className="px-2.5 py-2">
+                              <div className="font-bold text-slate-800 text-[11px] truncate">
+                                {p.main_category || 'FINISH GOODS'}
+                              </div>
+                              <div className="text-[10px] text-emerald-700 font-semibold truncate">
+                                ↳ {p.sub_category || 'General'}
+                              </div>
+                            </td>
+                            <td className="px-2.5 py-2">
+                              <span className="font-mono font-bold text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 text-[11px]">
+                                {p.sku}
+                              </span>
+                              {p.barcode && (
+                                <div className="text-[9.5px] font-mono text-slate-400 mt-0.5">
+                                  {p.barcode}
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-2.5 py-2">
+                              <div className="font-bold text-slate-900">{p.name}</div>
+                              <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mt-0.5">
+                                {p.brand && (
+                                  <span className="bg-sky-50 text-sky-700 px-1 rounded font-semibold border border-sky-200">
+                                    {p.brand}
+                                  </span>
+                                )}
+                                {p.rack_no && (
+                                  <span className="bg-amber-50 text-amber-700 px-1 rounded border border-amber-200">
+                                    {p.rack_no}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-2 py-2 text-center font-semibold text-slate-700">
+                              {p.unit || 'Pcs'}
+                            </td>
+                            <td className="px-2.5 py-2 text-right font-mono text-slate-600">
+                              {formatCurrency(p.cost_price || 0)}
+                            </td>
+                            <td className="px-2.5 py-2 text-right font-mono text-slate-600">
+                              {formatCurrency(p.wholesale_price || Math.round(p.sale_price * 0.9))}
+                            </td>
+                            <td className="px-2.5 py-2 text-right font-mono font-bold text-slate-900">
+                              {formatCurrency(p.sale_price)}
+                            </td>
+                            <td className="px-2 py-2 text-center">
+                              {marginPct !== null ? (
+                                <span className="inline-flex items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                                  +{marginPct}%
+                                </span>
+                              ) : (
+                                <span className="text-slate-300">—</span>
+                              )}
+                            </td>
+                            <td className="px-2.5 py-2 text-right font-mono">
+                              <span
+                                className={`font-bold px-1.5 py-0.5 rounded text-[11px] ${
+                                  p.stock_qty > 0
+                                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                                    : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                }`}
+                              >
+                                {p.stock_qty || 0}
+                              </span>
+                            </td>
+                            <td className="px-2.5 py-2 text-center font-mono text-[10px] text-slate-500">
+                              {p.hs_code || '3917.2390'}
+                            </td>
+                            <td className="px-2.5 py-2 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleBillInPos(p)}
+                                  title="Bill directly into active POS Sale invoice"
+                                  className="flex items-center gap-1 rounded bg-emerald-600 px-2 py-1 text-[10px] font-bold text-white hover:bg-emerald-700 active:scale-95 transition"
+                                >
+                                  <Zap className="h-3 w-3" />
+                                  <span>Bill</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditItem(p)}
+                                  title="Edit finished good specifications"
+                                  className="rounded border border-slate-300 p-1 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteProduct(p)}
+                                  title="Delete item"
+                                  className="rounded border border-slate-300 p-1 text-rose-600 hover:bg-rose-50"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
 
-        {/* --------------------------------------------------------- */}
-        {/* TAB 2: MAIN CATEGORIES (USER HUD ADD KAR SAKTA HAI)      */}
-        {/* --------------------------------------------------------- */}
-        {activeTab === 'MAINS' && (
-          <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 bg-slate-50/50">
-            {/* Create New Main Category Form Card */}
-            <form onSubmit={handleSaveMainCategory} className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-2 mb-3">
-                <Layers className="h-4 w-4 text-emerald-600" />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                  + Add New Main Category (Tenant Custom Category)
+        {/* TAB 2: MAIN CATEGORIES MASTER (TIER 1 DIRECT MANAGEMENT) */}
+        {activeTab === 'MAIN_CATEGORIES' && (
+          <div className="flex-1 flex flex-col min-h-0 bg-white">
+            <div className="p-3 border-b border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">
+                  Tier 1 &bull; Main Categories Directory
                 </h3>
+                <p className="text-[11px] text-slate-500">
+                  Primary classification for your inventory (e.g. Finish Goods, Raw Materials, Fittings, Pipes)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleOpenAddMainCat()}
+                className="flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 shadow-sm"
+              >
+                <Plus className="h-4 w-4" />
+                <span>+ Register New Main Category</span>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto p-4 bg-slate-50/40">
+              <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-2xs">
+                <table className="w-full border-collapse text-left text-xs">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] text-[10.5px] font-bold uppercase tracking-wider text-slate-100">
+                      <th className="w-12 px-3 py-2.5 text-center">#</th>
+                      <th className="w-32 px-3 py-2.5">Category Code</th>
+                      <th className="px-3 py-2.5">Main Category Name</th>
+                      <th className="w-40 px-3 py-2.5">Category Type</th>
+                      <th className="w-32 px-3 py-2.5 text-center">Sub-Categories</th>
+                      <th className="w-32 px-3 py-2.5 text-center">Items Count</th>
+                      <th className="w-48 px-3 py-2.5 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {mainCategories.map((main, idx) => {
+                      const subs = subCategoriesByParent[main.code] || [];
+                      const prodCount = productCountByMainName[main.name.toLowerCase()] || 0;
+
+                      return (
+                        <tr key={main.code} className="hover:bg-slate-50">
+                          <td className="px-3 py-2.5 text-center font-mono text-slate-400">{idx + 1}</td>
+                          <td className="px-3 py-2.5 font-mono font-bold text-slate-900">{main.code}</td>
+                          <td className="px-3 py-2.5 font-bold text-slate-900 flex items-center gap-2">
+                            <Folder className="h-4 w-4 text-amber-500" />
+                            <span>{main.name}</span>
+                          </td>
+                          <td className="px-3 py-2.5 font-semibold text-slate-600">
+                            {main.category_type || 'Finish Goods'}
+                          </td>
+                          <td className="px-3 py-2.5 text-center">
+                            <span className="bg-sky-50 text-sky-700 px-2 py-0.5 rounded font-bold border border-sky-200">
+                              {subs.length} Subs
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 text-center">
+                            <span className="bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded font-bold border border-emerald-200">
+                              {prodCount} Items
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenAddSubCat(main.code)}
+                                className="flex items-center gap-1 rounded bg-teal-600 px-2 py-1 text-[10px] font-bold text-white hover:bg-teal-700"
+                              >
+                                <Plus className="h-3 w-3" />
+                                <span>Add Sub</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditMainCat(main)}
+                                className="rounded border border-slate-300 p-1 text-slate-700 hover:bg-slate-100"
+                                title="Edit Main Category"
+                              >
+                                <Edit className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCategory(main)}
+                                className="rounded border border-slate-300 p-1 text-rose-600 hover:bg-rose-50"
+                                title="Delete Main Category"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: SUB-CATEGORIES MASTER (TIER 2 DIRECT MANAGEMENT) */}
+        {activeTab === 'SUB_CATEGORIES' && (
+          <div className="flex-1 flex flex-col min-h-0 bg-white">
+            <div className="p-3 border-b border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">
+                  Tier 2 &bull; Sub-Categories Directory
+                </h3>
+                <p className="text-[11px] text-slate-500">
+                  Secondary classification grouping specific product families under each Main Category
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleOpenAddSubCat()}
+                className="flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 shadow-sm"
+              >
+                <Plus className="h-4 w-4" />
+                <span>+ Register New Sub-Category</span>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto p-4 bg-slate-50/40">
+              <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-2xs">
+                <table className="w-full border-collapse text-left text-xs">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] text-[10.5px] font-bold uppercase tracking-wider text-slate-100">
+                      <th className="w-12 px-3 py-2.5 text-center">#</th>
+                      <th className="w-32 px-3 py-2.5">Sub Code</th>
+                      <th className="px-3 py-2.5">Sub-Category Name</th>
+                      <th className="w-48 px-3 py-2.5">Parent Main Category</th>
+                      <th className="w-36 px-3 py-2.5">Category Type</th>
+                      <th className="w-32 px-3 py-2.5 text-center">Items Count</th>
+                      <th className="w-40 px-3 py-2.5 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {subCategories.map((sub, idx) => {
+                      const parent = mainCategories.find((m) => m.code === sub.parent_code);
+                      const prodCount = productCountBySubName[sub.name.toLowerCase()] || 0;
+
+                      return (
+                        <tr key={sub.code} className="hover:bg-slate-50">
+                          <td className="px-3 py-2.5 text-center font-mono text-slate-400">{idx + 1}</td>
+                          <td className="px-3 py-2.5 font-mono font-bold text-slate-900">{sub.code}</td>
+                          <td className="px-3 py-2.5 font-bold text-slate-900 flex items-center gap-2">
+                            <span className="text-emerald-600 font-bold">↳</span>
+                            <span>{sub.name}</span>
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <span className="bg-slate-100 text-slate-800 px-2 py-0.5 rounded font-semibold border border-slate-200">
+                              {parent ? `${parent.name} (${parent.code})` : sub.parent_code}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 font-semibold text-slate-600">
+                            {sub.category_type || 'Finish Goods'}
+                          </td>
+                          <td className="px-3 py-2.5 text-center">
+                            <span className="bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded font-bold border border-emerald-200">
+                              {prodCount} Items
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenAddItem(parent?.name, sub.name)}
+                                className="flex items-center gap-1 rounded bg-emerald-600 px-2 py-1 text-[10px] font-bold text-white hover:bg-emerald-700"
+                              >
+                                <Plus className="h-3 w-3" />
+                                <span>Add Item</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditSubCat(sub)}
+                                className="rounded border border-slate-300 p-1 text-slate-700 hover:bg-slate-100"
+                                title="Edit Sub-Category"
+                              >
+                                <Edit className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCategory(sub)}
+                                className="rounded border border-slate-300 p-1 text-rose-600 hover:bg-rose-50"
+                                title="Delete Sub-Category"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* 5. BOTTOM STATUS BAR                                      */}
+        {/* ========================================================= */}
+        <div className="flex shrink-0 items-center justify-between border-t border-slate-200 bg-slate-100 px-4 py-2 text-xs text-slate-600 rounded-b-xl">
+          <div className="flex items-center gap-3">
+            <span className="font-semibold text-slate-800">
+              Catalog Total: <strong className="text-slate-900">{totalItemCount}</strong> Products across{' '}
+              <strong className="text-slate-900">{mainCategories.length}</strong> Main Categories &amp;{' '}
+              <strong className="text-slate-900">{subCategories.length}</strong> Sub-Categories
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 text-[11px] text-slate-500">
+            <span className="rounded bg-slate-200 px-2 py-0.5 font-mono font-bold text-slate-700">
+              F2: New Item
+            </span>
+            <span className="rounded bg-slate-200 px-2 py-0.5 font-mono font-bold text-slate-700">
+              Ctrl+F: Search
+            </span>
+            <span className="rounded bg-slate-200 px-2 py-0.5 font-mono font-bold text-slate-700">
+              Esc: Close
+            </span>
+          </div>
+        </div>
+
+        {/* ========================================================= */}
+        {/* 6. MODAL: REGISTER / EDIT FINISHED GOODS ITEM             */}
+        {/* ========================================================= */}
+        {showItemModal && (
+          <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 p-3 sm:p-5 backdrop-blur-xs font-sans animate-fade-in">
+            <div className="w-full max-w-2xl rounded-2xl border border-slate-700/80 bg-white shadow-2xl overflow-hidden flex flex-col">
+              {/* Form Titlebar */}
+              <div className="flex h-12 shrink-0 items-center justify-between border-b border-slate-800 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] px-4 text-white">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                    <PackagePlus className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold tracking-wide">
+                      {editingProduct
+                        ? `Edit Finished Good [${editingProduct.sku}]`
+                        : 'New Finished Goods / Item Registration'}
+                    </h3>
+                    <p className="text-[10px] text-slate-300">
+                      Enterprise Finished Goods Inventory &amp; FBR HS Code Mapping
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowItemModal(false)}
+                  className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-                <div className="sm:col-span-5">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+              {/* Hierarchy Live Mapping Banner */}
+              <div className="bg-slate-900 border-b border-slate-800 px-4 py-2 text-xs flex items-center justify-between text-slate-200">
+                <div className="flex items-center gap-1.5 font-mono">
+                  <span className="text-slate-400 font-sans">Active Mapping:</span>
+                  <span className="text-emerald-400 font-bold">{formMainCat}</span>
+                  <span className="text-slate-500">❯</span>
+                  <span className="text-teal-400 font-bold">{formSubCat}</span>
+                  <span className="text-slate-500">❯</span>
+                  <span className="text-sky-300 font-bold">{formSku || 'NEW_ITEM'}</span>
+                </div>
+                <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-2 py-0.5 rounded font-semibold">
+                  Multi-Tenant Ready
+                </span>
+              </div>
+
+              {/* Form Body */}
+              <form onSubmit={handleSaveItemSubmit} className="flex-1 flex flex-col min-h-0">
+                <div className="p-4 sm:p-5 space-y-4 max-h-[70vh] overflow-y-auto bg-slate-50/40">
+                  {/* Form Error Banner */}
+                  {formError && (
+                    <div className="rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-xs font-semibold text-rose-800 flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0" />
+                      <span>{formError}</span>
+                    </div>
+                  )}
+
+                  {/* Section 1: Classification & 2-Tier Hierarchy Selection */}
+                  <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                      <div className="flex items-center gap-2">
+                        <FolderTree className="h-4 w-4 text-emerald-600" />
+                        <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                          1. Classification &amp; 3-Tier Hierarchy Mapping
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-slate-400 font-medium">Self-Service Hierarchy</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Main Category with Quick Add */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-xs font-bold text-slate-800">
+                            Main Category <span className="text-rose-600">*</span>
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenAddMainCat()}
+                            className="text-[10.5px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-0.5 cursor-pointer"
+                          >
+                            <Plus className="h-3 w-3" />
+                            <span>New Main</span>
+                          </button>
+                        </div>
+                        <select
+                          value={formMainCat}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFormMainCat(val);
+                            const mainObj = mainCategories.find(
+                              (m) => m.name.toLowerCase() === val.toLowerCase()
+                            );
+                            if (mainObj) {
+                              const subs = subCategoriesByParent[mainObj.code];
+                              if (subs && subs.length > 0) {
+                                setFormSubCat(subs[0].name);
+                              }
+                            }
+                          }}
+                          className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-xs font-bold text-slate-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
+                        >
+                          {mainCategories.map((m) => (
+                            <option key={m.code} value={m.name}>
+                              {m.name} ({m.code})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Sub-Category with Quick Add */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-xs font-bold text-slate-800">
+                            Sub-Category <span className="text-rose-600">*</span>
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const mainObj = mainCategories.find(
+                                (m) => m.name.toLowerCase() === formMainCat.toLowerCase()
+                              );
+                              handleOpenAddSubCat(mainObj?.code);
+                            }}
+                            className="text-[10.5px] font-bold text-teal-700 hover:text-teal-800 hover:underline flex items-center gap-0.5 cursor-pointer"
+                          >
+                            <Plus className="h-3 w-3" />
+                            <span>New Sub</span>
+                          </button>
+                        </div>
+                        <select
+                          value={formSubCat}
+                          onChange={(e) => setFormSubCat(e.target.value)}
+                          className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-xs font-bold text-slate-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
+                        >
+                          {(() => {
+                            const mainObj = mainCategories.find(
+                              (m) => m.name.toLowerCase() === formMainCat.toLowerCase()
+                            );
+                            const subs = mainObj ? subCategoriesByParent[mainObj.code] || [] : [];
+                            if (subs.length === 0) {
+                              return <option value="General">General (Default)</option>;
+                            }
+                            return subs.map((s) => (
+                              <option key={s.code} value={s.name}>
+                                {s.name} ({s.code})
+                              </option>
+                            ));
+                          })()}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 2: Product Identification & Specifications */}
+                  <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs space-y-3">
+                    <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+                      <Package className="h-4 w-4 text-sky-600" />
+                      <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                        2. Item Identification &amp; Product Specifications
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="mb-1 block text-xs font-bold text-slate-800">
+                          Item Code / SKU <span className="text-rose-600">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={formSku}
+                          onChange={(e) => setFormSku(e.target.value.toUpperCase())}
+                          placeholder="e.g. FG-202011"
+                          className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs font-bold text-slate-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700">
+                          Barcode (EAN-13 / UPC)
+                        </label>
+                        <div className="relative">
+                          <Barcode className="pointer-events-none absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                          <input
+                            type="text"
+                            value={formBarcode}
+                            onChange={(e) => setFormBarcode(e.target.value)}
+                            placeholder="8969XXXXXXXXX"
+                            className="h-8.5 w-full rounded-lg border border-slate-300 bg-white pl-8 pr-3 font-mono text-xs text-slate-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Product Name & Dimensions */}
+                    <div>
+                      <label className="mb-1 block text-xs font-bold text-slate-800">
+                        Product Name &amp; Dimensions <span className="text-rose-600">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formName}
+                        onChange={(e) => setFormName(e.target.value)}
+                        placeholder="e.g. 2&quot;X13' U-PVC PRESSURE PIPE - 2.50 KG"
+                        className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-3 text-xs font-bold text-slate-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
+                      />
+                    </div>
+
+                    {/* 1-Click Pipe Dimension Quick Add Chips */}
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1.5 text-[10.5px] font-bold text-slate-600">
+                        <Sparkles className="h-3 w-3 text-emerald-600" />
+                        <span>Quick-Add Dimensions &amp; Specifications:</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {QUICK_SIZES.concat(QUICK_SPECS).map((chip) => (
+                          <button
+                            key={chip}
+                            type="button"
+                            onClick={() => handleAppendSpec(chip)}
+                            className="rounded border border-slate-300 bg-slate-100 hover:bg-emerald-50 hover:border-emerald-400 hover:text-emerald-800 px-2 py-0.5 text-[10.5px] font-mono font-semibold text-slate-700 transition cursor-pointer"
+                          >
+                            +{chip}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700">
+                          Unit of Measure (UOM)
+                        </label>
+                        <select
+                          value={formUnit}
+                          onChange={(e) => setFormUnit(e.target.value)}
+                          className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-2 text-xs font-semibold text-slate-900 focus:border-emerald-500 focus:outline-none"
+                        >
+                          {COMMON_UNITS.map((u) => (
+                            <option key={u} value={u}>
+                              {u}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700">Brand</label>
+                        <select
+                          value={formBrand}
+                          onChange={(e) => setFormBrand(e.target.value)}
+                          className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-2 text-xs font-semibold text-slate-900 focus:border-emerald-500 focus:outline-none"
+                        >
+                          {BRANDS.map((b) => (
+                            <option key={b} value={b}>
+                              {b}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700">
+                          Warehouse Rack No.
+                        </label>
+                        <input
+                          type="text"
+                          value={formRackNo}
+                          onChange={(e) => setFormRackNo(e.target.value)}
+                          placeholder="e.g. Rack A-01"
+                          className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-emerald-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 3: Commercial Pricing & Margins */}
+                  <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                      <div className="flex items-center gap-2">
+                        <Coins className="h-4 w-4 text-emerald-600" />
+                        <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                          3. Commercial Pricing &amp; Profit Margins (Rs.)
+                        </span>
+                      </div>
+                      {Number(calculatedMargin) > 0 && (
+                        <span className="bg-emerald-100 text-emerald-900 border border-emerald-300 px-2 py-0.5 rounded-full text-[11px] font-bold font-mono">
+                          Profit Margin: +{calculatedMargin}% (Rs. {netGainAmount}/pc)
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700">
+                          Cost / Purchase Price (Rs.)
+                        </label>
+                        <input
+                          type="number"
+                          step="any"
+                          min="0"
+                          value={formCostPrice}
+                          onChange={(e) => setFormCostPrice(parseFloat(e.target.value) || 0)}
+                          className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs text-slate-900 focus:border-emerald-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700">
+                          Wholesale Price (Rs.)
+                        </label>
+                        <input
+                          type="number"
+                          step="any"
+                          min="0"
+                          value={formWholesalePrice}
+                          onChange={(e) => setFormWholesalePrice(parseFloat(e.target.value) || 0)}
+                          className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs text-slate-900 focus:border-emerald-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs font-bold text-slate-900">
+                          Retail Sale Price (Rs.) <span className="text-rose-600">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          step="any"
+                          min="0"
+                          required
+                          value={formSalePrice}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            setFormSalePrice(val);
+                            if (formWholesalePrice === 0) {
+                              setFormWholesalePrice(Math.round(val * 0.9));
+                            }
+                          }}
+                          className="h-8.5 w-full rounded-lg border-2 border-emerald-500 bg-emerald-50/20 px-3 font-mono text-xs font-bold text-slate-900 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 4: FBR Compliance & Opening Stock */}
+                  <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs space-y-3">
+                    <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+                      <ShieldCheck className="h-4 w-4 text-indigo-600" />
+                      <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                        4. FBR Customs HS Code &amp; Stock Balance
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700">
+                          Pakistan Customs HS Code
+                        </label>
+                        <input
+                          type="text"
+                          value={formHsCode}
+                          onChange={(e) => setFormHsCode(e.target.value)}
+                          placeholder="3917.2390"
+                          className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs text-slate-900 focus:border-emerald-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700">
+                          Sales Tax Rate (GST %)
+                        </label>
+                        <input
+                          type="number"
+                          value={formTaxRate}
+                          onChange={(e) => setFormTaxRate(parseFloat(e.target.value) || 18)}
+                          className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs text-slate-900 focus:border-emerald-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700">
+                          Opening Stock Qty
+                        </label>
+                        <input
+                          type="number"
+                          step="any"
+                          value={formStockQty}
+                          onChange={(e) => setFormStockQty(parseFloat(e.target.value) || 0)}
+                          className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs text-slate-900 focus:border-emerald-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Form Footer Action Buttons */}
+                <div className="flex shrink-0 items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowItemModal(false)}
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 cursor-pointer"
+                  >
+                    Cancel (Esc)
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleSaveAndBill}
+                      disabled={savingItem}
+                      className="flex items-center gap-1.5 rounded-lg border border-emerald-600 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 cursor-pointer"
+                    >
+                      <Zap className="h-4 w-4 text-emerald-600" />
+                      <span>Save &amp; Bill in POS</span>
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={savingItem}
+                      className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2 text-xs font-bold text-white shadow-md hover:from-emerald-700 hover:to-teal-700 active:scale-95 disabled:opacity-50 cursor-pointer"
+                    >
+                      {savingItem ? (
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Check className="h-4 w-4" />
+                      )}
+                      <span>{editingProduct ? 'Update Finished Good' : 'Save Finished Good (Ctrl+S)'}</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* 7. MODAL: REGISTER / EDIT MAIN CATEGORY (TIER 1)          */}
+        {/* ========================================================= */}
+        {showMainCatModal && (
+          <div className="fixed inset-0 z-70 flex items-center justify-center bg-black/75 p-3 backdrop-blur-xs font-sans animate-fade-in">
+            <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-white shadow-2xl overflow-hidden flex flex-col">
+              <div className="flex h-11 shrink-0 items-center justify-between border-b border-slate-800 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] px-4 text-white">
+                <div className="flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-emerald-400" />
+                  <span className="text-xs font-bold uppercase tracking-wide">
+                    {editingMainCat ? 'Edit Main Category' : 'Register New Main Category (Tier 1)'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowMainCatModal(false)}
+                  className="rounded p-1 text-slate-400 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveMainCat} className="p-4 space-y-3">
+                {mainCatError && (
+                  <div className="rounded border border-rose-200 bg-rose-50 p-2 text-xs font-semibold text-rose-800">
+                    {mainCatError}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 mb-1">
+                    Main Category Code <span className="text-rose-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={mainCatCode}
+                    onChange={(e) => setMainCatCode(e.target.value.toUpperCase())}
+                    placeholder="e.g. FG-1 or PVC-1"
+                    className="h-8.5 w-full rounded-lg border border-slate-300 px-3 font-mono text-xs font-bold text-slate-900 focus:border-emerald-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 mb-1">
                     Main Category Name <span className="text-rose-600">*</span>
                   </label>
                   <input
                     type="text"
-                    value={newMainName}
-                    onChange={(e) => setNewMainName(e.target.value)}
-                    placeholder="e.g. PVC PIPES / SANITARY / TILES"
-                    className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-xs font-bold text-slate-900 uppercase focus:border-emerald-500 focus:outline-none"
                     required
+                    value={mainCatName}
+                    onChange={(e) => setMainCatName(e.target.value.toUpperCase())}
+                    placeholder="e.g. FINISH GOODS / RAW MATERIAL"
+                    className="h-8.5 w-full rounded-lg border border-slate-300 px-3 text-xs font-bold text-slate-900 focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
 
-                <div className="sm:col-span-3">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Category Code (Optional)</label>
-                  <input
-                    type="text"
-                    value={newMainCode}
-                    onChange={(e) => setNewMainCode(e.target.value)}
-                    placeholder="e.g. CAT-1 (Auto)"
-                    className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-2.5 font-mono text-xs text-slate-900 uppercase focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Type</label>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Category Type
+                  </label>
                   <select
-                    value={newMainType}
-                    onChange={(e) => setNewMainType(e.target.value)}
-                    className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-2 text-xs font-semibold text-slate-800 focus:border-emerald-500 focus:outline-none"
+                    value={mainCatType}
+                    onChange={(e) => setMainCatType(e.target.value)}
+                    className="h-8.5 w-full rounded-lg border border-slate-300 px-2.5 text-xs font-semibold text-slate-900 focus:border-emerald-500 focus:outline-none"
                   >
                     {CATEGORY_TYPES.map((t) => (
                       <option key={t} value={t}>
@@ -1100,98 +2127,69 @@ export function InventoryModal() {
                   </select>
                 </div>
 
-                <div className="sm:col-span-2">
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => setShowMainCatModal(false)}
+                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100"
+                  >
+                    Cancel
+                  </button>
                   <button
                     type="submit"
-                    disabled={saving}
-                    className="flex h-8.5 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-500 shadow-2xs active:scale-95 transition"
+                    disabled={savingMainCat}
+                    className="flex items-center gap-1 rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-emerald-700"
                   >
-                    <Plus className="h-4 w-4" />
-                    <span>{saving ? 'Adding...' : 'Add Category'}</span>
+                    {savingMainCat ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                    <span>Save Main Category</span>
                   </button>
                 </div>
-              </div>
-            </form>
-
-            {/* List of Active Main Categories */}
-            <div className="rounded-xl border border-slate-200 bg-white shadow-2xs overflow-hidden">
-              <div className="bg-slate-100 px-3 py-2 border-b border-slate-200 flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-800">
-                  Active Main Categories in Database ({mainCategories.length})
-                </span>
-                <span className="text-[11px] text-slate-500">Any tenant can customize these categories</span>
-              </div>
-
-              <div className="divide-y divide-slate-100">
-                {mainCategories.map((m, idx) => {
-                  const linkedSubs = categories.filter((c) => c.parent_code === m.code);
-                  const linkedItems = products.filter(
-                    (p) =>
-                      (p.main_category && p.main_category.toLowerCase() === m.name.toLowerCase()) ||
-                      p.category.toLowerCase().includes(m.name.toLowerCase())
-                  );
-
-                  return (
-                    <div key={m.code} className="flex items-center justify-between p-3 hover:bg-slate-50">
-                      <div className="flex items-center gap-3">
-                        <span className="font-mono text-xs font-bold text-slate-400 w-6 text-center">{idx + 1}</span>
-                        <span className="rounded bg-slate-900 text-white px-2 py-0.5 text-xs font-mono font-bold">
-                          {m.code}
-                        </span>
-                        <div>
-                          <p className="text-xs font-extrabold text-slate-900 uppercase">{m.name}</p>
-                          <p className="text-[10px] text-slate-500 font-medium">Type: {m.category_type}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-4">
-                        <span className="rounded bg-sky-50 px-2 py-0.5 text-xs font-bold text-sky-800 border border-sky-200">
-                          {linkedSubs.length} Sub-Categories
-                        </span>
-                        <span className="rounded bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-200">
-                          {linkedItems.length} Items Listed
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteCategory(m.code, m.name)}
-                          className="flex h-7 w-7 items-center justify-center rounded border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
-                          title="Delete category"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              </form>
             </div>
           </div>
         )}
 
-        {/* --------------------------------------------------------- */}
-        {/* TAB 3: SUB-CATEGORIES (USER HUD ADD KAR SAKTA HAI)        */}
-        {/* --------------------------------------------------------- */}
-        {activeTab === 'SUBS' && (
-          <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 bg-slate-50/50">
-            {/* Create New Sub Category Form Card */}
-            <form onSubmit={handleSaveSubCategory} className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-2 mb-3">
-                <FolderOpen className="h-4 w-4 text-emerald-600" />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                  + Add New Sub-Category under Main Category
-                </h3>
+        {/* ========================================================= */}
+        {/* 8. MODAL: REGISTER / EDIT SUB-CATEGORY (TIER 2)           */}
+        {/* ========================================================= */}
+        {showSubCatModal && (
+          <div className="fixed inset-0 z-70 flex items-center justify-center bg-black/75 p-3 backdrop-blur-xs font-sans animate-fade-in">
+            <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-white shadow-2xl overflow-hidden flex flex-col">
+              <div className="flex h-11 shrink-0 items-center justify-between border-b border-slate-800 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] px-4 text-white">
+                <div className="flex items-center gap-2">
+                  <FolderTree className="h-4 w-4 text-teal-400" />
+                  <span className="text-xs font-bold uppercase tracking-wide">
+                    {editingSubCat ? 'Edit Sub-Category' : 'Register New Sub-Category (Tier 2)'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowSubCatModal(false)}
+                  className="rounded p-1 text-slate-400 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-                <div className="sm:col-span-4">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Select Main Category <span className="text-rose-600">*</span>
+              <form onSubmit={handleSaveSubCat} className="p-4 space-y-3">
+                {subCatError && (
+                  <div className="rounded border border-rose-200 bg-rose-50 p-2 text-xs font-semibold text-rose-800">
+                    {subCatError}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 mb-1">
+                    Parent Main Category <span className="text-rose-600">*</span>
                   </label>
                   <select
-                    value={newSubParent}
-                    onChange={(e) => setNewSubParent(e.target.value)}
-                    className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-xs font-bold text-slate-900 focus:border-emerald-500 focus:outline-none"
-                    required
+                    value={subCatParentCode}
+                    onChange={(e) => {
+                      const parent = e.target.value;
+                      setSubCatParentCode(parent);
+                      setSubCatCode(`${parent}-${100 + subCategories.length + 1}`);
+                    }}
+                    className="h-8.5 w-full rounded-lg border border-slate-300 px-2.5 text-xs font-bold text-slate-900 focus:border-emerald-500 focus:outline-none"
                   >
                     {mainCategories.map((m) => (
                       <option key={m.code} value={m.code}>
@@ -1201,445 +2199,66 @@ export function InventoryModal() {
                   </select>
                 </div>
 
-                <div className="sm:col-span-4">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 mb-1">
+                    Sub-Category Code <span className="text-rose-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={subCatCode}
+                    onChange={(e) => setSubCatCode(e.target.value.toUpperCase())}
+                    placeholder="e.g. FG-101"
+                    className="h-8.5 w-full rounded-lg border border-slate-300 px-3 font-mono text-xs font-bold text-slate-900 focus:border-emerald-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 mb-1">
                     Sub-Category Name <span className="text-rose-600">*</span>
                   </label>
                   <input
                     type="text"
-                    value={newSubName}
-                    onChange={(e) => setNewSubName(e.target.value)}
-                    placeholder="e.g. U-PVC PRESSURE PIPES"
-                    className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-xs font-bold text-slate-900 uppercase focus:border-emerald-500 focus:outline-none"
                     required
+                    value={subCatName}
+                    onChange={(e) => setSubCatName(e.target.value.toUpperCase())}
+                    placeholder="e.g. U-PVC PRESSURE PIPES"
+                    className="h-8.5 w-full rounded-lg border border-slate-300 px-3 text-xs font-bold text-slate-900 focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
 
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Code (Optional)</label>
-                  <input
-                    type="text"
-                    value={newSubCode}
-                    onChange={(e) => setNewSubCode(e.target.value)}
-                    placeholder="e.g. SUB-1 (Auto)"
-                    className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-2.5 font-mono text-xs text-slate-900 uppercase focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="flex h-8.5 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-500 shadow-2xs active:scale-95 transition"
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Category Type
+                  </label>
+                  <select
+                    value={subCatType}
+                    onChange={(e) => setSubCatType(e.target.value)}
+                    className="h-8.5 w-full rounded-lg border border-slate-300 px-2.5 text-xs font-semibold text-slate-900 focus:border-emerald-500 focus:outline-none"
                   >
-                    <Plus className="h-4 w-4" />
-                    <span>{saving ? 'Adding...' : 'Add Sub-Category'}</span>
-                  </button>
-                </div>
-              </div>
-            </form>
-
-            {/* List of Active Sub-Categories */}
-            <div className="rounded-xl border border-slate-200 bg-white shadow-2xs overflow-hidden">
-              <div className="bg-slate-100 px-3 py-2 border-b border-slate-200 flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-800">
-                  Active Sub-Categories in Database ({subCategories.length})
-                </span>
-                <span className="text-[11px] text-slate-500">Cascading under each tenant Main Category</span>
-              </div>
-
-              <div className="divide-y divide-slate-100">
-                {subCategories.map((s, idx) => {
-                  const parent = mainCategories.find((m) => m.code === s.parent_code);
-                  const linkedItems = products.filter(
-                    (p) =>
-                      (p.sub_category && p.sub_category.toLowerCase() === s.name.toLowerCase()) ||
-                      p.category.toLowerCase().includes(s.name.toLowerCase())
-                  );
-
-                  return (
-                    <div key={s.code} className="flex items-center justify-between p-3 hover:bg-slate-50">
-                      <div className="flex items-center gap-3">
-                        <span className="font-mono text-xs font-bold text-slate-400 w-6 text-center">{idx + 1}</span>
-                        <div>
-                          <p className="text-xs font-extrabold text-slate-900 uppercase flex items-center gap-2">
-                            <span>{s.name}</span>
-                            <span className="font-mono text-[10px] text-slate-500 font-normal">[{s.code}]</span>
-                          </p>
-                          <p className="text-[10.5px] text-emerald-700 font-semibold mt-0.5">
-                            Belongs to: <strong>{parent?.name || s.parent_code}</strong>
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-4">
-                        <span className="rounded bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-200">
-                          {linkedItems.length} Items
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteCategory(s.code, s.name)}
-                          className="flex h-7 w-7 items-center justify-center rounded border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
-                          title="Delete subcategory"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ========================================================= */}
-        {/* 4. BOTTOM FOOTER STATUS BAR                               */}
-        {/* ========================================================= */}
-        <div className="shrink-0 flex items-center justify-between border-t border-slate-200 bg-slate-100 px-4 py-2 text-xs text-slate-600 rounded-b-xl">
-          <div className="flex items-center gap-3">
-            <span className="font-semibold text-slate-800">
-              Showing <strong className="text-slate-900">{filteredProducts.length}</strong> of{' '}
-              {totalItemCount} catalog items across <strong className="text-slate-900">{mainCategories.length}</strong> Main &amp;{' '}
-              <strong className="text-slate-900">{subCategories.length}</strong> Sub-Categories
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 text-[11px] text-slate-500">
-            <span className="rounded bg-slate-200 px-2 py-0.5 font-mono font-bold text-slate-700">F2: New Item</span>
-            <span className="rounded bg-slate-200 px-2 py-0.5 font-mono font-bold text-slate-700">Esc: Close</span>
-          </div>
-        </div>
-
-        {/* ========================================================= */}
-        {/* 5. ITEM ADD / EDIT POPUP MODAL (SIMPLE & ELEGANT)         */}
-        {/* ========================================================= */}
-        {showItemModal && (
-          <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 p-3 sm:p-5 backdrop-blur-xs font-sans">
-            <div className="w-full max-w-xl rounded-2xl border border-slate-700/80 bg-white shadow-2xl overflow-hidden flex flex-col">
-              {/* Modal Titlebar */}
-              <div className="flex h-11 shrink-0 items-center justify-between border-b border-slate-800 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] px-4 text-white">
-                <div className="flex items-center gap-2">
-                  <PackagePlus className="h-4 w-4 text-emerald-400" />
-                  <h3 className="text-xs font-bold uppercase tracking-wider">
-                    {editingProduct ? `Edit Item [${editingProduct.sku}]` : 'Add New Inventory Item'}
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowItemModal(false)}
-                  className="rounded p-1 text-slate-400 hover:text-white"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              {/* Form Body */}
-              <form onSubmit={handleSaveItemSubmit} className="p-4 space-y-3 max-h-[75vh] overflow-y-auto text-xs bg-slate-50/50">
-                {itemError && (
-                  <div className="rounded-lg border border-rose-200 bg-rose-50 p-2 text-xs font-semibold text-rose-800">
-                    {itemError}
-                  </div>
-                )}
-
-                {/* 1. Category Hierarchy Selectors */}
-                <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-2xs space-y-2.5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {/* Main Category */}
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="font-bold text-slate-800">
-                          Main Category <span className="text-rose-600">*</span>
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setInlineCatTarget('MAIN');
-                            setInlineCatName('');
-                            setShowInlineCatModal(true);
-                          }}
-                          className="text-[10.5px] font-bold text-emerald-700 hover:underline"
-                        >
-                          + New Main
-                        </button>
-                      </div>
-                      <select
-                        value={itemMainCat}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setItemMainCat(val);
-                          const matching = categories.filter(
-                            (c) => c.parent_code === mainCategories.find((m) => m.name === val)?.code
-                          );
-                          if (matching.length > 0) setItemSubCat(matching[0].name);
-                        }}
-                        className="h-8 w-full rounded border border-slate-300 bg-white px-2 font-semibold text-slate-800 focus:border-emerald-500 focus:outline-none"
-                      >
-                        {mainCategories.map((m) => (
-                          <option key={m.code} value={m.name}>
-                            {m.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Sub Category */}
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="font-bold text-slate-800">Sub-Category</label>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setInlineCatTarget('SUB');
-                            setInlineCatName('');
-                            setShowInlineCatModal(true);
-                          }}
-                          className="text-[10.5px] font-bold text-emerald-700 hover:underline"
-                        >
-                          + New Sub
-                        </button>
-                      </div>
-                      <select
-                        value={itemSubCat}
-                        onChange={(e) => setItemSubCat(e.target.value)}
-                        className="h-8 w-full rounded border border-slate-300 bg-white px-2 font-semibold text-slate-800 focus:border-emerald-500 focus:outline-none"
-                      >
-                        {subCategoriesForItemForm.map((s) => (
-                          <option key={s.code} value={s.name}>
-                            {s.name}
-                          </option>
-                        ))}
-                        {subCategoriesForItemForm.length === 0 && (
-                          <option value={itemMainCat}>{itemMainCat}</option>
-                        )}
-                      </select>
-                    </div>
-                  </div>
+                    {CATEGORY_TYPES.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
-                {/* 2. Product Name & SKU */}
-                <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-2xs space-y-2.5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <div>
-                      <label className="block mb-1 font-bold text-slate-800">
-                        Item Code / SKU <span className="text-rose-600">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={itemSku}
-                        onChange={(e) => setItemSku(e.target.value)}
-                        placeholder="e.g. FG-202011"
-                        className="h-8 w-full rounded border border-slate-300 bg-white px-2 font-mono font-bold text-slate-900 uppercase focus:border-emerald-500 focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block mb-1 font-bold text-slate-800">Barcode</label>
-                      <input
-                        type="text"
-                        value={itemBarcode}
-                        onChange={(e) => setItemBarcode(e.target.value)}
-                        placeholder="e.g. 896912345678"
-                        className="h-8 w-full rounded border border-slate-300 bg-white px-2 font-mono text-slate-700 focus:border-emerald-500 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block mb-1 font-bold text-slate-800">
-                      Product Name &amp; Dimensions <span className="text-rose-600">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={itemName}
-                      onChange={(e) => setItemName(e.target.value)}
-                      placeholder={'e.g. 2"X13\' U-PVC PRESSURE PIPE - 2.50 KG'}
-                      className="h-8 w-full rounded border border-slate-300 bg-white px-2 text-xs font-bold text-slate-900 uppercase focus:border-emerald-500 focus:outline-none"
-                    />
-
-                    {/* Quick dimension buttons */}
-                    <div className="mt-1.5 flex flex-wrap items-center gap-1 select-none">
-                      <span className="text-[10px] font-bold text-emerald-800 uppercase">Quick Add:</span>
-                      {QUICK_SIZES.slice(0, 7).map((sz) => (
-                        <button
-                          key={sz}
-                          type="button"
-                          onClick={() => handleAppendSpec(sz)}
-                          className="rounded border border-slate-200 bg-slate-100 px-1.5 py-0.2 text-[10px] font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-300"
-                        >
-                          {sz}
-                        </button>
-                      ))}
-                      {QUICK_SPECS.slice(0, 3).map((sp) => (
-                        <button
-                          key={sp}
-                          type="button"
-                          onClick={() => handleAppendSpec(sp)}
-                          className="rounded border border-slate-200 bg-slate-100 px-1.5 py-0.2 text-[10px] font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-300"
-                        >
-                          {sp}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div>
-                      <label className="block mb-1 font-bold text-slate-800">Unit of Measure</label>
-                      <select
-                        value={itemUnit}
-                        onChange={(e) => setItemUnit(e.target.value)}
-                        className="h-8 w-full rounded border border-slate-300 bg-white px-2 font-semibold text-slate-800 focus:border-emerald-500 focus:outline-none"
-                      >
-                        {COMMON_UNITS.map((u) => (
-                          <option key={u} value={u}>
-                            {u}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block mb-1 font-bold text-slate-800">Opening Stock Qty</label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={itemStockQty === 0 ? '' : itemStockQty}
-                        onChange={(e) => setItemStockQty(Number(e.target.value) || 0)}
-                        placeholder="0"
-                        className="h-8 w-full rounded border border-slate-300 bg-white px-2 text-right font-bold text-slate-900 focus:border-emerald-500 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3. Pricing Card */}
-                <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-2xs space-y-2.5">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                    <span className="font-bold text-slate-800 uppercase text-xs flex items-center gap-1.5">
-                      <Coins className="h-3.5 w-3.5 text-emerald-600" />
-                      <span>Pricing (Rs.)</span>
-                    </span>
-                    {calculatedMargin !== 0 && (
-                      <span className="rounded-full bg-emerald-100 px-2 py-0.2 text-[10.5px] font-extrabold text-emerald-800 border border-emerald-300">
-                        Margin: +{calculatedMargin}%
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    <div>
-                      <label className="block mb-1 font-bold text-slate-700">Cost Price (Rs.)</label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={itemCostPrice === 0 ? '' : itemCostPrice}
-                        onChange={(e) => setItemCostPrice(Number(e.target.value) || 0)}
-                        placeholder="0.00"
-                        className="h-8 w-full rounded border border-slate-300 bg-white px-2 text-right font-bold text-slate-900 focus:border-emerald-500 focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block mb-1 font-bold text-slate-700">
-                        Retail Sale Price (Rs.) <span className="text-rose-600">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={itemSalePrice === 0 ? '' : itemSalePrice}
-                        onChange={(e) => {
-                          const val = Number(e.target.value) || 0;
-                          setItemSalePrice(val);
-                          if (!itemWholesalePrice) setItemWholesalePrice(Math.round(val * 0.9));
-                        }}
-                        placeholder="0.00"
-                        className="h-8 w-full rounded border border-emerald-500 bg-emerald-50/40 px-2 text-right font-extrabold text-emerald-950 focus:border-emerald-600 focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block mb-1 font-bold text-slate-700">Wholesale Rate (Rs.)</label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={itemWholesalePrice === 0 ? '' : itemWholesalePrice}
-                        onChange={(e) => setItemWholesalePrice(Number(e.target.value) || 0)}
-                        placeholder="0.00"
-                        className="h-8 w-full rounded border border-slate-300 bg-white px-2 text-right font-bold text-slate-900 focus:border-emerald-500 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer Buttons */}
                 <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
                   <button
                     type="button"
-                    onClick={() => setShowItemModal(false)}
-                    className="h-8.5 rounded-lg border border-slate-300 bg-white px-4 text-xs font-bold text-slate-700 hover:bg-slate-100"
+                    onClick={() => setShowSubCatModal(false)}
+                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    disabled={saving}
-                    className="flex h-8.5 items-center gap-1.5 rounded-lg bg-emerald-600 px-5 text-xs font-bold text-white shadow-sm hover:bg-emerald-500 active:scale-95 transition"
+                    disabled={savingSubCat}
+                    className="flex items-center gap-1 rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-emerald-700"
                   >
-                    <Check className="h-4 w-4" />
-                    <span>{saving ? 'Saving...' : 'Save Product'}</span>
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* ========================================================= */}
-        {/* 6. INLINE QUICK ADD CATEGORY POPUP                        */}
-        {/* ========================================================= */}
-        {showInlineCatModal && (
-          <div className="fixed inset-0 z-70 flex items-center justify-center bg-black/60 p-3 backdrop-blur-xs font-sans">
-            <div className="w-full max-w-sm rounded-xl border border-slate-700 bg-white shadow-2xl p-4 space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <h4 className="text-xs font-bold uppercase text-slate-900">
-                  + Add New {inlineCatTarget === 'MAIN' ? 'Main Category' : `Sub-Category under ${itemMainCat}`}
-                </h4>
-                <button
-                  type="button"
-                  onClick={() => setShowInlineCatModal(false)}
-                  className="text-slate-400 hover:text-slate-700"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <form onSubmit={handleSaveInlineCategory} className="space-y-3 text-xs">
-                <div>
-                  <label className="block mb-1 font-semibold text-slate-700">Category Name</label>
-                  <input
-                    type="text"
-                    value={inlineCatName}
-                    onChange={(e) => setInlineCatName(e.target.value)}
-                    placeholder="Enter category name..."
-                    className="h-8 w-full rounded border border-slate-300 bg-white px-2 uppercase font-bold text-slate-900 focus:border-emerald-500 focus:outline-none"
-                    autoFocus
-                    required
-                  />
-                </div>
-
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowInlineCatModal(false)}
-                    className="h-7.5 px-3 rounded border border-slate-300 bg-slate-50 text-slate-700 font-bold"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="h-7.5 px-4 rounded bg-emerald-600 text-white font-bold hover:bg-emerald-500 shadow-2xs"
-                  >
-                    Add
+                    {savingSubCat ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                    <span>Save Sub-Category</span>
                   </button>
                 </div>
               </form>
