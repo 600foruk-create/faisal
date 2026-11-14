@@ -485,8 +485,6 @@ function mysql_update_customer(PDO $pdo, int $id, array $input): array
     $row->execute([$id]);
     return cast_customer($row->fetch());
 }
-    return cast_customer($row->fetch());
-}
 
 function mysql_delete_customer(PDO $pdo, int $id): bool
 {
