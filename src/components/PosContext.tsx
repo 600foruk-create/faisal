@@ -25,6 +25,14 @@ interface PosContextValue {
   setSelectedCustomerId: (id: number | null) => void;
   customerRefreshNonce: number;
   triggerCustomerRefresh: () => void;
+  isInventoryModalOpen: boolean;
+  setIsInventoryModalOpen: (open: boolean) => void;
+  openInventoryModal: () => void;
+  closeInventoryModal: () => void;
+  inventoryRefreshNonce: number;
+  triggerInventoryRefresh: () => void;
+  selectedProductIdForPos: number | null;
+  setSelectedProductIdForPos: (id: number | null) => void;
   setActiveBranchId: (branchId: number | null) => void;
   setActiveUser: (user: UserSummary | null) => void;
   triggerRefresh: () => void;
@@ -61,12 +69,18 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
   const [customerRefreshNonce, setCustomerRefreshNonce] = useState(0);
+  const [isInventoryModalOpen, setIsInventoryModalOpen] = useState(false);
+  const [selectedProductIdForPos, setSelectedProductIdForPos] = useState<number | null>(null);
+  const [inventoryRefreshNonce, setInventoryRefreshNonce] = useState(0);
 
   const openPosSale = useCallback(() => setIsPosModalOpen(true), []);
   const closePosSale = useCallback(() => setIsPosModalOpen(false), []);
   const openCustomerModal = useCallback(() => setIsCustomerModalOpen(true), []);
   const closeCustomerModal = useCallback(() => setIsCustomerModalOpen(false), []);
   const triggerCustomerRefresh = useCallback(() => setCustomerRefreshNonce((n) => n + 1), []);
+  const openInventoryModal = useCallback(() => setIsInventoryModalOpen(true), []);
+  const closeInventoryModal = useCallback(() => setIsInventoryModalOpen(false), []);
+  const triggerInventoryRefresh = useCallback(() => setInventoryRefreshNonce((n) => n + 1), []);
 
   const refreshHeldCount = useCallback(async () => {
     try {
@@ -176,6 +190,14 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         setSelectedCustomerId,
         customerRefreshNonce,
         triggerCustomerRefresh,
+        isInventoryModalOpen,
+        setIsInventoryModalOpen,
+        openInventoryModal,
+        closeInventoryModal,
+        inventoryRefreshNonce,
+        triggerInventoryRefresh,
+        selectedProductIdForPos,
+        setSelectedProductIdForPos,
         setActiveBranchId,
         setActiveUser,
         triggerRefresh,

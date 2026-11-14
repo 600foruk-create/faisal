@@ -9,6 +9,7 @@ import {
   createSale,
   createSalesReturn,
   deleteCustomer,
+  deleteProduct,
   exportSystemBackup,
   getBranchesWithTerminals,
   getBusinessSettings,
@@ -20,6 +21,7 @@ import {
   getUsers,
   holdCart,
   listHeldCarts,
+  saveProduct,
   submitDayClosing,
   syncPendingFbrInvoices,
   updateBusinessSettings,
@@ -311,6 +313,52 @@ describe('Multi-Branch POS & FBR Integration Service', () => {
 
     const remaining = getCustomers(db);
     assert.equal(remaining.some((c) => c.id === created.id), false);
+  });
+
+  it('registers, updates, and deletes inventory catalog products', () => {
+    const db = createInMemoryDb(true);
+    const initial = getProducts(db, { includeInactive: true });
+    assert.ok(initial.length > 0);
+
+    // Register new finished goods item
+    const created = saveProduct(db, {
+      sku: 'FG-999999',
+      barcode: '896999999999',
+      name: '4" Heavy Duty Pressure Pipe',
+      category: 'PVC Pipes',
+      unit: 'Kgs',
+      sale_price: 1850,
+      cost_price: 1400,
+      tax_rate: 18,
+      branch_id: 1,
+      stock_qty: 250,
+      is_active: 1,
+    });
+    assert.equal(created.sku, 'FG-999999');
+    assert.equal(created.sale_price, 1850);
+    assert.equal(created.stock_qty, 250);
+
+    // Update product
+    const updated = saveProduct(db, {
+      id: created.id,
+      sku: 'FG-999999',
+      name: '4" Heavy Duty Pressure Pipe - Class D',
+      category: 'PVC Pipes',
+      unit: 'Kgs',
+      sale_price: 1950,
+      cost_price: 1450,
+      tax_rate: 18,
+      is_active: 1,
+    });
+    assert.equal(updated.name, '4" Heavy Duty Pressure Pipe - Class D');
+    assert.equal(updated.sale_price, 1950);
+
+    // Delete product (no sales history, so it gets removed)
+    const deleted = deleteProduct(db, created.id);
+    assert.equal(deleted, true);
+
+    const after = getProducts(db, { includeInactive: true });
+    assert.equal(after.some((p) => p.id === created.id), false);
   });
 });
 

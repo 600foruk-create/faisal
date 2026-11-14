@@ -33,7 +33,8 @@ type MenuAction =
   | 'about_software'
   | 'about_license'
   | 'about_contact'
-  | 'open_customers_modal';
+  | 'open_customers_modal'
+  | 'open_inventory_modal';
 type AboutSection = 'software' | 'license' | 'contact';
 
 interface DropdownItem {
@@ -74,7 +75,7 @@ const ADMIN_SUBHEADER_MENUS: DropdownGroup[] = [
     adminOnly: true,
     items: [
       { label: 'Customers', action: 'open_customers_modal', icon: Users },
-      { label: 'Chart Of Inventory', href: '/settings?tab=products', icon: Package },
+      { label: 'Chart Of Inventory', action: 'open_inventory_modal', icon: Package },
       { label: 'Inventory Opening Balances', href: '/settings?tab=stock_opening', icon: Boxes },
       { label: 'Item Price Settings', href: '/settings?tab=pricing', icon: Tag },
       { label: 'Item Sales Tax Rates', href: '/settings?tab=tax_rates', icon: Percent },
@@ -102,6 +103,7 @@ export function PosHeader() {
     setActiveUser,
     triggerRefresh,
     openCustomerModal,
+    openInventoryModal,
   } = usePosContext();
 
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -245,6 +247,22 @@ export function PosHeader() {
                             onClick={() => {
                               setOpenMenu(null);
                               openCustomerModal();
+                            }}
+                            className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700"
+                          >
+                            <Icon className="h-3.5 w-3.5 text-emerald-600" />
+                            <span>{item.label}</span>
+                          </button>
+                        );
+                      }
+                      if (item.action === 'open_inventory_modal') {
+                        return (
+                          <button
+                            key={item.label}
+                            type="button"
+                            onClick={() => {
+                              setOpenMenu(null);
+                              openInventoryModal();
                             }}
                             className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700"
                           >

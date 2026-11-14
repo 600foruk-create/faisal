@@ -425,6 +425,22 @@ function mysql_save_product(PDO $pdo, array $input): array
     throw new RuntimeException('Failed to load saved product');
 }
 
+function mysql_delete_product(PDO $pdo, int $id): bool
+{
+    $hasSales = $pdo->prepare('SELECT id FROM invoice_items WHERE product_id = ? LIMIT 1');
+    $hasSales->execute([$id]);
+    if ($hasSales->fetch()) {
+        $upd = $pdo->prepare('UPDATE products SET is_active = 0 WHERE id = ?');
+        $upd->execute([$id]);
+        return true;
+    }
+    $delInv = $pdo->prepare('DELETE FROM branch_inventory WHERE product_id = ?');
+    $delInv->execute([$id]);
+    $del = $pdo->prepare('DELETE FROM products WHERE id = ?');
+    $del->execute([$id]);
+    return true;
+}
+
 function mysql_get_customers(PDO $pdo, ?int $branchId = null): array
 {
     if ($branchId) {

@@ -50,6 +50,7 @@ export interface ProductWithStock {
   name: string;
   category: string;
   unit: string;
+  hs_code?: string;
   sale_price: number;
   cost_price: number;
   tax_rate: number;

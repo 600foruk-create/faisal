@@ -91,13 +91,21 @@ try {
             ]);
             json_out(['products' => $products]);
         }
-        if ($method === 'POST') {
+        if ($method === 'POST' || $method === 'PUT') {
             $body = read_json_body();
             if (empty($body['sku']) || empty($body['name'])) {
                 json_out(['error' => 'SKU and product name are required'], 400);
             }
             $prod = mysql_save_product($pdo, $body);
             json_out(['product' => $prod], !empty($body['id']) ? 200 : 201);
+        }
+        if ($method === 'DELETE') {
+            $id = parse_opt_int($_GET['id'] ?? null);
+            if (!$id) {
+                json_out(['error' => 'Product ID is required'], 400);
+            }
+            $ok = mysql_delete_product($pdo, $id);
+            json_out(['success' => $ok]);
         }
     }
 

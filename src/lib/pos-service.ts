@@ -206,6 +206,21 @@ export function saveProduct(
   });
 }
 
+export function deleteProduct(db: DatabaseSync, id: number): boolean {
+  return withTransaction(db, () => {
+    const hasSales = db
+      .prepare('SELECT id FROM invoice_items WHERE product_id = ? LIMIT 1')
+      .get(id);
+    if (hasSales) {
+      db.prepare('UPDATE products SET is_active = 0 WHERE id = ?').run(id);
+      return true;
+    }
+    db.prepare('DELETE FROM branch_inventory WHERE product_id = ?').run(id);
+    db.prepare('DELETE FROM products WHERE id = ?').run(id);
+    return true;
+  });
+}
+
 export function getCustomers(db: DatabaseSync, branchId?: number | null): Customer[] {
   if (branchId) {
     return db

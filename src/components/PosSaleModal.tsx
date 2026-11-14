@@ -96,6 +96,9 @@ export function PosSaleModal() {
     openCustomerModal,
     selectedCustomerId: contextCustomerId,
     customerRefreshNonce,
+    inventoryRefreshNonce,
+    selectedProductIdForPos,
+    setSelectedProductIdForPos,
   } = usePosContext();
 
   const router = useRouter();
@@ -198,7 +201,40 @@ export function PosSaleModal() {
 
   useEffect(() => {
     void loadCatalog();
-  }, [loadCatalog, refreshNonce, customerRefreshNonce]);
+  }, [loadCatalog, refreshNonce, customerRefreshNonce, inventoryRefreshNonce]);
+
+  useEffect(() => {
+    if (selectedProductIdForPos && products.length > 0) {
+      const prod = products.find((p) => p.id === selectedProductIdForPos);
+      if (prod) {
+        setRows((prev) => {
+          const emptyIdx = prev.findIndex((r) => !r.productId && !r.itemCode.trim());
+          const targetIdx = emptyIdx >= 0 ? emptyIdx : prev.length;
+          const next = [...prev];
+          const newRow: RowItem = {
+            id: next[targetIdx]?.id || crypto.randomUUID(),
+            productId: prod.id,
+            itemCode: prod.sku,
+            hsCode: prod.hs_code || '3917.2390',
+            description: prod.name,
+            pieces: 1,
+            qty: 1,
+            unit: prod.unit,
+            rate: prod.sale_price,
+            discountAmount: 0,
+            taxRate: prod.tax_rate ?? 18,
+          };
+          if (targetIdx < next.length) {
+            next[targetIdx] = newRow;
+          } else {
+            next.push(newRow);
+          }
+          return next;
+        });
+        setSelectedProductIdForPos(null);
+      }
+    }
+  }, [selectedProductIdForPos, products, setSelectedProductIdForPos]);
 
   useEffect(() => {
     if (contextCustomerId) {
