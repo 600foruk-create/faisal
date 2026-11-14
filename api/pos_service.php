@@ -425,134 +425,63 @@ function mysql_save_product(PDO $pdo, array $input): array
     throw new RuntimeException('Failed to load saved product');
 }
 
-function mysql_get_customer_columns(PDO $pdo): array
-{
-    static $cols = null;
-    if ($cols !== null) return $cols;
-    try {
-        $c = $pdo->query('SHOW COLUMNS FROM customers')->fetchAll(PDO::FETCH_COLUMN);
-        if (!in_array('city', $c, true)) {
-            try { $pdo->exec("ALTER TABLE customers ADD COLUMN city VARCHAR(100) NOT NULL DEFAULT ''"); } catch (\Throwable $e) {}
-        }
-        if (!in_array('address', $c, true)) {
-            try { $pdo->exec("ALTER TABLE customers ADD COLUMN address VARCHAR(255) NOT NULL DEFAULT ''"); } catch (\Throwable $e) {}
-        }
-        $c = $pdo->query('SHOW COLUMNS FROM customers')->fetchAll(PDO::FETCH_COLUMN);
-        $cols = $c;
-    } catch (\Throwable $e) {
-        $cols = ['id', 'branch_id', 'name', 'phone', 'cnic', 'ntn', 'is_walk_in'];
-    }
-    return $cols;
-}
-
 function mysql_get_customers(PDO $pdo, ?int $branchId = null): array
 {
-    $cols = mysql_get_customer_columns($pdo);
-    $hasCity = in_array('city', $cols, true);
-    $hasAddress = in_array('address', $cols, true);
-    $extraCols = '';
-    if ($hasCity) $extraCols .= ', city';
-    if ($hasAddress) $extraCols .= ', address';
-
     if ($branchId) {
         $stmt = $pdo->prepare(
-            "SELECT id, branch_id, name, phone, cnic, ntn{$extraCols}, is_walk_in
+            'SELECT id, branch_id, name, phone, cnic, ntn, is_walk_in
              FROM customers
              WHERE branch_id IS NULL OR branch_id = ?
-             ORDER BY is_walk_in DESC, name ASC"
+             ORDER BY is_walk_in DESC, name ASC'
         );
         $stmt->execute([$branchId]);
         return array_map('cast_customer', $stmt->fetchAll());
     }
     $rows = $pdo->query(
-        "SELECT id, branch_id, name, phone, cnic, ntn{$extraCols}, is_walk_in
+        'SELECT id, branch_id, name, phone, cnic, ntn, is_walk_in
          FROM customers
-         ORDER BY is_walk_in DESC, name ASC"
+         ORDER BY is_walk_in DESC, name ASC'
     )->fetchAll();
     return array_map('cast_customer', $rows);
 }
 
 function mysql_create_customer(PDO $pdo, array $input): array
 {
-    $cols = mysql_get_customer_columns($pdo);
-    $hasCity = in_array('city', $cols, true);
-    $hasAddress = in_array('address', $cols, true);
-
-    $fields = ['branch_id', 'name', 'phone', 'cnic', 'ntn'];
-    $placeholders = ['?', '?', '?', '?', '?'];
-    $values = [
+    $now = date('Y-m-d H:i:s');
+    $stmt = $pdo->prepare(
+        'INSERT INTO customers (branch_id, name, phone, cnic, ntn, is_walk_in, created_at)
+         VALUES (?, ?, ?, ?, ?, 0, ?)'
+    );
+    $stmt->execute([
         !empty($input['branch_id']) ? (int)$input['branch_id'] : null,
         trim((string)$input['name']),
         trim((string)($input['phone'] ?? '')),
         trim((string)($input['cnic'] ?? '')),
         trim((string)($input['ntn'] ?? '')),
-    ];
-
-    if ($hasCity) {
-        $fields[] = 'city';
-        $placeholders[] = '?';
-        $values[] = trim((string)($input['city'] ?? ''));
-    }
-    if ($hasAddress) {
-        $fields[] = 'address';
-        $placeholders[] = '?';
-        $values[] = trim((string)($input['address'] ?? ''));
-    }
-
-    $fields[] = 'is_walk_in';
-    $placeholders[] = '0';
-
-    $fields[] = 'created_at';
-    $placeholders[] = '?';
-    $values[] = date('Y-m-d H:i:s');
-
-    $sql = 'INSERT INTO customers (' . implode(', ', $fields) . ') VALUES (' . implode(', ', $placeholders) . ')';
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($values);
+        $now,
+    ]);
     $id = (int)$pdo->lastInsertId();
-
-    $extraCols = '';
-    if ($hasCity) $extraCols .= ', city';
-    if ($hasAddress) $extraCols .= ', address';
-
-    $row = $pdo->prepare("SELECT id, branch_id, name, phone, cnic, ntn{$extraCols}, is_walk_in FROM customers WHERE id = ?");
+    $row = $pdo->prepare('SELECT id, branch_id, name, phone, cnic, ntn, is_walk_in FROM customers WHERE id = ?');
     $row->execute([$id]);
     return cast_customer($row->fetch());
 }
 
 function mysql_update_customer(PDO $pdo, int $id, array $input): array
 {
-    $cols = mysql_get_customer_columns($pdo);
-    $hasCity = in_array('city', $cols, true);
-    $hasAddress = in_array('address', $cols, true);
-
-    $setSql = 'branch_id = ?, name = ?, phone = ?, cnic = ?, ntn = ?';
-    $values = [
+    $stmt = $pdo->prepare(
+        'UPDATE customers
+         SET branch_id = ?, name = ?, phone = ?, cnic = ?, ntn = ?
+         WHERE id = ?'
+    );
+    $stmt->execute([
         !empty($input['branch_id']) ? (int)$input['branch_id'] : null,
         trim((string)$input['name']),
         trim((string)($input['phone'] ?? '')),
         trim((string)($input['cnic'] ?? '')),
         trim((string)($input['ntn'] ?? '')),
-    ];
-
-    if ($hasCity) {
-        $setSql .= ', city = ?';
-        $values[] = trim((string)($input['city'] ?? ''));
-    }
-    if ($hasAddress) {
-        $setSql .= ', address = ?';
-        $values[] = trim((string)($input['address'] ?? ''));
-    }
-
-    $values[] = $id;
-    $stmt = $pdo->prepare("UPDATE customers SET {$setSql} WHERE id = ?");
-    $stmt->execute($values);
-
-    $extraCols = '';
-    if ($hasCity) $extraCols .= ', city';
-    if ($hasAddress) $extraCols .= ', address';
-
-    $row = $pdo->prepare("SELECT id, branch_id, name, phone, cnic, ntn{$extraCols}, is_walk_in FROM customers WHERE id = ?");
+        $id,
+    ]);
+    $row = $pdo->prepare('SELECT id, branch_id, name, phone, cnic, ntn, is_walk_in FROM customers WHERE id = ?');
     $row->execute([$id]);
     return cast_customer($row->fetch());
 }
