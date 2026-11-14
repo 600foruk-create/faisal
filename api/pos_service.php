@@ -448,6 +448,135 @@ function mysql_save_product(PDO $pdo, array $input): array
     throw new RuntimeException('Failed to load saved product');
 }
 
+function mysql_ensure_categories_table(PDO $pdo): void
+{
+    $isSqlite = is_sqlite_pdo($pdo);
+    $pdo->exec(
+        $isSqlite
+            ? 'CREATE TABLE IF NOT EXISTS categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                category_type TEXT NOT NULL DEFAULT "Finish Goods",
+                parent_code TEXT DEFAULT NULL,
+                is_active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL
+              )'
+            : 'CREATE TABLE IF NOT EXISTS categories (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                code VARCHAR(50) NOT NULL UNIQUE,
+                name VARCHAR(150) NOT NULL,
+                category_type VARCHAR(50) NOT NULL DEFAULT "Finish Goods",
+                parent_code VARCHAR(50) NULL,
+                is_active TINYINT(1) NOT NULL DEFAULT 1,
+                created_at DATETIME NOT NULL
+              )'
+    );
+
+    $count = (int)$pdo->query('SELECT COUNT(*) FROM categories')->fetchColumn();
+    if ($count === 0) {
+        $now = date('Y-m-d H:i:s');
+        $insert = $pdo->prepare(
+            'INSERT INTO categories (code, name, category_type, parent_code, is_active, created_at)
+             VALUES (?, ?, ?, ?, 1, ?)'
+        );
+
+        $mains = [
+            ['FG-1', 'FINISH GOODS', 'Finish Goods'],
+            ['PVC-1', 'U-PVC PIPES', 'Finish Goods'],
+            ['RAW-1', 'RAW MATERIAL', 'Raw Material'],
+            ['FIT-1', 'SEASTONE FITTING', 'Finish Goods'],
+            ['SAN-1', 'SANITARY WARE', 'Finish Goods'],
+            ['TIL-1', 'TILES & CERAMICS', 'Finish Goods'],
+            ['ADH-1', 'ADHESIVES & CHEMICALS', 'Finish Goods'],
+            ['HRD-1', 'HARDWARE & ACCESSORIES', 'Finish Goods'],
+        ];
+        foreach ($mains as $m) {
+            $insert->execute([$m[0], $m[1], $m[2], null, $now]);
+        }
+
+        $subs = [
+            ['FG-101', 'U-PVC PRESSURE PIPES', 'Finish Goods', 'FG-1'],
+            ['FG-102', 'PPR-C HOT & COLD PIPES', 'Finish Goods', 'FG-1'],
+            ['FG-103', 'PVC CONDUIT PIPES', 'Finish Goods', 'FG-1'],
+            ['FG-104', 'SEWERAGE & DRAINAGE PIPES', 'Finish Goods', 'FG-1'],
+            ['PVC-101', 'PRESSURE PIPES CLASS B', 'Finish Goods', 'PVC-1'],
+            ['PVC-102', 'PRESSURE PIPES CLASS D', 'Finish Goods', 'PVC-1'],
+            ['RAW-101', 'PVC RESIN COMPOUND', 'Raw Material', 'RAW-1'],
+            ['RAW-102', 'STABILIZERS & CHEMICALS', 'Raw Material', 'RAW-1'],
+            ['FIT-101', 'ELBOWS & TEES', 'Finish Goods', 'FIT-1'],
+            ['FIT-102', 'SOCKETS & BENDS', 'Finish Goods', 'FIT-1'],
+            ['FIT-103', 'VALVES & UNION', 'Finish Goods', 'FIT-1'],
+            ['SAN-101', 'WASH BASINS & COUNTERTOPS', 'Finish Goods', 'SAN-1'],
+            ['SAN-102', 'ONE-PIECE & RIMLESS COMMODES', 'Finish Goods', 'SAN-1'],
+            ['SAN-103', 'MIXER TAPS & FAUCETS', 'Finish Goods', 'SAN-1'],
+            ['TIL-101', 'PORCELAIN FLOOR TILES 60x60', 'Finish Goods', 'TIL-1'],
+            ['TIL-102', 'PORCELAIN FLOOR TILES 80x80', 'Finish Goods', 'TIL-1'],
+            ['TIL-103', 'CERAMIC WALL TILES 30x60', 'Finish Goods', 'TIL-1'],
+            ['ADH-101', 'PVC SOLVENT CEMENT (GLUE)', 'Finish Goods', 'ADH-1'],
+            ['ADH-102', 'TILE BOND ADHESIVE (BAGS)', 'Finish Goods', 'ADH-1'],
+            ['HRD-101', 'PIPE CLAMPS & WALL BRACKETS', 'Finish Goods', 'HRD-1'],
+            ['HRD-102', 'TEFLON TAPES & RUBBER SEALS', 'Finish Goods', 'HRD-1'],
+        ];
+        foreach ($subs as $s) {
+            $insert->execute([$s[0], $s[1], $s[2], $s[3], $now]);
+        }
+    }
+}
+
+function mysql_get_categories(PDO $pdo): array
+{
+    mysql_ensure_categories_table($pdo);
+    $rows = $pdo->query('SELECT * FROM categories WHERE is_active = 1 ORDER BY code ASC')->fetchAll();
+    return array_map(function ($r) {
+        $r['id'] = (int)$r['id'];
+        $r['is_active'] = (int)$r['is_active'];
+        return $r;
+    }, $rows);
+}
+
+function mysql_save_category(PDO $pdo, array $input): array
+{
+    mysql_ensure_categories_table($pdo);
+    $now = date('Y-m-d H:i:s');
+    $code = strtoupper(trim((string)$input['code']));
+    $name = trim((string)$input['name']);
+    $type = !empty($input['category_type']) ? trim((string)$input['category_type']) : 'Finish Goods';
+    $parent = !empty($input['parent_code']) ? trim((string)$input['parent_code']) : null;
+    $id = !empty($input['id']) ? (int)$input['id'] : null;
+
+    if ($id && $id > 0) {
+        $stmt = $pdo->prepare('UPDATE categories SET code = ?, name = ?, category_type = ?, parent_code = ? WHERE id = ?');
+        $stmt->execute([$code, $name, $type, $parent, $id]);
+    } else {
+        $isSqlite = is_sqlite_pdo($pdo);
+        $sql = $isSqlite
+            ? 'INSERT INTO categories (code, name, category_type, parent_code, is_active, created_at)
+               VALUES (?, ?, ?, ?, 1, ?)
+               ON CONFLICT(code) DO UPDATE SET name = excluded.name, category_type = excluded.category_type, parent_code = excluded.parent_code, is_active = 1'
+            : 'INSERT INTO categories (code, name, category_type, parent_code, is_active, created_at)
+               VALUES (?, ?, ?, ?, 1, ?)
+               ON DUPLICATE KEY UPDATE name = VALUES(name), category_type = VALUES(category_type), parent_code = VALUES(parent_code), is_active = 1';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$code, $name, $type, $parent, $now]);
+    }
+
+    $row = $pdo->prepare('SELECT * FROM categories WHERE code = ?');
+    $row->execute([$code]);
+    $cat = $row->fetch();
+    $cat['id'] = (int)$cat['id'];
+    $cat['is_active'] = (int)$cat['is_active'];
+    return $cat;
+}
+
+function mysql_delete_category(PDO $pdo, string $code): bool
+{
+    mysql_ensure_categories_table($pdo);
+    $stmt = $pdo->prepare('UPDATE categories SET is_active = 0 WHERE code = ? OR parent_code = ?');
+    $stmt->execute([$code, $code]);
+    return true;
+}
+
 function mysql_delete_product(PDO $pdo, int $id): bool
 {
     $hasSales = $pdo->prepare('SELECT id FROM invoice_items WHERE product_id = ? LIMIT 1');

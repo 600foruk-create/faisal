@@ -8,11 +8,13 @@ import {
   createCustomer,
   createSale,
   createSalesReturn,
+  deleteCategory,
   deleteCustomer,
   deleteProduct,
   exportSystemBackup,
   getBranchesWithTerminals,
   getBusinessSettings,
+  getCategories,
   getCustomers,
   getDashboardSummary,
   getDayClosingPreview,
@@ -21,6 +23,7 @@ import {
   getUsers,
   holdCart,
   listHeldCarts,
+  saveCategory,
   saveProduct,
   submitDayClosing,
   syncPendingFbrInvoices,
@@ -359,6 +362,42 @@ describe('Multi-Branch POS & FBR Integration Service', () => {
 
     const after = getProducts(db, { includeInactive: true });
     assert.equal(after.some((p) => p.id === created.id), false);
+  });
+
+  it('manages 3-tier inventory categories and subcategories', () => {
+    const db = createInMemoryDb(true);
+    const initial = getCategories(db);
+    assert.ok(initial.length > 0);
+
+    // Save new main category
+    const main = saveCategory(db, {
+      code: 'TENANT-1',
+      name: 'ELECTRONICS & MOTORS',
+      category_type: 'Finish Goods',
+    });
+    assert.equal(main.code, 'TENANT-1');
+    assert.equal(main.name, 'ELECTRONICS & MOTORS');
+
+    // Save subcategory under main
+    const sub = saveCategory(db, {
+      code: 'TENANT-101',
+      name: 'SUBMERSIBLE PUMPS',
+      category_type: 'Finish Goods',
+      parent_code: 'TENANT-1',
+    });
+    assert.equal(sub.code, 'TENANT-101');
+    assert.equal(sub.parent_code, 'TENANT-1');
+
+    // Verify retrieval
+    const cats = getCategories(db);
+    assert.ok(cats.some((c) => c.code === 'TENANT-1'));
+    assert.ok(cats.some((c) => c.code === 'TENANT-101'));
+
+    // Delete category
+    const deleted = deleteCategory(db, 'TENANT-1');
+    assert.equal(deleted, true);
+    const remaining = getCategories(db);
+    assert.equal(remaining.some((c) => c.code === 'TENANT-1'), false);
   });
 });
 

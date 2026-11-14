@@ -14,6 +14,7 @@ import type {
   FbrStatus,
   FbrSyncLogRecord,
   HeldCartRecord,
+  InventoryCategory,
   InvoiceDetail,
   InvoiceItemRecord,
   InvoiceRecord,
@@ -73,6 +74,124 @@ export function updateBusinessSettings(
     }
   });
   return getBusinessSettings(db);
+}
+
+export function ensureCategoriesTable(db: DatabaseSync): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      code TEXT NOT NULL UNIQUE,
+      name TEXT NOT NULL,
+      category_type TEXT NOT NULL DEFAULT 'Finish Goods',
+      parent_code TEXT DEFAULT NULL,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL
+    );
+  `);
+
+  const countRow = db.prepare('SELECT COUNT(*) as c FROM categories').get() as { c: number };
+  if (!countRow || countRow.c === 0) {
+    const now = getLocalIsoDateTime();
+    const insert = db.prepare(`
+      INSERT INTO categories (code, name, category_type, parent_code, is_active, created_at)
+      VALUES (?, ?, ?, ?, 1, ?)
+    `);
+
+    // Main Categories matching user's screenshot
+    const mains: [string, string, string][] = [
+      ['FG-1', 'FINISH GOODS', 'Finish Goods'],
+      ['PVC-1', 'U-PVC PIPES', 'Finish Goods'],
+      ['RAW-1', 'RAW MATERIAL', 'Raw Material'],
+      ['FIT-1', 'SEASTONE FITTING', 'Finish Goods'],
+      ['SAN-1', 'SANITARY WARE', 'Finish Goods'],
+      ['TIL-1', 'TILES & CERAMICS', 'Finish Goods'],
+      ['ADH-1', 'ADHESIVES & CHEMICALS', 'Finish Goods'],
+      ['HRD-1', 'HARDWARE & ACCESSORIES', 'Finish Goods'],
+    ];
+    for (const [code, name, type] of mains) {
+      insert.run(code, name, type, null, now);
+    }
+
+    // Sub Categories matching user's screenshot & domain
+    const subs: [string, string, string, string][] = [
+      ['FG-101', 'U-PVC PRESSURE PIPES', 'Finish Goods', 'FG-1'],
+      ['FG-102', 'PPR-C HOT & COLD PIPES', 'Finish Goods', 'FG-1'],
+      ['FG-103', 'PVC CONDUIT PIPES', 'Finish Goods', 'FG-1'],
+      ['FG-104', 'SEWERAGE & DRAINAGE PIPES', 'Finish Goods', 'FG-1'],
+      ['PVC-101', 'PRESSURE PIPES CLASS B', 'Finish Goods', 'PVC-1'],
+      ['PVC-102', 'PRESSURE PIPES CLASS D', 'Finish Goods', 'PVC-1'],
+      ['RAW-101', 'PVC RESIN COMPOUND', 'Raw Material', 'RAW-1'],
+      ['RAW-102', 'STABILIZERS & CHEMICALS', 'Raw Material', 'RAW-1'],
+      ['FIT-101', 'ELBOWS & TEES', 'Finish Goods', 'FIT-1'],
+      ['FIT-102', 'SOCKETS & BENDS', 'Finish Goods', 'FIT-1'],
+      ['FIT-103', 'VALVES & UNION', 'Finish Goods', 'FIT-1'],
+      ['SAN-101', 'WASH BASINS & COUNTERTOPS', 'Finish Goods', 'SAN-1'],
+      ['SAN-102', 'ONE-PIECE & RIMLESS COMMODES', 'Finish Goods', 'SAN-1'],
+      ['SAN-103', 'MIXER TAPS & FAUCETS', 'Finish Goods', 'SAN-1'],
+      ['TIL-101', 'PORCELAIN FLOOR TILES 60x60', 'Finish Goods', 'TIL-1'],
+      ['TIL-102', 'PORCELAIN FLOOR TILES 80x80', 'Finish Goods', 'TIL-1'],
+      ['TIL-103', 'CERAMIC WALL TILES 30x60', 'Finish Goods', 'TIL-1'],
+      ['ADH-101', 'PVC SOLVENT CEMENT (GLUE)', 'Finish Goods', 'ADH-1'],
+      ['ADH-102', 'TILE BOND ADHESIVE (BAGS)', 'Finish Goods', 'ADH-1'],
+      ['HRD-101', 'PIPE CLAMPS & WALL BRACKETS', 'Finish Goods', 'HRD-1'],
+      ['HRD-102', 'TEFLON TAPES & RUBBER SEALS', 'Finish Goods', 'HRD-1'],
+    ];
+    for (const [code, name, type, parent] of subs) {
+      insert.run(code, name, type, parent, now);
+    }
+  }
+}
+
+export function getCategories(db: DatabaseSync): InventoryCategory[] {
+  ensureCategoriesTable(db);
+  return db
+    .prepare('SELECT * FROM categories WHERE is_active = 1 ORDER BY code ASC')
+    .all() as unknown as InventoryCategory[];
+}
+
+export function saveCategory(
+  db: DatabaseSync,
+  input: {
+    id?: number | string;
+    code: string;
+    name: string;
+    category_type?: string;
+    parent_code?: string | null;
+  }
+): InventoryCategory {
+  ensureCategoriesTable(db);
+  const now = getLocalIsoDateTime();
+  const type = input.category_type || 'Finish Goods';
+  const parent = input.parent_code ? input.parent_code.trim() : null;
+  const code = input.code.trim().toUpperCase();
+  const name = input.name.trim();
+
+  return withTransaction(db, () => {
+    if (input.id && Number(input.id) > 0) {
+      db.prepare(`
+        UPDATE categories
+        SET code = ?, name = ?, category_type = ?, parent_code = ?
+        WHERE id = ?
+      `).run(code, name, type, parent, Number(input.id));
+    } else {
+      db.prepare(`
+        INSERT INTO categories (code, name, category_type, parent_code, is_active, created_at)
+        VALUES (?, ?, ?, ?, 1, ?)
+        ON CONFLICT(code) DO UPDATE SET name = excluded.name, category_type = excluded.category_type, parent_code = excluded.parent_code, is_active = 1
+      `).run(code, name, type, parent, now);
+    }
+
+    const row = db.prepare('SELECT * FROM categories WHERE code = ?').get(code) as unknown as InventoryCategory;
+    return row;
+  });
+}
+
+export function deleteCategory(db: DatabaseSync, code: string): boolean {
+  ensureCategoriesTable(db);
+  return withTransaction(db, () => {
+    db.prepare('UPDATE categories SET is_active = 0 WHERE code = ? OR parent_code = ?').run(code, code);
+    return true;
+  });
 }
 
 export function getProducts(

@@ -109,6 +109,28 @@ try {
         }
     }
 
+    if ($route === 'categories') {
+        if ($method === 'GET') {
+            json_out(['categories' => mysql_get_categories($pdo)]);
+        }
+        if ($method === 'POST' || $method === 'PUT') {
+            $body = read_json_body();
+            if (empty($body['code']) || empty($body['name'])) {
+                json_out(['error' => 'Category code and name are required'], 400);
+            }
+            $cat = mysql_save_category($pdo, $body);
+            json_out(['category' => $cat], !empty($body['id']) ? 200 : 201);
+        }
+        if ($method === 'DELETE') {
+            $code = trim((string)($_GET['code'] ?? ''));
+            if ($code === '') {
+                json_out(['error' => 'Category code is required'], 400);
+            }
+            $ok = mysql_delete_category($pdo, $code);
+            json_out(['success' => $ok]);
+        }
+    }
+
     if ($route === 'customers') {
         if ($method === 'GET') {
             $branchId = parse_opt_int($_GET['branchId'] ?? null);

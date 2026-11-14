@@ -43,20 +43,38 @@ export interface UserSummary {
   is_active: number;
 }
 
+export interface InventoryCategory {
+  id: number | string;
+  code: string;
+  name: string;
+  category_type: string;
+  parent_code?: string | null;
+  is_active?: number;
+  created_at?: string;
+}
+
 export interface ProductWithStock {
   id: number;
   sku: string;
   barcode: string;
   name: string;
+  description?: string;
   category: string;
   main_category?: string;
   sub_category?: string;
   unit: string;
   hs_code?: string;
+  brand?: string;
+  rack_no?: string;
   sale_price: number;
   cost_price: number;
   wholesale_price?: number;
   tax_rate: number;
+  tax_type?: 'PERCENT' | 'AMOUNT';
+  valuation_method?: 'WEIGHTED_AVG' | 'MANUAL';
+  valuation_cost?: number;
+  order_quantity?: number;
+  qty_per_piece?: number;
   stock_qty: number;
   is_active: number;
 }
