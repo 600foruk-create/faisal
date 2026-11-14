@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Banknote,
   Barcode,
@@ -93,6 +94,20 @@ export function PosSaleModal() {
     refreshNonce,
     closePosSale,
   } = usePosContext();
+
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const handleClose = useCallback(() => {
+    closePosSale();
+    if (
+      pathname === '/sale' ||
+      (typeof window !== 'undefined' &&
+        (window.location.pathname === '/sale' || window.location.pathname.endsWith('/sale')))
+    ) {
+      router.push('/');
+    }
+  }, [closePosSale, pathname, router]);
 
   const [branchId, setBranchId] = useState<number>(1);
   const [products, setProducts] = useState<ProductWithStock[]>([]);
@@ -594,13 +609,13 @@ export function PosSaleModal() {
         if (showPaymentModal) setShowPaymentModal(false);
         else if (showRecallModal) setShowRecallModal(false);
         else if (showNewCustomer) setShowNewCustomer(false);
-        else closePosSale();
+        else handleClose();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showPaymentModal, showRecallModal, showNewCustomer, calculatedRows, closePosSale]);
+  }, [showPaymentModal, showRecallModal, showNewCustomer, calculatedRows, handleClose]);
 
   // Minimized dock pill on bottom right
   if (isMinimized) {
@@ -676,11 +691,11 @@ export function PosSaleModal() {
             {/* Close */}
             <button
               type="button"
-              onClick={closePosSale}
+              onClick={handleClose}
               title="Close Form (Return to Dashboard)"
-              className="flex h-5 w-5 cursor-pointer items-center justify-center rounded hover:bg-rose-600 hover:text-white transition"
+              className="flex h-5.5 w-5.5 cursor-pointer items-center justify-center rounded hover:bg-rose-600 hover:text-white transition active:scale-95"
             >
-              <X className="h-3 w-3" />
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
@@ -793,6 +808,17 @@ export function PosSaleModal() {
             >
               <Printer className="h-3 w-3" />
               <span>Print</span>
+            </button>
+
+            {/* 8. Close Form */}
+            <button
+              type="button"
+              onClick={handleClose}
+              className="inline-flex h-6.5 cursor-pointer items-center gap-1 rounded bg-[#be123c] px-2.5 text-[11px] font-bold text-white shadow-2xs transition hover:bg-rose-700 active:scale-95"
+              title="Close Form (Return to Dashboard)"
+            >
+              <X className="h-3 w-3" />
+              <span>Close</span>
             </button>
           </div>
         </div>
@@ -920,23 +946,23 @@ export function PosSaleModal() {
                 </tr>
               </thead>
 
-              {/* Scrollable Table Rows (Compact ERP Rows - 10 Rows Fit On Screen) */}
+              {/* Scrollable Table Rows (Compact Flat ERP Rows - Clean Seamless Table) */}
               <tbody className="divide-y divide-slate-200/80">
                 {calculatedRows.map((r, idx) => {
                   return (
                     <tr
                       key={r.id}
-                      className={`h-6.5 transition hover:bg-emerald-50/30 ${
+                      className={`h-7 transition-colors hover:bg-emerald-50/25 ${
                         idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
                       }`}
                     >
                       {/* # (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-1 py-0.5 text-center font-normal text-slate-500 tabular-nums text-xs">
+                      <td className="border-b border-r border-slate-200/80 px-1.5 py-1 text-center font-normal text-slate-500 tabular-nums text-xs">
                         {idx + 1}
                       </td>
 
-                      {/* ITEM CODE with Autocomplete Dropdown (Regular font-normal) */}
-                      <td className="relative border-b border-r border-slate-200/80 px-1 py-0.5">
+                      {/* ITEM CODE with Autocomplete Dropdown (Seamless Table Cell) */}
+                      <td className="relative border-b border-r border-slate-200/80 p-0">
                         <input
                           type="text"
                           value={r.itemCode}
@@ -960,14 +986,14 @@ export function PosSaleModal() {
                             }
                           }}
                           placeholder=""
-                          className="h-5.5 w-full rounded border border-slate-200 bg-white px-1.5 py-0 text-xs font-normal text-slate-800 focus:border-emerald-500 focus:outline-none"
+                          className="h-7 w-full border-0 bg-transparent px-2 text-xs font-medium text-slate-800 outline-none ring-0 focus:bg-emerald-50/50 focus:ring-1 focus:ring-inset focus:ring-emerald-500 transition-colors"
                         />
 
                         {/* Interactive Autocomplete Dropdown */}
                         {activeSearchRowId === r.id && autocompleteProducts.length > 0 && (
                           <div
                             ref={searchDropdownRef}
-                            className="absolute left-1 top-7 z-50 max-h-52 w-80 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-2xl"
+                            className="absolute left-0 top-7.5 z-50 max-h-52 w-80 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-2xl"
                           >
                             {autocompleteProducts.map((p) => (
                               <button
@@ -994,18 +1020,18 @@ export function PosSaleModal() {
                         )}
                       </td>
 
-                      {/* HS CODE (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-1 py-0.5">
+                      {/* HS CODE (Seamless Table Cell) */}
+                      <td className="border-b border-r border-slate-200/80 p-0">
                         <input
                           type="text"
                           value={r.hsCode}
                           onChange={(e) => updateRow(r.id, { hsCode: e.target.value })}
-                          className="h-5.5 w-full rounded border border-slate-200 bg-white px-1.5 py-0 text-xs font-normal text-slate-600 focus:border-emerald-500 focus:outline-none"
+                          className="h-7 w-full border-0 bg-transparent px-2 text-xs font-normal text-slate-600 outline-none ring-0 focus:bg-emerald-50/50 focus:ring-1 focus:ring-inset focus:ring-emerald-500 transition-colors"
                         />
                       </td>
 
-                      {/* DESCRIPTION (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-1 py-0.5">
+                      {/* DESCRIPTION (Seamless Table Cell) */}
+                      <td className="border-b border-r border-slate-200/80 p-0">
                         <input
                           type="text"
                           value={r.description}
@@ -1016,12 +1042,12 @@ export function PosSaleModal() {
                             setActiveSearchRowId(r.id);
                           }}
                           placeholder=""
-                          className="h-5.5 w-full rounded border border-slate-200 bg-white px-1.5 py-0 text-xs font-normal text-slate-900 focus:border-emerald-500 focus:outline-none"
+                          className="h-7 w-full border-0 bg-transparent px-2 text-xs font-normal text-slate-900 outline-none ring-0 focus:bg-emerald-50/50 focus:ring-1 focus:ring-inset focus:ring-emerald-500 transition-colors"
                         />
                       </td>
 
-                      {/* PIECES (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-1 py-0.5">
+                      {/* PIECES (Seamless Table Cell) */}
+                      <td className="border-b border-r border-slate-200/80 p-0">
                         <input
                           type="number"
                           min={0}
@@ -1030,12 +1056,12 @@ export function PosSaleModal() {
                           onChange={(e) =>
                             updateRow(r.id, { pieces: Math.max(0, Number(e.target.value) || 0) })
                           }
-                          className="h-5.5 w-full rounded border border-slate-200 bg-white px-1 py-0 text-right text-xs font-normal text-slate-700 tabular-nums focus:border-emerald-500 focus:outline-none placeholder:text-slate-400"
+                          className="h-7 w-full border-0 bg-transparent px-2 text-right text-xs font-normal text-slate-700 tabular-nums outline-none ring-0 focus:bg-emerald-50/50 focus:ring-1 focus:ring-inset focus:ring-emerald-500 placeholder:text-slate-400 transition-colors"
                         />
                       </td>
 
-                      {/* QTY (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-1 py-0.5">
+                      {/* QTY (Seamless Table Cell) */}
+                      <td className="border-b border-r border-slate-200/80 p-0">
                         <input
                           type="number"
                           min={0}
@@ -1044,22 +1070,22 @@ export function PosSaleModal() {
                           onChange={(e) =>
                             updateRow(r.id, { qty: Math.max(0, Number(e.target.value) || 0) })
                           }
-                          className="h-5.5 w-full rounded border border-slate-200 bg-white px-1 py-0 text-right text-xs font-normal text-slate-700 tabular-nums focus:border-emerald-500 focus:outline-none placeholder:text-slate-400"
+                          className="h-7 w-full border-0 bg-transparent px-2 text-right text-xs font-normal text-slate-700 tabular-nums outline-none ring-0 focus:bg-emerald-50/50 focus:ring-1 focus:ring-inset focus:ring-emerald-500 placeholder:text-slate-400 transition-colors"
                         />
                       </td>
 
-                      {/* UNIT (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-1 py-0.5 text-center">
+                      {/* UNIT (Seamless Table Cell) */}
+                      <td className="border-b border-r border-slate-200/80 p-0 text-center">
                         <input
                           type="text"
                           value={r.unit}
                           onChange={(e) => updateRow(r.id, { unit: e.target.value })}
-                          className="h-5.5 w-12 rounded border border-slate-200 bg-white py-0 text-center text-xs font-normal text-slate-600 focus:border-emerald-500 focus:outline-none"
+                          className="h-7 w-full border-0 bg-transparent px-1 text-center text-xs font-normal text-slate-600 outline-none ring-0 focus:bg-emerald-50/50 focus:ring-1 focus:ring-inset focus:ring-emerald-500 transition-colors"
                         />
                       </td>
 
-                      {/* RATE (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-1 py-0.5">
+                      {/* RATE (Seamless Table Cell) */}
+                      <td className="border-b border-r border-slate-200/80 p-0">
                         <input
                           type="number"
                           min={0}
@@ -1068,36 +1094,36 @@ export function PosSaleModal() {
                           onChange={(e) =>
                             updateRow(r.id, { rate: Math.max(0, Number(e.target.value) || 0) })
                           }
-                          className="h-5.5 w-full rounded border border-slate-200 bg-white px-1 py-0 text-right text-xs font-normal text-slate-700 tabular-nums focus:border-emerald-500 focus:outline-none placeholder:text-slate-400"
+                          className="h-7 w-full border-0 bg-transparent px-2 text-right text-xs font-normal text-slate-700 tabular-nums outline-none ring-0 focus:bg-emerald-50/50 focus:ring-1 focus:ring-inset focus:ring-emerald-500 placeholder:text-slate-400 transition-colors"
                         />
                       </td>
 
                       {/* VAL EXCL. TAX (BOLD as in Screenshot!) */}
-                      <td className="border-b border-r border-slate-200/80 px-1.5 py-0.5 text-right tabular-nums text-xs font-bold text-slate-900">
+                      <td className="border-b border-r border-slate-200/80 px-2 py-1 text-right tabular-nums text-xs font-bold text-slate-900">
                         {r.valExclTax.toFixed(2)}
                       </td>
 
                       {/* S.T % (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-1 py-0.5 text-center tabular-nums text-xs font-normal text-slate-600">
+                      <td className="border-b border-r border-slate-200/80 px-1 py-1 text-center tabular-nums text-xs font-normal text-slate-600">
                         {r.taxRate.toFixed(2)}
                       </td>
 
                       {/* S.T AMT (Regular font-normal) */}
-                      <td className="border-b border-r border-slate-200/80 px-1.5 py-0.5 text-right tabular-nums text-xs font-normal text-slate-800">
+                      <td className="border-b border-r border-slate-200/80 px-2 py-1 text-right tabular-nums text-xs font-normal text-slate-800">
                         {r.taxAmt.toFixed(2)}
                       </td>
 
                       {/* VAL INCL. TAX (BOLD AMBER as in Screenshot!) */}
-                      <td className="border-b border-r border-slate-200/80 px-1.5 py-0.5 text-right tabular-nums text-xs font-bold text-amber-700">
+                      <td className="border-b border-r border-slate-200/80 px-2 py-1 text-right tabular-nums text-xs font-bold text-amber-700">
                         {r.valInclTax.toFixed(2)}
                       </td>
 
                       {/* Action Delete */}
-                      <td className="border-b px-1 py-0.5 text-center border-slate-200/80">
+                      <td className="border-b border-slate-200/80 p-0 text-center">
                         <button
                           type="button"
                           onClick={() => removeRow(r.id)}
-                          className="cursor-pointer rounded p-0.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                          className="flex h-7 w-full cursor-pointer items-center justify-center text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
                           title="Delete row"
                         >
                           <Trash2 className="mx-auto h-3 w-3" />

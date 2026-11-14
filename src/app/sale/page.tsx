@@ -1,17 +1,15 @@
 'use client';
 
-import React from 'react';
-import { PosSaleModal } from '@/components/PosSaleModal';
+import React, { useEffect } from 'react';
+import { usePosContext } from '@/components/PosContext';
 import MainDashboardPage from '../page';
 
 export default function PosSaleRoutePage() {
-  return (
-    <>
-      {/* Background Dashboard */}
-      <MainDashboardPage />
+  const { openPosSale } = usePosContext();
 
-      {/* Foreground Floating POS Sale Form Window */}
-      <PosSaleModal />
-    </>
-  );
+  useEffect(() => {
+    openPosSale();
+  }, [openPosSale]);
+
+  return <MainDashboardPage />;
 }
