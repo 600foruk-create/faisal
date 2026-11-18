@@ -1077,11 +1077,11 @@ export function InventoryModal() {
                   </div>
                 </div>
 
-                {/* Section A: Product Name & Dimension Input */}
-                <div className="space-y-2">
-                  <div>
+                {/* Section A: Product Name & Dimension Dropdown */}
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                  <div className="sm:col-span-8">
                     <label className="mb-1 block text-xs font-bold text-slate-800">
-                      Product Name &amp; Dimensions <span className="text-rose-600">*</span>
+                      Product Name &amp; Description <span className="text-rose-600">*</span>
                     </label>
                     <input
                       ref={itemNameInputRef}
@@ -1090,66 +1090,77 @@ export function InventoryModal() {
                       value={formName}
                       onChange={(e) => setFormName(e.target.value)}
                       placeholder={'e.g. 2" X 13\' U-PVC PRESSURE PIPE - 2.50 KG / 90 DEGREE ELBOW'}
-                      className="h-10 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
+                      className="h-9.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
                     />
                   </div>
 
-                  {/* Curated 1-Click Dimension Chips */}
-                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                    <span className="text-[11px] font-bold text-slate-500 mr-1 flex items-center gap-1">
-                      <Sparkles className="h-3 w-3 text-emerald-600" />
-                      <span>Quick Add:</span>
-                    </span>
-                    {PIPE_SIZES.concat(PIPE_SPECS).map((chip) => (
-                      <button
-                        key={chip}
-                        type="button"
-                        onClick={() => handleAppendSpec(chip)}
-                        className="rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-400 hover:text-emerald-800 px-2.5 py-0.5 text-xs font-mono font-semibold text-slate-700 transition cursor-pointer"
-                      >
-                        +{chip}
-                      </button>
-                    ))}
+                  <div className="sm:col-span-4">
+                    <label className="mb-1 block text-xs font-bold text-slate-700 flex items-center gap-1">
+                      <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
+                      <span>Insert Size / Dimension</span>
+                    </label>
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          handleAppendSpec(e.target.value);
+                          e.target.value = '';
+                        }
+                      }}
+                      className="h-9.5 w-full rounded-xl border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-800 focus:border-emerald-500 focus:outline-none cursor-pointer"
+                    >
+                      <option value="">-- Select Size to Insert --</option>
+                      <optgroup label="Pipe Diameters">
+                        {PIPE_SIZES.map((size) => (
+                          <option key={size} value={size}>
+                            {size} Diameter
+                          </option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="Lengths & Specifications">
+                        {PIPE_SPECS.map((spec) => (
+                          <option key={spec} value={spec}>
+                            {spec}
+                          </option>
+                        ))}
+                      </optgroup>
+                    </select>
                   </div>
                 </div>
 
-                {/* Section B: Unit, Brand, and Warehouse Rack in 3 clean columns */}
+                {/* Section B: Unit, Brand, and Warehouse Rack Dropdowns in 3 clean columns */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                  {/* UOM */}
+                  {/* UOM Dropdown */}
                   <div>
-                    <label className="mb-1.5 block text-xs font-bold text-slate-700">
+                    <label className="mb-1 block text-xs font-bold text-slate-700">
                       Unit of Measure (UOM) <span className="text-rose-600">*</span>
                     </label>
-                    <div className="flex flex-wrap gap-1">
-                      {QUICK_UNITS.map((u) => {
-                        const isSelected = formUnit === u;
-                        return (
-                          <button
-                            key={u}
-                            type="button"
-                            onClick={() => setFormUnit(u)}
-                            className={`rounded-lg px-2.5 py-1 text-xs font-bold transition cursor-pointer ${
-                              isSelected
-                                ? 'bg-emerald-600 text-white shadow-xs'
-                                : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
-                            }`}
-                          >
-                            {u}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <select
+                      value={formUnit}
+                      onChange={(e) => setFormUnit(e.target.value)}
+                      className="h-9.5 w-full rounded-xl border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-900 focus:border-emerald-500 focus:outline-none cursor-pointer"
+                    >
+                      <option value="Pcs">Pcs - Pieces</option>
+                      <option value="Kgs">Kgs - Kilograms</option>
+                      <option value="Bundle">Bundle - Bundle</option>
+                      <option value="Feet">Feet - Running Feet</option>
+                      <option value="Meter">Meter - Meters</option>
+                      <option value="Box">Box - Packing Box</option>
+                      <option value="Bags">Bags - Sacks / Bags</option>
+                      <option value="Coil">Coil - Roll / Coil</option>
+                      <option value="Set">Set - Complete Set</option>
+                    </select>
                   </div>
 
-                  {/* Brand */}
+                  {/* Brand Dropdown */}
                   <div>
-                    <label className="mb-1.5 block text-xs font-bold text-slate-700">
+                    <label className="mb-1 block text-xs font-bold text-slate-700">
                       Brand / Manufacturer
                     </label>
                     <select
                       value={formBrand}
                       onChange={(e) => setFormBrand(e.target.value)}
-                      className="h-9 w-full rounded-xl border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-900 focus:border-emerald-500 focus:outline-none"
+                      className="h-9.5 w-full rounded-xl border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-900 focus:border-emerald-500 focus:outline-none cursor-pointer"
                     >
                       {BRANDS.map((b) => (
                         <option key={b} value={b}>
@@ -1161,7 +1172,7 @@ export function InventoryModal() {
 
                   {/* Warehouse Rack */}
                   <div>
-                    <label className="mb-1.5 block text-xs font-bold text-slate-700">
+                    <label className="mb-1 block text-xs font-bold text-slate-700">
                       Warehouse / Rack Location
                     </label>
                     <input
@@ -1169,7 +1180,7 @@ export function InventoryModal() {
                       value={formRackNo}
                       onChange={(e) => setFormRackNo(e.target.value)}
                       placeholder="e.g. Rack A-01"
-                      className="h-9 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-emerald-500 focus:outline-none"
+                      className="h-9.5 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
                 </div>
