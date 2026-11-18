@@ -52,19 +52,11 @@ import { usePosContext } from './PosContext';
 import { formatCurrency } from '@/lib/format';
 import type { InventoryCategory, ProductWithStock } from '@/lib/types';
 
-// Quick dimension helper chips for PVC pipes & building materials
-export const QUICK_SIZES = ['1/2"', '3/4"', '1"', '1.25"', '1.5"', '2"', '2.5"', '3"', '4"', '5"', '6"', '8"'];
-export const QUICK_SPECS = ["X 13'", "X 10'", '2.00 KG', '2.50 KG', '3.00 KG', '3.50 KG', '4.00 KG', 'Class B', 'Class D', 'Heavy Duty'];
-export const COMMON_UNITS = ['Pcs', 'Kgs', 'Mtr', 'Feet', 'Bundle', 'Bags', 'Box', 'Coil', 'Set'];
-export const CATEGORY_TYPES = ['Finish Goods', 'Raw Material', 'Trading Goods', 'Services', 'Assets', 'None'];
-export const STANDARD_HS_CODES = [
-  { code: '3917.2390', label: '3917.2390 - U-PVC Pipes & Rigid Conduits' },
-  { code: '3917.4000', label: '3917.4000 - Plastic Fittings (Elbows, Tees, Sockets)' },
-  { code: '6910.1000', label: '6910.1000 - Ceramic Sanitary Fixtures & Basins' },
-  { code: '6907.2100', label: '6907.2100 - Glazed Ceramic & Porcelain Tiles' },
-  { code: '3506.9100', label: '3506.9100 - Adhesives & Tile Bond Cement' },
-  { code: '8302.4100', label: '8302.4100 - Hardware & Mounting Accessories' },
-];
+// Curated clean pipe dimension helper chips
+export const PIPE_SIZES = ['1/2"', '3/4"', '1"', '1.25"', '1.5"', '2"', '2.5"', '3"', '4"', '5"', '6"'];
+export const PIPE_LENGTH_WEIGHT = ["X 10'", "X 13'", '2.00 KG', '2.50 KG', '3.00 KG', '3.50 KG', 'Class B', 'Class D', 'Heavy Duty'];
+export const QUICK_UNITS = ['Pcs', 'Kgs', 'Bundle', 'Feet', 'Meter', 'Box'];
+export const ALL_UNITS = ['Pcs', 'Kgs', 'Mtr', 'Feet', 'Bundle', 'Bags', 'Box', 'Coil', 'Set'];
 export const BRANDS = ['SEASTONE', 'MASTER', 'POPULAR', 'IIL', 'ALPHA', 'CUSTOM', 'None'];
 
 export function InventoryModal() {
@@ -123,11 +115,13 @@ export function InventoryModal() {
   const [formStockQty, setFormStockQty] = useState<number>(0);
   const [formError, setFormError] = useState<string | null>(null);
 
+  // Toggle for Advanced Code & Tax details (to keep Step 3 ultra simple)
+  const [showAdvancedDetails, setShowAdvancedDetails] = useState(false);
+
   // Item List Table Search & Filters
   const [tableSearchQuery, setTableSearchQuery] = useState('');
   const [tableMainFilter, setTableMainFilter] = useState('ALL');
   const [tableSubFilter, setTableSubFilter] = useState('ALL');
-  const [branchFilter, setBranchFilter] = useState('ALL');
 
   const itemNameInputRef = useRef<HTMLInputElement>(null);
 
@@ -253,9 +247,6 @@ export function InventoryModal() {
 
   // KPI Calculations
   const totalItemCount = products.length;
-  const totalValuation = useMemo(() => {
-    return products.reduce((acc, p) => acc + (p.stock_qty || 0) * (p.sale_price || 0), 0);
-  }, [products]);
 
   // Live Profit Margin Calculation
   const calculatedMargin = useMemo(() => {
@@ -391,12 +382,12 @@ export function InventoryModal() {
       return;
     }
     if (!formName.trim()) {
-      setFormError('Product Name & Dimensions is required.');
+      setFormError('Please enter Product Name (Item ka naam likhein).');
       itemNameInputRef.current?.focus();
       return;
     }
     if (formSalePrice <= 0) {
-      setFormError('Retail Sale Price must be greater than 0.');
+      setFormError('Please enter Retail Sale Price (Farokht Rate lazmi darj karein).');
       return;
     }
 
@@ -443,7 +434,7 @@ export function InventoryModal() {
 
         setStatusMessage({
           type: 'success',
-          text: `Finished Good [${payload.sku}] "${payload.name}" saved successfully under ${mainName} ➔ ${subName}!`,
+          text: `Item [${payload.name}] saved successfully under ${mainName} ➔ ${subName}!`,
         });
 
         if (billDirectlyInPos && savedProduct?.id) {
@@ -652,10 +643,10 @@ export function InventoryModal() {
             </div>
             <div>
               <span className="text-xs font-bold tracking-wide uppercase">
-                Chart Of Inventory &bull; Option A Direct Entry Form
+                Chart Of Inventory &bull; Item Registration Master
               </span>
               <span className="hidden sm:inline-block ml-2 text-[10px] text-slate-300 font-normal">
-                (Step 1: Main Category ➔ Step 2: Sub-Category ➔ Step 3: Item Specifications)
+                (Step 1: Main Category ➔ Step 2: Sub-Category ➔ Step 3: Item &amp; Rates)
               </span>
             </div>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-950/60 px-2 py-0.5 text-[10px] font-medium text-emerald-300">
@@ -703,10 +694,10 @@ export function InventoryModal() {
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-100 text-emerald-900 border border-emerald-300 px-2.5 py-1 text-xs font-bold">
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" />
-                  <span>Direct 3-Step Creation Active</span>
+                  <span>Direct 3-Step Creation Form</span>
                 </span>
                 <span className="text-xs text-slate-500 hidden sm:inline">
-                  Step-by-step clean entry without confusing tables.
+                  Pehle Category, phir Sub-Category, phir Item Naam aur Rates.
                 </span>
               </div>
             ) : (
@@ -801,10 +792,10 @@ export function InventoryModal() {
         {/* 3. MODE A: OPTION A DIRECT 3-STEP SMART FORM               */}
         {/* ========================================================= */}
         {viewMode === 'DIRECT_FORM' && (
-          <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 bg-slate-100/60 flex flex-col">
+          <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 bg-slate-100/60 flex flex-col">
             <form
               onSubmit={(e) => handleSaveItemSubmit(e, false)}
-              className="max-w-4xl mx-auto w-full space-y-4 pb-4"
+              className="max-w-4xl mx-auto w-full space-y-3.5 pb-4"
             >
               {/* Form Error Banner */}
               {formError && (
@@ -815,10 +806,10 @@ export function InventoryModal() {
               )}
 
               {/* Live Hierarchy Breadcrumb Ribbon */}
-              <div className="rounded-xl border border-slate-800 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] p-3 text-white shadow-md flex flex-wrap items-center justify-between gap-2">
+              <div className="rounded-xl border border-slate-800 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] p-2.5 px-4 text-white shadow-md flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-xs">
                   <span className="text-[11px] uppercase tracking-wider text-emerald-400 font-bold">
-                    Active Hierarchy Mapping:
+                    Item Mapping:
                   </span>
                   <div className="flex items-center gap-1.5 font-bold font-mono">
                     <span className="bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/40">
@@ -851,37 +842,34 @@ export function InventoryModal() {
               {/* --------------------------------------------------- */}
               {/* STEP 1: MAIN CATEGORY (TIER 1)                      */}
               {/* --------------------------------------------------- */}
-              <div className="rounded-2xl border-2 border-slate-200 bg-white p-4 shadow-sm space-y-3 transition hover:border-slate-300">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-600 text-white font-extrabold text-xs shadow-xs">
+              <div className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-sm space-y-2.5 transition hover:border-slate-300">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-sky-600 text-white font-extrabold text-xs shadow-xs">
                       1
                     </div>
                     <div>
                       <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wide">
-                        Step 1 &bull; Choose or Create Main Category (Tier 1)
+                        Step 1 &bull; Main Category (Pehla Step: Main Category)
                       </h4>
-                      <p className="text-[11px] text-slate-500">
-                        Top-tier classification (e.g. FINISH GOODS, U-PVC PIPES, RAW MATERIAL, SEASTONE FITTING)
-                      </p>
                     </div>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => setShowInlineAddMain((prev) => !prev)}
-                    className="flex items-center gap-1 rounded-lg border border-sky-300 bg-sky-50 px-2.5 py-1 text-xs font-bold text-sky-800 hover:bg-sky-100 cursor-pointer"
+                    className="flex items-center gap-1 rounded-lg border border-sky-300 bg-sky-50 px-2.5 py-1 text-[11px] font-bold text-sky-800 hover:bg-sky-100 cursor-pointer"
                   >
-                    <Plus className="h-3.5 w-3.5 text-sky-700" />
-                    <span>{showInlineAddMain ? 'Close New Main' : '+ Create New Main Category'}</span>
+                    <Plus className="h-3 w-3 text-sky-700" />
+                    <span>{showInlineAddMain ? 'Cancel' : '+ Nayi Main Category'}</span>
                   </button>
                 </div>
 
                 {/* Inline New Main Category Form */}
                 {showInlineAddMain && (
-                  <div className="rounded-xl border border-sky-200 bg-sky-50/60 p-3 space-y-2 animate-fade-in">
+                  <div className="rounded-xl border border-sky-200 bg-sky-50/70 p-3 space-y-2 animate-fade-in">
                     <p className="text-xs font-bold text-sky-900">
-                      Register Brand New Main Category:
+                      Nayi Main Category Ka Naam Likhein:
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <input
@@ -895,7 +883,7 @@ export function InventoryModal() {
                         type="text"
                         value={newMainName}
                         onChange={(e) => setNewMainName(e.target.value.toUpperCase())}
-                        placeholder="Main Category Name e.g. ELECTRICAL ITEMS"
+                        placeholder="e.g. ELECTRICAL ITEMS / HARDWARE"
                         className="h-8.5 rounded-lg border border-sky-300 bg-white px-2.5 text-xs font-bold text-slate-900 focus:outline-none sm:col-span-2"
                       />
                     </div>
@@ -903,7 +891,7 @@ export function InventoryModal() {
                       <button
                         type="button"
                         onClick={() => setShowInlineAddMain(false)}
-                        className="rounded px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-200"
+                        className="rounded px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-200"
                       >
                         Cancel
                       </button>
@@ -914,89 +902,72 @@ export function InventoryModal() {
                         className="flex items-center gap-1 rounded bg-sky-700 px-3 py-1 text-xs font-bold text-white hover:bg-sky-800 disabled:opacity-50 cursor-pointer"
                       >
                         {savingNewMain ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-                        <span>Save &amp; Select Main</span>
+                        <span>Save &amp; Select</span>
                       </button>
                     </div>
                   </div>
                 )}
 
-                {/* Main Category Selection Chips / Dropdown */}
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-800">
-                    Select Active Main Category:
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {mainCategories.map((main) => {
-                      const isSelected = selectedMainCode === main.code;
-                      return (
-                        <button
-                          key={main.code}
-                          type="button"
-                          onClick={() => {
-                            setSelectedMainCode(main.code);
-                            // Auto select its first sub
-                            const subs = subCategories.filter((s) => s.parent_code === main.code);
-                            if (subs.length > 0) {
-                              setSelectedSubCode(subs[0].code);
-                            }
-                          }}
-                          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
-                            isSelected
-                              ? 'bg-gradient-to-r from-sky-600 to-sky-700 text-white shadow-sm ring-2 ring-sky-400'
-                              : 'border border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100'
-                          }`}
-                        >
-                          <Folder className={`h-3.5 w-3.5 ${isSelected ? 'text-white' : 'text-amber-500'}`} />
-                          <span>{main.name}</span>
-                          <span
-                            className={`text-[10px] font-mono px-1 py-0.2 rounded ${
-                              isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
-                            }`}
-                          >
-                            {main.code}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                {/* Main Category Selection Chips */}
+                <div className="flex flex-wrap gap-1.5">
+                  {mainCategories.map((main) => {
+                    const isSelected = selectedMainCode === main.code;
+                    return (
+                      <button
+                        key={main.code}
+                        type="button"
+                        onClick={() => {
+                          setSelectedMainCode(main.code);
+                          const subs = subCategories.filter((s) => s.parent_code === main.code);
+                          if (subs.length > 0) {
+                            setSelectedSubCode(subs[0].code);
+                          }
+                        }}
+                        className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
+                          isSelected
+                            ? 'bg-gradient-to-r from-sky-600 to-sky-700 text-white shadow-sm ring-2 ring-sky-400'
+                            : 'border border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <Folder className={`h-3.5 w-3.5 ${isSelected ? 'text-white' : 'text-amber-500'}`} />
+                        <span>{main.name}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               {/* --------------------------------------------------- */}
               {/* STEP 2: SUB-CATEGORY (TIER 2)                       */}
               {/* --------------------------------------------------- */}
-              <div className="rounded-2xl border-2 border-slate-200 bg-white p-4 shadow-sm space-y-3 transition hover:border-slate-300">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-600 text-white font-extrabold text-xs shadow-xs">
+              <div className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-sm space-y-2.5 transition hover:border-slate-300">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-teal-600 text-white font-extrabold text-xs shadow-xs">
                       2
                     </div>
                     <div>
                       <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wide">
-                        Step 2 &bull; Choose or Create Sub-Category (Tier 2)
+                        Step 2 &bull; Sub-Category (Doosra Step: Sub-Category)
                       </h4>
-                      <p className="text-[11px] text-slate-500">
-                        Linked directly under Main Category:{' '}
-                        <strong className="text-sky-700 font-bold">{activeMainCategory?.name}</strong>
-                      </p>
                     </div>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => setShowInlineAddSub((prev) => !prev)}
-                    className="flex items-center gap-1 rounded-lg border border-teal-300 bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-800 hover:bg-teal-100 cursor-pointer"
+                    className="flex items-center gap-1 rounded-lg border border-teal-300 bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-800 hover:bg-teal-100 cursor-pointer"
                   >
-                    <Plus className="h-3.5 w-3.5 text-teal-700" />
-                    <span>{showInlineAddSub ? 'Close New Sub' : `+ Add Sub under ${activeMainCategory?.name?.split(' ')[0]}`}</span>
+                    <Plus className="h-3 w-3 text-teal-700" />
+                    <span>{showInlineAddSub ? 'Cancel' : `+ Nayi Sub-Category`}</span>
                   </button>
                 </div>
 
                 {/* Inline New Sub Category Form */}
                 {showInlineAddSub && (
-                  <div className="rounded-xl border border-teal-200 bg-teal-50/60 p-3 space-y-2 animate-fade-in">
+                  <div className="rounded-xl border border-teal-200 bg-teal-50/70 p-3 space-y-2 animate-fade-in">
                     <p className="text-xs font-bold text-teal-900">
-                      Register New Sub-Category under {activeMainCategory?.name}:
+                      [{activeMainCategory?.name}] Ke Under Nayi Sub-Category Likhein:
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <input
@@ -1010,7 +981,7 @@ export function InventoryModal() {
                         type="text"
                         value={newSubName}
                         onChange={(e) => setNewSubName(e.target.value.toUpperCase())}
-                        placeholder="Sub-Category Name e.g. 3-INCH CONDUIT PIPES"
+                        placeholder="e.g. 3-INCH CONDUIT PIPES / GATE VALVES"
                         className="h-8.5 rounded-lg border border-teal-300 bg-white px-2.5 text-xs font-bold text-slate-900 focus:outline-none sm:col-span-2"
                       />
                     </div>
@@ -1018,7 +989,7 @@ export function InventoryModal() {
                       <button
                         type="button"
                         onClick={() => setShowInlineAddSub(false)}
-                        className="rounded px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-200"
+                        className="rounded px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-200"
                       >
                         Cancel
                       </button>
@@ -1029,193 +1000,293 @@ export function InventoryModal() {
                         className="flex items-center gap-1 rounded bg-teal-700 px-3 py-1 text-xs font-bold text-white hover:bg-teal-800 disabled:opacity-50 cursor-pointer"
                       >
                         {savingNewSub ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-                        <span>Save &amp; Select Sub</span>
+                        <span>Save &amp; Select</span>
                       </button>
                     </div>
                   </div>
                 )}
 
                 {/* Sub Category Selection Chips */}
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-800">
-                    Select Active Sub-Category for this Item:
-                  </label>
-                  {subCategoriesForActiveMain.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-teal-300 bg-teal-50/50 p-3 text-xs text-teal-800 flex items-center justify-between">
-                      <span>No sub-categories yet under {activeMainCategory?.name}.</span>
-                      <button
-                        type="button"
-                        onClick={() => setShowInlineAddSub(true)}
-                        className="font-bold underline cursor-pointer"
-                      >
-                        + Create First Sub-Category
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-1.5">
-                      {subCategoriesForActiveMain.map((sub) => {
-                        const isSelected = selectedSubCode === sub.code;
-                        return (
-                          <button
-                            key={sub.code}
-                            type="button"
-                            onClick={() => setSelectedSubCode(sub.code)}
-                            className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
-                              isSelected
-                                ? 'bg-gradient-to-r from-teal-600 to-teal-700 text-white shadow-sm ring-2 ring-teal-400'
-                                : 'border border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100'
-                            }`}
-                          >
-                            <span className="text-teal-300 font-bold">↳</span>
-                            <span>{sub.name}</span>
-                            <span
-                              className={`text-[10px] font-mono px-1 py-0.2 rounded ${
-                                isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
-                              }`}
-                            >
-                              {sub.code}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                {subCategoriesForActiveMain.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-teal-300 bg-teal-50/50 p-2.5 text-xs text-teal-800 flex items-center justify-between">
+                    <span>Is Main Category ke under koi sub-category nahi hai.</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowInlineAddSub(true)}
+                      className="font-bold underline cursor-pointer"
+                    >
+                      + Pehli Sub-Category Banayein
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {subCategoriesForActiveMain.map((sub) => {
+                      const isSelected = selectedSubCode === sub.code;
+                      return (
+                        <button
+                          key={sub.code}
+                          type="button"
+                          onClick={() => setSelectedSubCode(sub.code)}
+                          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
+                            isSelected
+                              ? 'bg-gradient-to-r from-teal-600 to-teal-700 text-white shadow-sm ring-2 ring-teal-400'
+                              : 'border border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          <span className="text-teal-300 font-bold">↳</span>
+                          <span>{sub.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* --------------------------------------------------- */}
-              {/* STEP 3: ITEM SPECIFICATIONS & PRICING (TIER 3)      */}
+              {/* STEP 3: REDESIGNED CLEAN & BEAUTIFUL ITEM DETAILS    */}
               {/* --------------------------------------------------- */}
-              <div className="rounded-2xl border-2 border-emerald-500/60 bg-white p-4 shadow-sm space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <div className="rounded-2xl border-2 border-emerald-500 bg-white p-4 sm:p-5 shadow-md space-y-4">
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-white font-extrabold text-xs shadow-xs">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-white font-extrabold text-sm shadow-xs">
                       3
                     </div>
                     <div>
-                      <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wide">
-                        Step 3 &bull; Finished Goods Specifications &amp; Commercial Rates
+                      <h4 className="text-sm font-extrabold text-slate-900 uppercase tracking-wide">
+                        Step 3 &bull; Item Details &amp; Rates (Teesra Step: Item Ka Naam Aur Rates)
                       </h4>
-                      <p className="text-[11px] text-slate-500">
-                        Item will be registered inside:{' '}
-                        <strong className="text-emerald-700 font-bold">
-                          {activeMainCategory?.name} ➔ {activeSubCategory?.name}
-                        </strong>
+                      <p className="text-xs text-slate-500">
+                        Neeche Item ka naam, paimana (Unit) aur rates darj karein.
                       </p>
                     </div>
                   </div>
 
-                  {editingProduct && (
-                    <button
-                      type="button"
-                      onClick={handleResetItemFields}
-                      className="text-xs font-bold text-slate-600 hover:text-slate-900 underline"
-                    >
-                      Clear / New Item
-                    </button>
-                  )}
-                </div>
-
-                {/* SKU & Barcode */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-bold text-slate-800">
-                        Item Code / SKU <span className="text-rose-600">*</span>
-                      </label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono font-bold bg-slate-100 border border-slate-300 text-slate-800 px-2.5 py-1 rounded-lg">
+                      SKU: {formSku}
+                    </span>
+                    {editingProduct && (
                       <button
                         type="button"
-                        onClick={generateNewSkuAndBarcode}
-                        className="text-[10.5px] font-bold text-emerald-700 hover:underline flex items-center gap-0.5"
+                        onClick={handleResetItemFields}
+                        className="text-xs font-bold text-rose-600 hover:underline"
                       >
-                        <RefreshCw className="h-3 w-3" />
-                        <span>Auto SKU</span>
+                        Reset / New Item
                       </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2-COLUMN BALANCED CARDS: CARD A (ITEM & UNIT) + CARD B (RATES & PROFIT) */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                  {/* LEFT CARD: ITEM NAME, SIZES & UNIT (7 cols) */}
+                  <div className="lg:col-span-7 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 space-y-3">
+                    {/* Item Name Input */}
+                    <div>
+                      <label className="mb-1 block text-xs font-extrabold text-slate-800">
+                        Item Ka Naam &amp; Specifications <span className="text-rose-600">*</span>
+                      </label>
+                      <input
+                        ref={itemNameInputRef}
+                        type="text"
+                        required
+                        value={formName}
+                        onChange={(e) => setFormName(e.target.value)}
+                        placeholder="e.g. 2&quot;X13' U-PVC PIPE - 2.50 KG / 90 DEGREE ELBOW"
+                        className="h-10 w-full rounded-xl border-2 border-slate-300 bg-white px-3.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
+                      />
                     </div>
+
+                    {/* Quick Size Chips (Curated & Neat) */}
+                    <div>
+                      <span className="text-[11px] font-bold text-slate-600 block mb-1.5 flex items-center gap-1">
+                        <Sparkles className="h-3 w-3 text-emerald-600" />
+                        <span>Aasan Size Buttons (Click karein to naam me add ho jayega):</span>
+                      </span>
+
+                      {/* Row 1: Sizes */}
+                      <div className="flex flex-wrap gap-1 mb-1.5">
+                        {PIPE_SIZES.map((chip) => (
+                          <button
+                            key={chip}
+                            type="button"
+                            onClick={() => handleAppendSpec(chip)}
+                            className="rounded-lg border border-slate-300 bg-white hover:bg-emerald-50 hover:border-emerald-500 hover:text-emerald-900 px-2 py-0.5 text-xs font-mono font-bold text-slate-700 transition cursor-pointer shadow-2xs"
+                          >
+                            +{chip}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Row 2: Length / Specs */}
+                      <div className="flex flex-wrap gap-1">
+                        {PIPE_LENGTH_WEIGHT.map((spec) => (
+                          <button
+                            key={spec}
+                            type="button"
+                            onClick={() => handleAppendSpec(spec)}
+                            className="rounded-lg border border-teal-200 bg-teal-50/70 hover:bg-teal-100 hover:border-teal-400 hover:text-teal-900 px-2 py-0.5 text-[11px] font-mono font-semibold text-teal-800 transition cursor-pointer shadow-2xs"
+                          >
+                            +{spec}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Unit of Measure (Visual Quick Buttons) */}
+                    <div>
+                      <label className="mb-1.5 block text-xs font-extrabold text-slate-800">
+                        Paimana / Unit of Measure (UOM) <span className="text-rose-600">*</span>
+                      </label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {QUICK_UNITS.map((unit) => {
+                          const isUnitSelected = formUnit === unit;
+                          return (
+                            <button
+                              key={unit}
+                              type="button"
+                              onClick={() => setFormUnit(unit)}
+                              className={`rounded-lg px-3 py-1 text-xs font-bold transition cursor-pointer ${
+                                isUnitSelected
+                                  ? 'bg-emerald-600 text-white shadow-xs'
+                                  : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                              }`}
+                            >
+                              {unit}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* RIGHT CARD: RATES & LIVE PROFIT BADGE (5 cols) */}
+                  <div className="lg:col-span-5 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 space-y-3 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-800 uppercase tracking-wide border-b border-slate-200 pb-1.5">
+                        <Coins className="h-4 w-4 text-emerald-600" />
+                        <span>Kharid O Farokht Rates (Rs.)</span>
+                      </div>
+
+                      {/* Purchase Price */}
+                      <div>
+                        <label className="mb-1 block text-xs font-bold text-slate-700">
+                          Kharid Rate (Purchase Price Rs.)
+                        </label>
+                        <div className="relative">
+                          <span className="pointer-events-none absolute left-3 top-2 text-xs font-bold text-slate-400">
+                            Rs.
+                          </span>
+                          <input
+                            type="number"
+                            step="any"
+                            min="0"
+                            value={formCostPrice}
+                            onChange={(e) => setFormCostPrice(parseFloat(e.target.value) || 0)}
+                            className="h-9 w-full rounded-xl border border-slate-300 bg-white pl-9 pr-3 font-mono text-xs font-bold text-slate-900 focus:border-emerald-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Retail Sale Price (Most Prominent) */}
+                      <div>
+                        <label className="mb-1 block text-xs font-extrabold text-emerald-800">
+                          Farokht Rate (Retail Sale Price Rs.) <span className="text-rose-600">*</span>
+                        </label>
+                        <div className="relative">
+                          <span className="pointer-events-none absolute left-3 top-2 text-xs font-extrabold text-emerald-600">
+                            Rs.
+                          </span>
+                          <input
+                            type="number"
+                            step="any"
+                            min="0"
+                            required
+                            value={formSalePrice}
+                            onChange={(e) => {
+                              const val = parseFloat(e.target.value) || 0;
+                              setFormSalePrice(val);
+                              if (formWholesalePrice === 0) {
+                                setFormWholesalePrice(Math.round(val * 0.9));
+                              }
+                            }}
+                            className="h-10 w-full rounded-xl border-2 border-emerald-500 bg-emerald-50/20 pl-9 pr-3 font-mono text-sm font-extrabold text-slate-900 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Wholesale Price */}
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-600">
+                          Wholesale / Dealer Rate (Rs.)
+                        </label>
+                        <div className="relative">
+                          <span className="pointer-events-none absolute left-3 top-1.5 text-xs text-slate-400">
+                            Rs.
+                          </span>
+                          <input
+                            type="number"
+                            step="any"
+                            min="0"
+                            value={formWholesalePrice}
+                            onChange={(e) => setFormWholesalePrice(parseFloat(e.target.value) || 0)}
+                            className="h-8.5 w-full rounded-xl border border-slate-300 bg-white pl-9 pr-3 font-mono text-xs text-slate-700 focus:border-emerald-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* LIVE PROFIT HIGHLIGHT BOX */}
+                    <div className="rounded-xl border border-emerald-300 bg-gradient-to-r from-emerald-50 to-teal-50 p-2.5 text-center shadow-2xs">
+                      {Number(calculatedMargin) > 0 ? (
+                        <div>
+                          <p className="text-[10.5px] uppercase tracking-wider font-extrabold text-emerald-800">
+                            Munafa / Profit Calculation
+                          </p>
+                          <p className="text-sm font-extrabold font-mono text-emerald-900">
+                            Rs. {netGainAmount} / {formUnit} (+{calculatedMargin}%)
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-500 font-medium">
+                          Kharid aur Farokht rate darj karein taake munafa calculate ho sake.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* BOTTOM ROW: STOCK QUANTITY & GODAM RACK */}
+                <div className="rounded-xl border border-slate-200 bg-white p-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-slate-700">
+                      Opening Stock (Mojooda Taadad)
+                    </label>
                     <input
-                      type="text"
-                      required
-                      value={formSku}
-                      onChange={(e) => setFormSku(e.target.value.toUpperCase())}
-                      placeholder="e.g. FG-202011"
-                      className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs font-bold text-slate-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
+                      type="number"
+                      step="any"
+                      value={formStockQty}
+                      onChange={(e) => setFormStockQty(parseFloat(e.target.value) || 0)}
+                      className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs text-slate-900 focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
 
                   <div>
                     <label className="mb-1 block text-xs font-semibold text-slate-700">
-                      Barcode (EAN-13 / Scanner Input)
+                      Dukan / Godam Rack No.
                     </label>
-                    <div className="relative">
-                      <Barcode className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-                      <input
-                        type="text"
-                        value={formBarcode}
-                        onChange={(e) => setFormBarcode(e.target.value)}
-                        placeholder="8969XXXXXXXXX"
-                        className="h-9 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 font-mono text-xs text-slate-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Product Name & Dimensions */}
-                <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-800">
-                    Product Name &amp; Dimensions <span className="text-rose-600">*</span>
-                  </label>
-                  <input
-                    ref={itemNameInputRef}
-                    type="text"
-                    required
-                    value={formName}
-                    onChange={(e) => setFormName(e.target.value)}
-                    placeholder="e.g. 2&quot;X13' U-PVC PRESSURE PIPE - 2.50 KG / 90 DEGREE ELBOW"
-                    className="h-9 w-full rounded-lg border-2 border-slate-300 bg-white px-3 text-xs font-bold text-slate-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
-                  />
-                </div>
-
-                {/* 1-Click Pipe Dimension Quick Add Chips */}
-                <div>
-                  <div className="flex items-center gap-1.5 mb-1.5 text-[10.5px] font-bold text-slate-600">
-                    <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
-                    <span>1-Click Dimension &amp; Spec Chips (Click to append to name):</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {QUICK_SIZES.concat(QUICK_SPECS).map((chip) => (
-                      <button
-                        key={chip}
-                        type="button"
-                        onClick={() => handleAppendSpec(chip)}
-                        className="rounded-lg border border-slate-300 bg-slate-100 hover:bg-emerald-50 hover:border-emerald-400 hover:text-emerald-800 px-2.5 py-1 text-xs font-mono font-semibold text-slate-700 transition cursor-pointer"
-                      >
-                        +{chip}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* UOM, Brand, Warehouse Rack */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700">
-                      Unit of Measure (UOM)
-                    </label>
-                    <select
-                      value={formUnit}
-                      onChange={(e) => setFormUnit(e.target.value)}
-                      className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-2 text-xs font-semibold text-slate-900 focus:border-emerald-500 focus:outline-none"
-                    >
-                      {COMMON_UNITS.map((u) => (
-                        <option key={u} value={u}>
-                          {u}
-                        </option>
-                      ))}
-                    </select>
+                    <input
+                      type="text"
+                      value={formRackNo}
+                      onChange={(e) => setFormRackNo(e.target.value)}
+                      placeholder="e.g. Rack A-01 / Godam #2"
+                      className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-emerald-500 focus:outline-none"
+                    />
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700">Brand</label>
+                    <label className="mb-1 block text-xs font-semibold text-slate-700">Brand / Company</label>
                     <select
                       value={formBrand}
                       onChange={(e) => setFormBrand(e.target.value)}
@@ -1228,127 +1299,59 @@ export function InventoryModal() {
                       ))}
                     </select>
                   </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700">
-                      Warehouse Rack No.
-                    </label>
-                    <input
-                      type="text"
-                      value={formRackNo}
-                      onChange={(e) => setFormRackNo(e.target.value)}
-                      placeholder="e.g. Rack A-01"
-                      className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-emerald-500 focus:outline-none"
-                    />
-                  </div>
                 </div>
 
-                {/* Pricing & Commercial Rates */}
-                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 uppercase tracking-wide">
-                      <Coins className="h-4 w-4 text-emerald-600" />
-                      <span>Commercial Rates &amp; Real-time Margin (Rs.)</span>
+                {/* TOGGLE ADVANCED DETAILS (FBR HS CODE & BARCODE) */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvancedDetails((prev) => !prev)}
+                    className="text-xs font-bold text-slate-600 hover:text-emerald-700 flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>{showAdvancedDetails ? '▼ Hide' : '▶ Show'} FBR Customs HS Code &amp; Barcode Details</span>
+                  </button>
+
+                  {showAdvancedDetails && (
+                    <div className="mt-2.5 rounded-xl border border-slate-200 bg-slate-50 p-3 grid grid-cols-1 sm:grid-cols-3 gap-3 animate-fade-in">
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700">
+                          Barcode (Scanner / EAN-13)
+                        </label>
+                        <input
+                          type="text"
+                          value={formBarcode}
+                          onChange={(e) => setFormBarcode(e.target.value)}
+                          placeholder="8969XXXXXXXXX"
+                          className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs text-slate-900 focus:border-emerald-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700">
+                          Pakistan Customs HS Code
+                        </label>
+                        <input
+                          type="text"
+                          value={formHsCode}
+                          onChange={(e) => setFormHsCode(e.target.value)}
+                          placeholder="3917.2390"
+                          className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs text-slate-900 focus:border-emerald-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700">
+                          Sales Tax Rate (GST %)
+                        </label>
+                        <input
+                          type="number"
+                          value={formTaxRate}
+                          onChange={(e) => setFormTaxRate(parseFloat(e.target.value) || 18)}
+                          className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs text-slate-900 focus:border-emerald-500 focus:outline-none"
+                        />
+                      </div>
                     </div>
-
-                    {Number(calculatedMargin) > 0 && (
-                      <span className="bg-emerald-100 text-emerald-900 border border-emerald-300 px-2.5 py-0.5 rounded-full text-xs font-bold font-mono shadow-2xs">
-                        Profit Margin: +{calculatedMargin}% (Net Gain: Rs. {netGainAmount}/pc)
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="mb-1 block text-xs font-semibold text-slate-700">
-                        Cost / Purchase Price (Rs.)
-                      </label>
-                      <input
-                        type="number"
-                        step="any"
-                        min="0"
-                        value={formCostPrice}
-                        onChange={(e) => setFormCostPrice(parseFloat(e.target.value) || 0)}
-                        className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs text-slate-900 focus:border-emerald-500 focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-1 block text-xs font-semibold text-slate-700">
-                        Wholesale Rate (Rs.)
-                      </label>
-                      <input
-                        type="number"
-                        step="any"
-                        min="0"
-                        value={formWholesalePrice}
-                        onChange={(e) => setFormWholesalePrice(parseFloat(e.target.value) || 0)}
-                        className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs text-slate-900 focus:border-emerald-500 focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-1 block text-xs font-bold text-slate-900">
-                        Retail Sale Price (Rs.) <span className="text-rose-600">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        step="any"
-                        min="0"
-                        required
-                        value={formSalePrice}
-                        onChange={(e) => {
-                          const val = parseFloat(e.target.value) || 0;
-                          setFormSalePrice(val);
-                          if (formWholesalePrice === 0) {
-                            setFormWholesalePrice(Math.round(val * 0.9));
-                          }
-                        }}
-                        className="h-8.5 w-full rounded-lg border-2 border-emerald-500 bg-white px-3 font-mono text-xs font-bold text-slate-900 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* FBR HS Code, GST Rate & Opening Stock */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700">
-                      Pakistan Customs HS Code
-                    </label>
-                    <input
-                      type="text"
-                      value={formHsCode}
-                      onChange={(e) => setFormHsCode(e.target.value)}
-                      placeholder="3917.2390"
-                      className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs text-slate-900 focus:border-emerald-500 focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700">
-                      Sales Tax Rate (GST %)
-                    </label>
-                    <input
-                      type="number"
-                      value={formTaxRate}
-                      onChange={(e) => setFormTaxRate(parseFloat(e.target.value) || 18)}
-                      className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs text-slate-900 focus:border-emerald-500 focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700">
-                      Opening Stock Qty
-                    </label>
-                    <input
-                      type="number"
-                      step="any"
-                      value={formStockQty}
-                      onChange={(e) => setFormStockQty(parseFloat(e.target.value) || 0)}
-                      className="h-8.5 w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs text-slate-900 focus:border-emerald-500 focus:outline-none"
-                    />
-                  </div>
+                  )}
                 </div>
               </div>
 
