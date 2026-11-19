@@ -40,7 +40,7 @@ function ReportsContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
 
-  const { branches, activeBranchId, settings, refreshNonce } = usePosContext();
+  const { branches, activeBranchId, settings, refreshNonce, openSaleSummaryModal } = usePosContext();
   const range = getDateRangeForPreset('month');
 
   const [branchId, setBranchId] = useState<string>('ALL');
@@ -106,6 +106,14 @@ function ReportsContent() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => openSaleSummaryModal()}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:from-emerald-700 hover:to-teal-800 transition"
+            >
+              <BarChart3 className="h-3.5 w-3.5" />
+              <span>Open Desktop ERP Sale Summary Window</span>
+            </button>
             <select
               value={branchId}
               onChange={(e) => setBranchId(e.target.value)}

@@ -47,6 +47,7 @@ export default function MainDashboardPage() {
     openPosSale,
     openSalesReturnModal,
     openDayClosingModal,
+    openSaleSummaryModal,
   } = usePosContext();
 
   const initialRange = getDateRangeForPreset('month');
@@ -823,13 +824,14 @@ export default function MainDashboardPage() {
                 <DoorOpen className="h-3 w-3 text-sky-400" />
                 Closing
               </button>
-              <Link
-                href="/reports"
-                className="inline-flex items-center justify-center gap-1 rounded-lg bg-white/10 px-2 py-1.5 text-[11px] font-semibold text-white transition hover:bg-white/20"
+              <button
+                type="button"
+                onClick={() => openSaleSummaryModal()}
+                className="inline-flex cursor-pointer items-center justify-center gap-1 rounded-lg bg-white/10 px-2 py-1.5 text-[11px] font-semibold text-white transition hover:bg-white/20 active:scale-95"
               >
                 <BarChart3 className="h-3 w-3 text-emerald-400" />
-                Reports
-              </Link>
+                Summary
+              </button>
             </div>
           </div>
         </div>
