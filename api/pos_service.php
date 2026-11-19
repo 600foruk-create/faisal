@@ -679,6 +679,39 @@ function mysql_update_product_prices(PDO $pdo, array $payload): array
     ];
 }
 
+function mysql_update_product_tax_rates(PDO $pdo, array $payload): array
+{
+    $items = (array)($payload['items'] ?? []);
+    $sql = 'UPDATE products SET tax_rate = :tax_rate WHERE id = :id';
+    $stmt = $pdo->prepare($sql);
+    $updatedCount = 0;
+
+    $pdo->beginTransaction();
+    try {
+        foreach ($items as $item) {
+            $id = (int)($item['product_id'] ?? 0);
+            if ($id <= 0) continue;
+            $taxRate = max(0, min(100, round((float)($item['tax_rate'] ?? 0), 2)));
+            $stmt->execute([
+                ':tax_rate' => $taxRate,
+                ':id' => $id,
+            ]);
+            $updatedCount++;
+        }
+        $pdo->commit();
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $e;
+    }
+
+    return [
+        'success' => true,
+        'updated_count' => $updatedCount,
+    ];
+}
+
 function mysql_get_customers(PDO $pdo, ?int $branchId = null): array
 {
     if ($branchId) {

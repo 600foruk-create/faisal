@@ -21,6 +21,7 @@ import type {
   PaymentMode,
   PosTerminal,
   ProductPriceBatchInput,
+  ProductTaxBatchInput,
   ProductWithStock,
   StockOpeningBatchInput,
   StockOpeningCommitResult,
@@ -435,6 +436,32 @@ export function updateProductPrices(
       const sale = roundMoney(item.sale_price);
       const cost = item.cost_price !== undefined ? roundMoney(item.cost_price) : -1;
       updateStmt.run(sale, cost, cost, item.product_id);
+      updatedCount++;
+    }
+
+    return {
+      success: true,
+      updated_count: updatedCount,
+    };
+  });
+}
+
+export function updateProductTaxRates(
+  db: DatabaseSync,
+  payload: ProductTaxBatchInput
+): { success: boolean; updated_count: number } {
+  return withTransaction(db, () => {
+    const updateStmt = db.prepare(`
+      UPDATE products
+      SET tax_rate = ?
+      WHERE id = ?
+    `);
+
+    let updatedCount = 0;
+    for (const item of payload.items) {
+      if (!item.product_id) continue;
+      const rate = Math.max(0, Math.min(100, roundMoney(item.tax_rate)));
+      updateStmt.run(rate, item.product_id);
       updatedCount++;
     }
 

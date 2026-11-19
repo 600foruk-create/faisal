@@ -31,6 +31,7 @@ import {
   updateBusinessSettings,
   updateCustomer,
   updateProductPrices,
+  updateProductTaxRates,
   updateUser,
 } from '../src/lib/pos-service.ts';
 
@@ -469,6 +470,34 @@ describe('Multi-Branch POS & FBR Integration Service', () => {
     assert.equal(afterP1.cost_price, 1100.0);
     assert.equal(afterP2.sale_price, 2800.0);
     assert.equal(afterP2.cost_price, 2100.0);
+  });
+
+  it('updates product sales tax rates in bulk and reflects on taxable calculations', () => {
+    const db = createInMemoryDb(true);
+    const products = getProducts(db, { includeInactive: true });
+    assert.ok(products.length >= 2);
+
+    const p1 = products[0];
+    const p2 = products[1];
+
+    const result = updateProductTaxRates(db, {
+      items: [
+        { product_id: p1.id, tax_rate: 0.0 }, // Exempt / Zero-rated
+        { product_id: p2.id, tax_rate: 5.0 }, // Reduced 5%
+      ],
+    });
+
+    assert.equal(result.success, true);
+    assert.equal(result.updated_count, 2);
+
+    const afterProducts = getProducts(db, { includeInactive: true });
+    const afterP1 = afterProducts.find((p) => p.id === p1.id);
+    const afterP2 = afterProducts.find((p) => p.id === p2.id);
+
+    assert.ok(afterP1);
+    assert.ok(afterP2);
+    assert.equal(afterP1.tax_rate, 0.0);
+    assert.equal(afterP2.tax_rate, 5.0);
   });
 });
 

@@ -36,7 +36,8 @@ type MenuAction =
   | 'open_customers_modal'
   | 'open_inventory_modal'
   | 'open_stock_opening_modal'
-  | 'open_price_settings_modal';
+  | 'open_price_settings_modal'
+  | 'open_sales_tax_rates_modal';
 type AboutSection = 'software' | 'license' | 'contact';
 
 interface DropdownItem {
@@ -80,7 +81,7 @@ const ADMIN_SUBHEADER_MENUS: DropdownGroup[] = [
       { label: 'Chart Of Inventory', action: 'open_inventory_modal', icon: Package },
       { label: 'Inventory Opening Balances', action: 'open_stock_opening_modal', icon: Boxes },
       { label: 'Item Price Settings', action: 'open_price_settings_modal', icon: Tag },
-      { label: 'Item Sales Tax Rates', href: '/settings?tab=tax_rates', icon: Percent },
+      { label: 'Item Sales Tax Rates', action: 'open_sales_tax_rates_modal', icon: Percent },
     ],
   },
   {
@@ -108,6 +109,7 @@ export function PosHeader() {
     openInventoryModal,
     openStockOpeningModal,
     openPriceSettingsModal,
+    openSalesTaxRatesModal,
   } = usePosContext();
 
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -299,6 +301,22 @@ export function PosHeader() {
                             onClick={() => {
                               setOpenMenu(null);
                               openPriceSettingsModal();
+                            }}
+                            className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700"
+                          >
+                            <Icon className="h-3.5 w-3.5 text-emerald-600" />
+                            <span>{item.label}</span>
+                          </button>
+                        );
+                      }
+                      if (item.action === 'open_sales_tax_rates_modal') {
+                        return (
+                          <button
+                            key={item.label}
+                            type="button"
+                            onClick={() => {
+                              setOpenMenu(null);
+                              openSalesTaxRatesModal();
                             }}
                             className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700"
                           >

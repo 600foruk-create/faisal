@@ -109,6 +109,16 @@ export interface ProductPriceBatchInput {
   items: ProductPriceUpdateItem[];
 }
 
+export interface ProductTaxUpdateItem {
+  product_id: number;
+  tax_rate: number;
+  hs_code?: string;
+}
+
+export interface ProductTaxBatchInput {
+  items: ProductTaxUpdateItem[];
+}
+
 export interface Customer {
   id: number;
   branch_id: number | null;

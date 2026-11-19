@@ -43,6 +43,12 @@ interface PosContextValue {
   closePriceSettingsModal: () => void;
   priceSettingsRefreshNonce: number;
   triggerPriceSettingsRefresh: () => void;
+  isSalesTaxRatesModalOpen: boolean;
+  setIsSalesTaxRatesModalOpen: (open: boolean) => void;
+  openSalesTaxRatesModal: () => void;
+  closeSalesTaxRatesModal: () => void;
+  salesTaxRatesRefreshNonce: number;
+  triggerSalesTaxRatesRefresh: () => void;
   selectedProductIdForPos: number | null;
   setSelectedProductIdForPos: (id: number | null) => void;
   setActiveBranchId: (branchId: number | null) => void;
@@ -88,6 +94,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const [stockOpeningRefreshNonce, setStockOpeningRefreshNonce] = useState(0);
   const [isPriceSettingsModalOpen, setIsPriceSettingsModalOpen] = useState(false);
   const [priceSettingsRefreshNonce, setPriceSettingsRefreshNonce] = useState(0);
+  const [isSalesTaxRatesModalOpen, setIsSalesTaxRatesModalOpen] = useState(false);
+  const [salesTaxRatesRefreshNonce, setSalesTaxRatesRefreshNonce] = useState(0);
 
   const openPosSale = useCallback(() => setIsPosModalOpen(true), []);
   const closePosSale = useCallback(() => setIsPosModalOpen(false), []);
@@ -103,6 +111,9 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const openPriceSettingsModal = useCallback(() => setIsPriceSettingsModalOpen(true), []);
   const closePriceSettingsModal = useCallback(() => setIsPriceSettingsModalOpen(false), []);
   const triggerPriceSettingsRefresh = useCallback(() => setPriceSettingsRefreshNonce((n) => n + 1), []);
+  const openSalesTaxRatesModal = useCallback(() => setIsSalesTaxRatesModalOpen(true), []);
+  const closeSalesTaxRatesModal = useCallback(() => setIsSalesTaxRatesModalOpen(false), []);
+  const triggerSalesTaxRatesRefresh = useCallback(() => setSalesTaxRatesRefreshNonce((n) => n + 1), []);
 
   const refreshHeldCount = useCallback(async () => {
     try {
@@ -230,6 +241,12 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         closePriceSettingsModal,
         priceSettingsRefreshNonce,
         triggerPriceSettingsRefresh,
+        isSalesTaxRatesModalOpen,
+        setIsSalesTaxRatesModalOpen,
+        openSalesTaxRatesModal,
+        closeSalesTaxRatesModal,
+        salesTaxRatesRefreshNonce,
+        triggerSalesTaxRatesRefresh,
         selectedProductIdForPos,
         setSelectedProductIdForPos,
         setActiveBranchId,
