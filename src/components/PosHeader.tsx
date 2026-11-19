@@ -34,7 +34,8 @@ type MenuAction =
   | 'about_license'
   | 'about_contact'
   | 'open_customers_modal'
-  | 'open_inventory_modal';
+  | 'open_inventory_modal'
+  | 'open_stock_opening_modal';
 type AboutSection = 'software' | 'license' | 'contact';
 
 interface DropdownItem {

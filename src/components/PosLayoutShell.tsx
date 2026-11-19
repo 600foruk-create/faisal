@@ -9,9 +9,15 @@ import { usePosContext } from './PosContext';
 import { PosSaleModal } from './PosSaleModal';
 import { CustomerModal } from './CustomerModal';
 import { InventoryModal } from './InventoryModal';
+import { StockOpeningModal } from './StockOpeningModal';
 
 export function PosLayoutShell({ children }: { children: React.ReactNode }) {
-  const { isPosModalOpen, isCustomerModalOpen, isInventoryModalOpen } = usePosContext();
+  const {
+    isPosModalOpen,
+    isCustomerModalOpen,
+    isInventoryModalOpen,
+    isStockOpeningModalOpen,
+  } = usePosContext();
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F3F5F8] text-slate-900 antialiased lg:h-screen lg:overflow-hidden">
@@ -40,6 +46,9 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
 
       {/* FLOATING CHART OF INVENTORY MODAL (Maintain Module) */}
       {isInventoryModalOpen && <InventoryModal />}
+
+      {/* FLOATING INVENTORY OPENING BALANCES MODAL (Maintain Module - Step 3) */}
+      {isStockOpeningModalOpen && <StockOpeningModal />}
     </div>
   );
 }
