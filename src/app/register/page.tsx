@@ -10,7 +10,7 @@ import { formatCurrency, getDateRangeForPreset } from '@/lib/format';
 import type { InvoiceRecord, PaymentMode } from '@/lib/types';
 
 function SalesRegisterContent() {
-  const { branches, activeBranchId, settings, refreshNonce } = usePosContext();
+  const { branches, activeBranchId, settings, refreshNonce, openSalesRegisterModal } = usePosContext();
 
   const defaultRange = getDateRangeForPreset('month');
   const [branchId, setBranchId] = useState<string>('ALL');
@@ -128,14 +128,24 @@ function SalesRegisterContent() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-          >
-            <Download className="h-3.5 w-3.5" />
-            Export CSV
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => openSalesRegisterModal()}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:from-emerald-700 hover:to-teal-800 transition"
+            >
+              <List className="h-3.5 w-3.5" />
+              Open Desktop ERP Sales Register Window
+            </button>
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Export CSV
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">

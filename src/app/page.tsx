@@ -38,7 +38,16 @@ import {
 import type { DashboardSummary, PeriodPreset } from '@/lib/types';
 
 export default function MainDashboardPage() {
-  const { branches, activeBranchId, activeUser, settings, refreshNonce, openPosSale } = usePosContext();
+  const {
+    branches,
+    activeBranchId,
+    activeUser,
+    settings,
+    refreshNonce,
+    openPosSale,
+    openSalesReturnModal,
+    openDayClosingModal,
+  } = usePosContext();
 
   const initialRange = getDateRangeForPreset('month');
   const todayIso = getLocalIsoDate();
@@ -798,20 +807,22 @@ export default function MainDashboardPage() {
                 <ShoppingCart className="h-3 w-3" />
                 POS Sale
               </button>
-              <Link
-                href="/returns"
-                className="inline-flex items-center justify-center gap-1 rounded-lg bg-white/10 px-2 py-1.5 text-[11px] font-semibold text-white transition hover:bg-white/20"
+              <button
+                type="button"
+                onClick={() => openSalesReturnModal()}
+                className="inline-flex cursor-pointer items-center justify-center gap-1 rounded-lg bg-white/10 px-2 py-1.5 text-[11px] font-semibold text-white transition hover:bg-white/20 active:scale-95"
               >
                 <Undo2 className="h-3 w-3 text-amber-400" />
                 Returns
-              </Link>
-              <Link
-                href="/closing"
-                className="inline-flex items-center justify-center gap-1 rounded-lg bg-white/10 px-2 py-1.5 text-[11px] font-semibold text-white transition hover:bg-white/20"
+              </button>
+              <button
+                type="button"
+                onClick={() => openDayClosingModal()}
+                className="inline-flex cursor-pointer items-center justify-center gap-1 rounded-lg bg-white/10 px-2 py-1.5 text-[11px] font-semibold text-white transition hover:bg-white/20 active:scale-95"
               >
                 <DoorOpen className="h-3 w-3 text-sky-400" />
                 Closing
-              </Link>
+              </button>
               <Link
                 href="/reports"
                 className="inline-flex items-center justify-center gap-1 rounded-lg bg-white/10 px-2 py-1.5 text-[11px] font-semibold text-white transition hover:bg-white/20"
