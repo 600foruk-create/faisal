@@ -74,7 +74,15 @@ function PosSidebarInner() {
   const searchParams = useSearchParams();
   const activeReportTab = searchParams.get('tab') || 'branches';
 
-  const { branches, activeBranchId, heldCount, openPosSale, isPosModalOpen } = usePosContext();
+  const {
+    branches,
+    activeBranchId,
+    heldCount,
+    openPosSale,
+    isPosModalOpen,
+    openSalesReturnModal,
+    isSalesReturnModalOpen,
+  } = usePosContext();
   const [collapsed, setCollapsed] = useState(false);
 
   const activeBranch = branches.find((b) => b.id === activeBranchId) ?? null;
@@ -82,6 +90,9 @@ function PosSidebarInner() {
   const isItemActive = (item: SidebarItem) => {
     if (item.matchPath === '/sale') {
       return isPosModalOpen || pathname === '/sale';
+    }
+    if (item.matchPath === '/returns') {
+      return isSalesReturnModalOpen || pathname === '/returns';
     }
     if (item.matchPath === '/reports') {
       return pathname.startsWith('/reports') && activeReportTab === (item.matchTab ?? 'branches');
@@ -93,6 +104,7 @@ function PosSidebarInner() {
     const Icon = item.icon;
     const isActive = isItemActive(item);
     const isSale = item.href === '/sale';
+    const isReturn = item.href === '/returns';
 
     if (isSale) {
       return (
@@ -112,6 +124,31 @@ function PosSidebarInner() {
           <Icon
             className={`h-3.5 w-3.5 shrink-0 ${
               isActive ? 'text-white' : 'text-slate-400 group-hover:text-emerald-600'
+            }`}
+          />
+          <span className={collapsed ? 'lg:hidden' : 'flex-1 truncate'}>{item.label}</span>
+        </button>
+      );
+    }
+
+    if (isReturn) {
+      return (
+        <button
+          key={item.href}
+          type="button"
+          onClick={() => openSalesReturnModal()}
+          title={collapsed ? item.label : undefined}
+          className={`group flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1 text-left text-[12.5px] font-semibold transition ${
+            collapsed ? 'lg:justify-center lg:px-2' : ''
+          } ${
+            isActive
+              ? 'bg-gradient-to-r from-rose-600 to-rose-700 text-white shadow-xs'
+              : 'text-slate-700 hover:bg-slate-100/80 hover:text-slate-900'
+          }`}
+        >
+          <Icon
+            className={`h-3.5 w-3.5 shrink-0 ${
+              isActive ? 'text-white' : 'text-slate-400 group-hover:text-rose-600'
             }`}
           />
           <span className={collapsed ? 'lg:hidden' : 'flex-1 truncate'}>{item.label}</span>

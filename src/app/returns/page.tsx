@@ -13,7 +13,7 @@ function SalesReturnContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('invoice') ?? '';
 
-  const { activeBranchId, activeUser, settings, refreshNonce } = usePosContext();
+  const { activeBranchId, activeUser, settings, refreshNonce, openSalesReturnModal } = usePosContext();
 
   const [invoiceQuery, setInvoiceQuery] = useState(initialQuery);
   const [originalInvoice, setOriginalInvoice] = useState<InvoiceDetail | null>(null);
@@ -121,18 +121,28 @@ function SalesReturnContent() {
   return (
     <div className="space-y-4">
       <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs">
-        <div className="mb-4 flex flex-wrap items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
-            <Undo2 className="h-5 w-5" />
-          </span>
-          <div>
-            <h1 className="text-lg font-extrabold tracking-tight text-slate-900">
-              Sales Return / Refund
-            </h1>
-            <p className="text-xs text-slate-500">
-              Look up a receipt to refund items and automatically restore branch stock
-            </p>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+              <Undo2 className="h-5 w-5" />
+            </span>
+            <div>
+              <h1 className="text-lg font-extrabold tracking-tight text-slate-900">
+                Sales Return / Refund
+              </h1>
+              <p className="text-xs text-slate-500">
+                Look up a receipt to refund items and automatically restore branch stock
+              </p>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => openSalesReturnModal(invoiceQuery)}
+            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 px-4 py-2 text-xs font-bold text-white shadow-md hover:from-rose-700 hover:to-rose-800 cursor-pointer transition"
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+            <span>Open Desktop ERP Return Window</span>
+          </button>
         </div>
 
         <form

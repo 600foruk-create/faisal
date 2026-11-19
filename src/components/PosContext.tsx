@@ -49,6 +49,12 @@ interface PosContextValue {
   closeSalesTaxRatesModal: () => void;
   salesTaxRatesRefreshNonce: number;
   triggerSalesTaxRatesRefresh: () => void;
+  isSalesReturnModalOpen: boolean;
+  setIsSalesReturnModalOpen: (open: boolean) => void;
+  openSalesReturnModal: (invoiceNo?: string) => void;
+  closeSalesReturnModal: () => void;
+  selectedInvoiceNoForReturn: string | null;
+  setSelectedInvoiceNoForReturn: (inv: string | null) => void;
   selectedProductIdForPos: number | null;
   setSelectedProductIdForPos: (id: number | null) => void;
   setActiveBranchId: (branchId: number | null) => void;
@@ -96,6 +102,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const [priceSettingsRefreshNonce, setPriceSettingsRefreshNonce] = useState(0);
   const [isSalesTaxRatesModalOpen, setIsSalesTaxRatesModalOpen] = useState(false);
   const [salesTaxRatesRefreshNonce, setSalesTaxRatesRefreshNonce] = useState(0);
+  const [isSalesReturnModalOpen, setIsSalesReturnModalOpen] = useState(false);
+  const [selectedInvoiceNoForReturn, setSelectedInvoiceNoForReturn] = useState<string | null>(null);
 
   const openPosSale = useCallback(() => setIsPosModalOpen(true), []);
   const closePosSale = useCallback(() => setIsPosModalOpen(false), []);
@@ -114,6 +122,16 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const openSalesTaxRatesModal = useCallback(() => setIsSalesTaxRatesModalOpen(true), []);
   const closeSalesTaxRatesModal = useCallback(() => setIsSalesTaxRatesModalOpen(false), []);
   const triggerSalesTaxRatesRefresh = useCallback(() => setSalesTaxRatesRefreshNonce((n) => n + 1), []);
+  const openSalesReturnModal = useCallback((invoiceNo?: string) => {
+    if (invoiceNo) {
+      setSelectedInvoiceNoForReturn(invoiceNo);
+    }
+    setIsSalesReturnModalOpen(true);
+  }, []);
+  const closeSalesReturnModal = useCallback(() => {
+    setIsSalesReturnModalOpen(false);
+    setSelectedInvoiceNoForReturn(null);
+  }, []);
 
   const refreshHeldCount = useCallback(async () => {
     try {
@@ -247,6 +265,12 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         closeSalesTaxRatesModal,
         salesTaxRatesRefreshNonce,
         triggerSalesTaxRatesRefresh,
+        isSalesReturnModalOpen,
+        setIsSalesReturnModalOpen,
+        openSalesReturnModal,
+        closeSalesReturnModal,
+        selectedInvoiceNoForReturn,
+        setSelectedInvoiceNoForReturn,
         selectedProductIdForPos,
         setSelectedProductIdForPos,
         setActiveBranchId,
