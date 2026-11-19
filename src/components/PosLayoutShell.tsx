@@ -14,6 +14,7 @@ import { PriceSettingsModal } from './PriceSettingsModal';
 import { SalesTaxRatesModal } from './SalesTaxRatesModal';
 import { SalesReturnModal } from './SalesReturnModal';
 import { HoldRecallModal } from './HoldRecallModal';
+import { DayClosingModal } from './DayClosingModal';
 
 export function PosLayoutShell({ children }: { children: React.ReactNode }) {
   const {
@@ -25,6 +26,7 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
     isSalesTaxRatesModalOpen,
     isSalesReturnModalOpen,
     isHoldRecallModalOpen,
+    isDayClosingModalOpen,
   } = usePosContext();
 
   return (
@@ -69,6 +71,9 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
 
       {/* FLOATING HOLD / RECALL PARKED BILLS MODAL */}
       {isHoldRecallModalOpen && <HoldRecallModal />}
+
+      {/* FLOATING DAY CLOSING & CASH RECONCILIATION MODAL */}
+      {isDayClosingModalOpen && <DayClosingModal />}
     </div>
   );
 }

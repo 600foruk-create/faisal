@@ -84,6 +84,8 @@ function PosSidebarInner() {
     isSalesReturnModalOpen,
     openHoldRecallModal,
     isHoldRecallModalOpen,
+    openDayClosingModal,
+    isDayClosingModalOpen,
   } = usePosContext();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -99,6 +101,9 @@ function PosSidebarInner() {
     if (item.matchPath === '/hold') {
       return isHoldRecallModalOpen || pathname === '/hold';
     }
+    if (item.matchPath === '/closing') {
+      return isDayClosingModalOpen || pathname === '/closing';
+    }
     if (item.matchPath === '/reports') {
       return pathname.startsWith('/reports') && activeReportTab === (item.matchTab ?? 'branches');
     }
@@ -111,6 +116,7 @@ function PosSidebarInner() {
     const isSale = item.href === '/sale';
     const isReturn = item.href === '/returns';
     const isHold = item.href === '/hold';
+    const isClosing = item.href === '/closing';
 
     if (isSale) {
       return (
@@ -196,6 +202,31 @@ function PosSidebarInner() {
               {heldCount}
             </span>
           )}
+        </button>
+      );
+    }
+
+    if (isClosing) {
+      return (
+        <button
+          key={item.href}
+          type="button"
+          onClick={() => openDayClosingModal()}
+          title={collapsed ? item.label : undefined}
+          className={`group flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1 text-left text-[12.5px] font-semibold transition ${
+            collapsed ? 'lg:justify-center lg:px-2' : ''
+          } ${
+            isActive
+              ? 'bg-gradient-to-r from-sky-600 to-indigo-700 text-white shadow-xs'
+              : 'text-slate-700 hover:bg-slate-100/80 hover:text-slate-900'
+          }`}
+        >
+          <Icon
+            className={`h-3.5 w-3.5 shrink-0 ${
+              isActive ? 'text-white' : 'text-slate-400 group-hover:text-sky-600'
+            }`}
+          />
+          <span className={collapsed ? 'lg:hidden' : 'flex-1 truncate'}>{item.label}</span>
         </button>
       );
     }

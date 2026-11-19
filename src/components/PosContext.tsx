@@ -61,6 +61,10 @@ interface PosContextValue {
   closeHoldRecallModal: () => void;
   recalledCartForPos: HeldCartRecord | null;
   setRecalledCartForPos: (cart: HeldCartRecord | null) => void;
+  isDayClosingModalOpen: boolean;
+  setIsDayClosingModalOpen: (open: boolean) => void;
+  openDayClosingModal: () => void;
+  closeDayClosingModal: () => void;
   selectedProductIdForPos: number | null;
   setSelectedProductIdForPos: (id: number | null) => void;
   setActiveBranchId: (branchId: number | null) => void;
@@ -112,6 +116,7 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const [selectedInvoiceNoForReturn, setSelectedInvoiceNoForReturn] = useState<string | null>(null);
   const [isHoldRecallModalOpen, setIsHoldRecallModalOpen] = useState(false);
   const [recalledCartForPos, setRecalledCartForPos] = useState<HeldCartRecord | null>(null);
+  const [isDayClosingModalOpen, setIsDayClosingModalOpen] = useState(false);
 
   const openPosSale = useCallback(() => setIsPosModalOpen(true), []);
   const closePosSale = useCallback(() => setIsPosModalOpen(false), []);
@@ -142,6 +147,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   }, []);
   const openHoldRecallModal = useCallback(() => setIsHoldRecallModalOpen(true), []);
   const closeHoldRecallModal = useCallback(() => setIsHoldRecallModalOpen(false), []);
+  const openDayClosingModal = useCallback(() => setIsDayClosingModalOpen(true), []);
+  const closeDayClosingModal = useCallback(() => setIsDayClosingModalOpen(false), []);
 
   const refreshHeldCount = useCallback(async () => {
     try {
@@ -287,6 +294,10 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         closeHoldRecallModal,
         recalledCartForPos,
         setRecalledCartForPos,
+        isDayClosingModalOpen,
+        setIsDayClosingModalOpen,
+        openDayClosingModal,
+        closeDayClosingModal,
         selectedProductIdForPos,
         setSelectedProductIdForPos,
         setActiveBranchId,

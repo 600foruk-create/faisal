@@ -7,7 +7,7 @@ import { formatCurrency, getLocalIsoDate, roundMoney } from '@/lib/format';
 import type { DayClosingPreview, DayClosingRecord } from '@/lib/types';
 
 export default function DayClosingPage() {
-  const { branches, activeBranchId, activeUser, settings, refreshNonce } = usePosContext();
+  const { branches, activeBranchId, activeUser, settings, refreshNonce, openDayClosingModal } = usePosContext();
 
   const [branchId, setBranchId] = useState<number>(1);
   const [closingDate, setClosingDate] = useState<string>(() => getLocalIsoDate());
@@ -100,6 +100,14 @@ export default function DayClosingPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 text-sm">
+            <button
+              type="button"
+              onClick={() => openDayClosingModal()}
+              className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-700 px-3.5 py-1.5 text-xs font-bold text-white shadow-md hover:from-sky-700 hover:to-indigo-800 cursor-pointer transition"
+            >
+              <DoorOpen className="h-3.5 w-3.5" />
+              <span>Open Desktop ERP Day Closing Window</span>
+            </button>
             <div className="flex items-center gap-2">
               <Store className="h-4 w-4 text-sky-600" />
               <select
