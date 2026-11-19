@@ -98,6 +98,17 @@ export interface StockOpeningCommitResult {
   updated_count: number;
 }
 
+export interface ProductPriceUpdateItem {
+  product_id: number;
+  sale_price: number;
+  cost_price?: number;
+  wholesale_price?: number;
+}
+
+export interface ProductPriceBatchInput {
+  items: ProductPriceUpdateItem[];
+}
+
 export interface Customer {
   id: number;
   branch_id: number | null;

@@ -37,6 +37,12 @@ interface PosContextValue {
   closeStockOpeningModal: () => void;
   stockOpeningRefreshNonce: number;
   triggerStockOpeningRefresh: () => void;
+  isPriceSettingsModalOpen: boolean;
+  setIsPriceSettingsModalOpen: (open: boolean) => void;
+  openPriceSettingsModal: () => void;
+  closePriceSettingsModal: () => void;
+  priceSettingsRefreshNonce: number;
+  triggerPriceSettingsRefresh: () => void;
   selectedProductIdForPos: number | null;
   setSelectedProductIdForPos: (id: number | null) => void;
   setActiveBranchId: (branchId: number | null) => void;
@@ -80,6 +86,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const [inventoryRefreshNonce, setInventoryRefreshNonce] = useState(0);
   const [isStockOpeningModalOpen, setIsStockOpeningModalOpen] = useState(false);
   const [stockOpeningRefreshNonce, setStockOpeningRefreshNonce] = useState(0);
+  const [isPriceSettingsModalOpen, setIsPriceSettingsModalOpen] = useState(false);
+  const [priceSettingsRefreshNonce, setPriceSettingsRefreshNonce] = useState(0);
 
   const openPosSale = useCallback(() => setIsPosModalOpen(true), []);
   const closePosSale = useCallback(() => setIsPosModalOpen(false), []);
@@ -92,6 +100,9 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const openStockOpeningModal = useCallback(() => setIsStockOpeningModalOpen(true), []);
   const closeStockOpeningModal = useCallback(() => setIsStockOpeningModalOpen(false), []);
   const triggerStockOpeningRefresh = useCallback(() => setStockOpeningRefreshNonce((n) => n + 1), []);
+  const openPriceSettingsModal = useCallback(() => setIsPriceSettingsModalOpen(true), []);
+  const closePriceSettingsModal = useCallback(() => setIsPriceSettingsModalOpen(false), []);
+  const triggerPriceSettingsRefresh = useCallback(() => setPriceSettingsRefreshNonce((n) => n + 1), []);
 
   const refreshHeldCount = useCallback(async () => {
     try {
@@ -213,6 +224,12 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         closeStockOpeningModal,
         stockOpeningRefreshNonce,
         triggerStockOpeningRefresh,
+        isPriceSettingsModalOpen,
+        setIsPriceSettingsModalOpen,
+        openPriceSettingsModal,
+        closePriceSettingsModal,
+        priceSettingsRefreshNonce,
+        triggerPriceSettingsRefresh,
         selectedProductIdForPos,
         setSelectedProductIdForPos,
         setActiveBranchId,

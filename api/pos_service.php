@@ -639,6 +639,46 @@ function mysql_commit_stock_opening(PDO $pdo, array $payload): array
     ];
 }
 
+function mysql_update_product_prices(PDO $pdo, array $payload): array
+{
+    $items = (array)($payload['items'] ?? []);
+    $sql = 'UPDATE products
+            SET sale_price = :sale,
+                cost_price = CASE WHEN :cost >= 0 THEN :cost ELSE cost_price END
+            WHERE id = :id';
+    $stmt = $pdo->prepare($sql);
+    $updatedCount = 0;
+
+    $pdo->beginTransaction();
+    try {
+        foreach ($items as $item) {
+            $id = (int)($item['product_id'] ?? 0);
+            if ($id <= 0) continue;
+            $sale = round((float)($item['sale_price'] ?? 0), 2);
+            $cost = isset($item['cost_price']) && is_numeric($item['cost_price'])
+                ? round((float)$item['cost_price'], 2)
+                : -1;
+            $stmt->execute([
+                ':sale' => $sale,
+                ':cost' => $cost,
+                ':id' => $id,
+            ]);
+            $updatedCount++;
+        }
+        $pdo->commit();
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $e;
+    }
+
+    return [
+        'success' => true,
+        'updated_count' => $updatedCount,
+    ];
+}
+
 function mysql_get_customers(PDO $pdo, ?int $branchId = null): array
 {
     if ($branchId) {

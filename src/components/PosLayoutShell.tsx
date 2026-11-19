@@ -10,6 +10,7 @@ import { PosSaleModal } from './PosSaleModal';
 import { CustomerModal } from './CustomerModal';
 import { InventoryModal } from './InventoryModal';
 import { StockOpeningModal } from './StockOpeningModal';
+import { PriceSettingsModal } from './PriceSettingsModal';
 
 export function PosLayoutShell({ children }: { children: React.ReactNode }) {
   const {
@@ -17,6 +18,7 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
     isCustomerModalOpen,
     isInventoryModalOpen,
     isStockOpeningModalOpen,
+    isPriceSettingsModalOpen,
   } = usePosContext();
 
   return (
@@ -49,6 +51,9 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
 
       {/* FLOATING INVENTORY OPENING BALANCES MODAL (Maintain Module - Step 3) */}
       {isStockOpeningModalOpen && <StockOpeningModal />}
+
+      {/* FLOATING ITEM PRICE SETTINGS MODAL (Maintain Module - Step 4) */}
+      {isPriceSettingsModalOpen && <PriceSettingsModal />}
     </div>
   );
 }

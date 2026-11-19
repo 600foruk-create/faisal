@@ -152,6 +152,27 @@ try {
         }
     }
 
+    if ($route === 'prices') {
+        if ($method === 'GET') {
+            $branchId = parse_opt_int($_GET['branchId'] ?? null);
+            $products = mysql_get_products($pdo, [
+                'branchId' => $branchId,
+                'search' => $_GET['search'] ?? '',
+                'category' => $_GET['category'] ?? '',
+                'includeInactive' => true,
+            ]);
+            json_out(['products' => $products]);
+        }
+        if ($method === 'POST') {
+            $body = read_json_body();
+            if (!is_array($body['items'] ?? null)) {
+                json_out(['error' => 'items array is required'], 400);
+            }
+            $result = mysql_update_product_prices($pdo, $body);
+            json_out($result);
+        }
+    }
+
     if ($route === 'customers') {
         if ($method === 'GET') {
             $branchId = parse_opt_int($_GET['branchId'] ?? null);

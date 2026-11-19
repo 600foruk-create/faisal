@@ -20,6 +20,7 @@ import type {
   InvoiceRecord,
   PaymentMode,
   PosTerminal,
+  ProductPriceBatchInput,
   ProductWithStock,
   StockOpeningBatchInput,
   StockOpeningCommitResult,
@@ -411,6 +412,34 @@ export function commitStockOpeningBalances(
     return {
       success: true,
       branch_id: payload.branch_id,
+      updated_count: updatedCount,
+    };
+  });
+}
+
+export function updateProductPrices(
+  db: DatabaseSync,
+  payload: ProductPriceBatchInput
+): { success: boolean; updated_count: number } {
+  return withTransaction(db, () => {
+    const updateStmt = db.prepare(`
+      UPDATE products
+      SET sale_price = ?,
+          cost_price = CASE WHEN ? >= 0 THEN ? ELSE cost_price END
+      WHERE id = ?
+    `);
+
+    let updatedCount = 0;
+    for (const item of payload.items) {
+      if (!item.product_id) continue;
+      const sale = roundMoney(item.sale_price);
+      const cost = item.cost_price !== undefined ? roundMoney(item.cost_price) : -1;
+      updateStmt.run(sale, cost, cost, item.product_id);
+      updatedCount++;
+    }
+
+    return {
+      success: true,
       updated_count: updatedCount,
     };
   });
