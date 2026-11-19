@@ -689,7 +689,7 @@ export function StockOpeningModal() {
                 <th className="py-2.5 px-3 w-36 text-center border-r border-slate-700/80">Category</th>
                 <th className="py-2.5 px-2 w-16 text-center border-r border-slate-700/80">Unit</th>
                 <th className="py-2.5 px-3 w-32 text-center border-r border-slate-700/80 bg-emerald-950/70 text-emerald-300">
-                  Opening Stock *
+                  Opening Stock
                 </th>
                 <th className="py-2.5 px-3 w-32 text-center border-r border-slate-700/80">
                   Unit Cost (Rs)
