@@ -131,6 +131,27 @@ try {
         }
     }
 
+    if ($route === 'stock-opening') {
+        if ($method === 'GET') {
+            $branchId = parse_opt_int($_GET['branchId'] ?? null) ?? 1;
+            $products = mysql_get_products($pdo, [
+                'branchId' => $branchId,
+                'search' => $_GET['search'] ?? '',
+                'category' => $_GET['category'] ?? '',
+                'includeInactive' => true,
+            ]);
+            json_out(['products' => $products, 'branch_id' => $branchId]);
+        }
+        if ($method === 'POST') {
+            $body = read_json_body();
+            if (empty($body['branch_id']) || !is_array($body['items'] ?? null)) {
+                json_out(['error' => 'branch_id and items are required'], 400);
+            }
+            $result = mysql_commit_stock_opening($pdo, $body);
+            json_out($result);
+        }
+    }
+
     if ($route === 'customers') {
         if ($method === 'GET') {
             $branchId = parse_opt_int($_GET['branchId'] ?? null);

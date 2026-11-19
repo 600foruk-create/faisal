@@ -31,6 +31,12 @@ interface PosContextValue {
   closeInventoryModal: () => void;
   inventoryRefreshNonce: number;
   triggerInventoryRefresh: () => void;
+  isStockOpeningModalOpen: boolean;
+  setIsStockOpeningModalOpen: (open: boolean) => void;
+  openStockOpeningModal: () => void;
+  closeStockOpeningModal: () => void;
+  stockOpeningRefreshNonce: number;
+  triggerStockOpeningRefresh: () => void;
   selectedProductIdForPos: number | null;
   setSelectedProductIdForPos: (id: number | null) => void;
   setActiveBranchId: (branchId: number | null) => void;
@@ -72,6 +78,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const [isInventoryModalOpen, setIsInventoryModalOpen] = useState(false);
   const [selectedProductIdForPos, setSelectedProductIdForPos] = useState<number | null>(null);
   const [inventoryRefreshNonce, setInventoryRefreshNonce] = useState(0);
+  const [isStockOpeningModalOpen, setIsStockOpeningModalOpen] = useState(false);
+  const [stockOpeningRefreshNonce, setStockOpeningRefreshNonce] = useState(0);
 
   const openPosSale = useCallback(() => setIsPosModalOpen(true), []);
   const closePosSale = useCallback(() => setIsPosModalOpen(false), []);
@@ -81,6 +89,9 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const openInventoryModal = useCallback(() => setIsInventoryModalOpen(true), []);
   const closeInventoryModal = useCallback(() => setIsInventoryModalOpen(false), []);
   const triggerInventoryRefresh = useCallback(() => setInventoryRefreshNonce((n) => n + 1), []);
+  const openStockOpeningModal = useCallback(() => setIsStockOpeningModalOpen(true), []);
+  const closeStockOpeningModal = useCallback(() => setIsStockOpeningModalOpen(false), []);
+  const triggerStockOpeningRefresh = useCallback(() => setStockOpeningRefreshNonce((n) => n + 1), []);
 
   const refreshHeldCount = useCallback(async () => {
     try {
@@ -196,6 +207,12 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         closeInventoryModal,
         inventoryRefreshNonce,
         triggerInventoryRefresh,
+        isStockOpeningModalOpen,
+        setIsStockOpeningModalOpen,
+        openStockOpeningModal,
+        closeStockOpeningModal,
+        stockOpeningRefreshNonce,
+        triggerStockOpeningRefresh,
         selectedProductIdForPos,
         setSelectedProductIdForPos,
         setActiveBranchId,

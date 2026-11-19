@@ -76,7 +76,7 @@ const ADMIN_SUBHEADER_MENUS: DropdownGroup[] = [
     items: [
       { label: 'Customers', action: 'open_customers_modal', icon: Users },
       { label: 'Chart Of Inventory', action: 'open_inventory_modal', icon: Package },
-      { label: 'Inventory Opening Balances', href: '/settings?tab=stock_opening', icon: Boxes },
+      { label: 'Inventory Opening Balances', action: 'open_stock_opening_modal', icon: Boxes },
       { label: 'Item Price Settings', href: '/settings?tab=pricing', icon: Tag },
       { label: 'Item Sales Tax Rates', href: '/settings?tab=tax_rates', icon: Percent },
     ],
@@ -104,6 +104,7 @@ export function PosHeader() {
     triggerRefresh,
     openCustomerModal,
     openInventoryModal,
+    openStockOpeningModal,
   } = usePosContext();
 
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -263,6 +264,22 @@ export function PosHeader() {
                             onClick={() => {
                               setOpenMenu(null);
                               openInventoryModal();
+                            }}
+                            className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700"
+                          >
+                            <Icon className="h-3.5 w-3.5 text-emerald-600" />
+                            <span>{item.label}</span>
+                          </button>
+                        );
+                      }
+                      if (item.action === 'open_stock_opening_modal') {
+                        return (
+                          <button
+                            key={item.label}
+                            type="button"
+                            onClick={() => {
+                              setOpenMenu(null);
+                              openStockOpeningModal();
                             }}
                             className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700"
                           >

@@ -593,6 +593,52 @@ function mysql_delete_product(PDO $pdo, int $id): bool
     return true;
 }
 
+function mysql_commit_stock_opening(PDO $pdo, array $payload): array
+{
+    $branchId = (int)($payload['branch_id'] ?? 1);
+    $items = (array)($payload['items'] ?? []);
+
+    $isSqlite = is_sqlite_pdo($pdo);
+    $invSql = $isSqlite
+        ? 'INSERT INTO branch_inventory (branch_id, product_id, stock_qty)
+           VALUES (?, ?, ?)
+           ON CONFLICT(branch_id, product_id) DO UPDATE SET stock_qty = excluded.stock_qty'
+        : 'INSERT INTO branch_inventory (branch_id, product_id, stock_qty)
+           VALUES (?, ?, ?)
+           ON DUPLICATE KEY UPDATE stock_qty = VALUES(stock_qty)';
+
+    $invStmt = $pdo->prepare($invSql);
+    $costStmt = $pdo->prepare('UPDATE products SET cost_price = ? WHERE id = ?');
+    $updatedCount = 0;
+
+    $pdo->beginTransaction();
+    try {
+        foreach ($items as $item) {
+            $productId = (int)($item['product_id'] ?? 0);
+            if ($productId <= 0) continue;
+            $stockQty = (float)($item['stock_qty'] ?? 0);
+            $invStmt->execute([$branchId, $productId, $stockQty]);
+
+            if (isset($item['cost_price']) && is_numeric($item['cost_price']) && (float)$item['cost_price'] >= 0) {
+                $costStmt->execute([(float)$item['cost_price'], $productId]);
+            }
+            $updatedCount++;
+        }
+        $pdo->commit();
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $e;
+    }
+
+    return [
+        'success' => true,
+        'branch_id' => $branchId,
+        'updated_count' => $updatedCount,
+    ];
+}
+
 function mysql_get_customers(PDO $pdo, ?int $branchId = null): array
 {
     if ($branchId) {

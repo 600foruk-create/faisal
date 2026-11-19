@@ -79,6 +79,25 @@ export interface ProductWithStock {
   is_active: number;
 }
 
+export interface StockOpeningItemInput {
+  product_id: number;
+  stock_qty: number;
+  cost_price?: number;
+}
+
+export interface StockOpeningBatchInput {
+  branch_id: number;
+  as_of_date?: string;
+  notes?: string;
+  items: StockOpeningItemInput[];
+}
+
+export interface StockOpeningCommitResult {
+  success: boolean;
+  branch_id: number;
+  updated_count: number;
+}
+
 export interface Customer {
   id: number;
   branch_id: number | null;

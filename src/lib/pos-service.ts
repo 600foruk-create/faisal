@@ -21,6 +21,8 @@ import type {
   PaymentMode,
   PosTerminal,
   ProductWithStock,
+  StockOpeningBatchInput,
+  StockOpeningCommitResult,
   UserRole,
   UserSummary,
 } from './types.ts';
@@ -375,6 +377,42 @@ export function deleteProduct(db: DatabaseSync, id: number): boolean {
     db.prepare('DELETE FROM branch_inventory WHERE product_id = ?').run(id);
     db.prepare('DELETE FROM products WHERE id = ?').run(id);
     return true;
+  });
+}
+
+export function commitStockOpeningBalances(
+  db: DatabaseSync,
+  payload: StockOpeningBatchInput
+): StockOpeningCommitResult {
+  return withTransaction(db, () => {
+    const invStmt = db.prepare(`
+      INSERT INTO branch_inventory (branch_id, product_id, stock_qty)
+      VALUES (?, ?, ?)
+      ON CONFLICT(branch_id, product_id) DO UPDATE SET stock_qty = excluded.stock_qty
+    `);
+
+    const updateCostStmt = db.prepare(`
+      UPDATE products SET cost_price = ? WHERE id = ?
+    `);
+
+    let updatedCount = 0;
+
+    for (const item of payload.items) {
+      if (!item.product_id) continue;
+      const targetStock = Number(item.stock_qty) || 0;
+      invStmt.run(payload.branch_id, item.product_id, targetStock);
+
+      if (item.cost_price !== undefined && Number(item.cost_price) >= 0) {
+        updateCostStmt.run(Number(item.cost_price), item.product_id);
+      }
+      updatedCount++;
+    }
+
+    return {
+      success: true,
+      branch_id: payload.branch_id,
+      updated_count: updatedCount,
+    };
   });
 }
 

@@ -5,6 +5,7 @@ import { getLocalIsoDate } from '../src/lib/format.ts';
 import {
   authenticateUser,
   clearAllTransactions,
+  commitStockOpeningBalances,
   createCustomer,
   createSale,
   createSalesReturn,
@@ -398,6 +399,45 @@ describe('Multi-Branch POS & FBR Integration Service', () => {
     assert.equal(deleted, true);
     const remaining = getCategories(db);
     assert.equal(remaining.some((c) => c.code === 'TENANT-1'), false);
+  });
+
+  it('commits bulk stock opening balances per branch and updates valuation accurately', () => {
+    const db = createInMemoryDb(true);
+    const branchId = 1;
+
+    // Get current products for Branch 1
+    const beforeProducts = getProducts(db, { branchId, includeInactive: true });
+    assert.ok(beforeProducts.length >= 2);
+
+    const p1 = beforeProducts[0];
+    const p2 = beforeProducts[1];
+
+    // Commit new opening stock balances
+    const result = commitStockOpeningBalances(db, {
+      branch_id: branchId,
+      as_of_date: '2026-11-18',
+      notes: 'Initial fiscal stock float audit',
+      items: [
+        { product_id: p1.id, stock_qty: 350, cost_price: 185.5 },
+        { product_id: p2.id, stock_qty: 120, cost_price: 450.0 },
+      ],
+    });
+
+    assert.equal(result.success, true);
+    assert.equal(result.branch_id, 1);
+    assert.equal(result.updated_count, 2);
+
+    // Verify stock is now set exactly to 350 and 120 in Branch 1
+    const afterProducts = getProducts(db, { branchId, includeInactive: true });
+    const afterP1 = afterProducts.find((p) => p.id === p1.id);
+    const afterP2 = afterProducts.find((p) => p.id === p2.id);
+
+    assert.ok(afterP1);
+    assert.ok(afterP2);
+    assert.equal(afterP1.stock_qty, 350);
+    assert.equal(afterP1.cost_price, 185.5);
+    assert.equal(afterP2.stock_qty, 120);
+    assert.equal(afterP2.cost_price, 450.0);
   });
 });
 
