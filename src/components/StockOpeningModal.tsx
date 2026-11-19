@@ -682,22 +682,22 @@ export function StockOpeningModal() {
             <thead className="bg-[#0e1f3d] text-white text-[11px] font-bold uppercase tracking-wider sticky top-0 z-20 select-none shadow-xs border-b border-slate-700">
               <tr>
                 <th className="py-2.5 px-3 w-10 text-center border-r border-slate-700/80">#</th>
-                <th className="py-2.5 px-3 w-32 border-r border-slate-700/80">Item SKU</th>
-                <th className="py-2.5 px-3 min-w-[280px] border-r border-slate-700/80">
+                <th className="py-2.5 px-3 w-32 text-center border-r border-slate-700/80">Item SKU</th>
+                <th className="py-2.5 px-3 min-w-[280px] text-center border-r border-slate-700/80">
                   Item Description &amp; Specifications
                 </th>
-                <th className="py-2.5 px-3 w-36 border-r border-slate-700/80">Category</th>
+                <th className="py-2.5 px-3 w-36 text-center border-r border-slate-700/80">Category</th>
                 <th className="py-2.5 px-2 w-16 text-center border-r border-slate-700/80">Unit</th>
-                <th className="py-2.5 px-3 w-32 text-right border-r border-slate-700/80 bg-emerald-950/70 text-emerald-300">
+                <th className="py-2.5 px-3 w-32 text-center border-r border-slate-700/80 bg-emerald-950/70 text-emerald-300">
                   Opening Stock *
                 </th>
-                <th className="py-2.5 px-3 w-32 text-right border-r border-slate-700/80">
+                <th className="py-2.5 px-3 w-32 text-center border-r border-slate-700/80">
                   Unit Cost (Rs)
                 </th>
-                <th className="py-2.5 px-3 w-36 text-right border-r border-slate-700/80">
+                <th className="py-2.5 px-3 w-36 text-center border-r border-slate-700/80">
                   Valuation (Rs)
                 </th>
-                <th className="py-2.5 px-3 w-28 text-right border-r border-slate-700/80">
+                <th className="py-2.5 px-3 w-28 text-center border-r border-slate-700/80">
                   Retail Price
                 </th>
                 <th className="py-2.5 px-3 w-24 text-center">Status</th>
@@ -745,12 +745,12 @@ export function StockOpeningModal() {
                       </td>
 
                       {/* SKU */}
-                      <td className="py-1 px-3 font-semibold text-slate-900 border-r border-slate-200 tabular-nums">
+                      <td className="py-1 px-3 text-center font-semibold text-slate-900 border-r border-slate-200 tabular-nums">
                         {row.sku}
                       </td>
 
                       {/* Name & Description */}
-                      <td className="py-1 px-3 text-slate-800 font-medium border-r border-slate-200 truncate max-w-[340px]">
+                      <td className="py-1 px-3 text-left text-slate-800 font-medium border-r border-slate-200 truncate max-w-[340px]">
                         <span title={row.name}>{row.name}</span>
                         {row.barcode && (
                           <span className="block text-[10px] text-slate-400 tabular-nums">
@@ -760,7 +760,7 @@ export function StockOpeningModal() {
                       </td>
 
                       {/* Category */}
-                      <td className="py-1 px-3 text-slate-600 border-r border-slate-200 truncate max-w-[150px]">
+                      <td className="py-1 px-3 text-center text-slate-600 border-r border-slate-200 truncate max-w-[150px]">
                         {row.category}
                       </td>
 
@@ -769,7 +769,7 @@ export function StockOpeningModal() {
                         {row.unit}
                       </td>
 
-                      {/* Seamless Editable Stock Cell (No Chunky Box Inside) */}
+                      {/* Seamless Editable Stock Cell (Centered) */}
                       <td className="p-0 border-r border-slate-200 bg-emerald-50/20 relative focus-within:bg-emerald-100/40">
                         <input
                           ref={(el) => {
@@ -783,11 +783,11 @@ export function StockOpeningModal() {
                           onFocus={(e) => e.target.select()}
                           onKeyDown={(e) => handleKeyDown(e, idx, 'qty')}
                           placeholder="0"
-                          className="h-8.5 w-full bg-transparent px-3 text-right text-xs font-bold text-slate-900 tabular-nums focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-600 focus:bg-white"
+                          className="h-8.5 w-full bg-transparent px-3 text-center text-xs font-bold text-slate-900 tabular-nums focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-600 focus:bg-white"
                         />
                       </td>
 
-                      {/* Seamless Editable Cost Cell (No Chunky Box Inside) */}
+                      {/* Seamless Editable Cost Cell (Centered) */}
                       <td className="p-0 border-r border-slate-200 relative focus-within:bg-slate-100/50">
                         <input
                           ref={(el) => {
@@ -801,17 +801,17 @@ export function StockOpeningModal() {
                           onFocus={(e) => e.target.select()}
                           onKeyDown={(e) => handleKeyDown(e, idx, 'cost')}
                           placeholder="0.00"
-                          className="h-8.5 w-full bg-transparent px-3 text-right text-xs font-semibold text-slate-800 tabular-nums focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-600 focus:bg-white"
+                          className="h-8.5 w-full bg-transparent px-3 text-center text-xs font-semibold text-slate-800 tabular-nums focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-600 focus:bg-white"
                         />
                       </td>
 
-                      {/* Valuation */}
-                      <td className="py-1 px-3 text-right font-bold text-slate-900 border-r border-slate-200 tabular-nums">
+                      {/* Valuation (Centered) */}
+                      <td className="py-1 px-3 text-center font-bold text-slate-900 border-r border-slate-200 tabular-nums">
                         Rs. {rowValuation.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </td>
 
-                      {/* Retail Price */}
-                      <td className="py-1 px-3 text-right text-slate-600 border-r border-slate-200 tabular-nums">
+                      {/* Retail Price (Centered) */}
+                      <td className="py-1 px-3 text-center text-slate-600 border-r border-slate-200 tabular-nums">
                         Rs. {row.sale_price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </td>
 
