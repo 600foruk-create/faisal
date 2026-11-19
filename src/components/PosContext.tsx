@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import type { Branch, BusinessSettings, PosTerminal, UserSummary } from '@/lib/types';
+import type { Branch, BusinessSettings, HeldCartRecord, PosTerminal, UserSummary } from '@/lib/types';
 
 interface PosContextValue {
   branches: Branch[];
@@ -55,6 +55,12 @@ interface PosContextValue {
   closeSalesReturnModal: () => void;
   selectedInvoiceNoForReturn: string | null;
   setSelectedInvoiceNoForReturn: (inv: string | null) => void;
+  isHoldRecallModalOpen: boolean;
+  setIsHoldRecallModalOpen: (open: boolean) => void;
+  openHoldRecallModal: () => void;
+  closeHoldRecallModal: () => void;
+  recalledCartForPos: HeldCartRecord | null;
+  setRecalledCartForPos: (cart: HeldCartRecord | null) => void;
   selectedProductIdForPos: number | null;
   setSelectedProductIdForPos: (id: number | null) => void;
   setActiveBranchId: (branchId: number | null) => void;
@@ -104,6 +110,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const [salesTaxRatesRefreshNonce, setSalesTaxRatesRefreshNonce] = useState(0);
   const [isSalesReturnModalOpen, setIsSalesReturnModalOpen] = useState(false);
   const [selectedInvoiceNoForReturn, setSelectedInvoiceNoForReturn] = useState<string | null>(null);
+  const [isHoldRecallModalOpen, setIsHoldRecallModalOpen] = useState(false);
+  const [recalledCartForPos, setRecalledCartForPos] = useState<HeldCartRecord | null>(null);
 
   const openPosSale = useCallback(() => setIsPosModalOpen(true), []);
   const closePosSale = useCallback(() => setIsPosModalOpen(false), []);
@@ -132,6 +140,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
     setIsSalesReturnModalOpen(false);
     setSelectedInvoiceNoForReturn(null);
   }, []);
+  const openHoldRecallModal = useCallback(() => setIsHoldRecallModalOpen(true), []);
+  const closeHoldRecallModal = useCallback(() => setIsHoldRecallModalOpen(false), []);
 
   const refreshHeldCount = useCallback(async () => {
     try {
@@ -271,6 +281,12 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         closeSalesReturnModal,
         selectedInvoiceNoForReturn,
         setSelectedInvoiceNoForReturn,
+        isHoldRecallModalOpen,
+        setIsHoldRecallModalOpen,
+        openHoldRecallModal,
+        closeHoldRecallModal,
+        recalledCartForPos,
+        setRecalledCartForPos,
         selectedProductIdForPos,
         setSelectedProductIdForPos,
         setActiveBranchId,

@@ -9,7 +9,7 @@ import type { HeldCartRecord } from '@/lib/types';
 
 export default function HoldRecallPage() {
   const router = useRouter();
-  const { activeBranchId, settings, refreshHeldCount, refreshNonce } = usePosContext();
+  const { activeBranchId, settings, refreshHeldCount, refreshNonce, openHoldRecallModal } = usePosContext();
   const [carts, setCarts] = useState<HeldCartRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -61,14 +61,22 @@ export default function HoldRecallPage() {
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <PauseCircle className="h-5 w-5 text-amber-600" />
           <h1 className="text-lg font-bold text-slate-900">Hold / Recall Bills</h1>
+          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900 border border-amber-300">
+            {carts.length} Parked Bills
+          </span>
         </div>
-        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">
-          {carts.length} Parked Bills
-        </span>
+        <button
+          type="button"
+          onClick={() => openHoldRecallModal()}
+          className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 px-4 py-2 text-xs font-bold text-white shadow-md hover:from-amber-700 hover:to-amber-800 cursor-pointer transition"
+        >
+          <PauseCircle className="h-3.5 w-3.5" />
+          <span>Open Desktop ERP Parked Bills Manager</span>
+        </button>
       </div>
 
       {loading ? (

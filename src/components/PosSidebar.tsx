@@ -82,6 +82,8 @@ function PosSidebarInner() {
     isPosModalOpen,
     openSalesReturnModal,
     isSalesReturnModalOpen,
+    openHoldRecallModal,
+    isHoldRecallModalOpen,
   } = usePosContext();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -94,6 +96,9 @@ function PosSidebarInner() {
     if (item.matchPath === '/returns') {
       return isSalesReturnModalOpen || pathname === '/returns';
     }
+    if (item.matchPath === '/hold') {
+      return isHoldRecallModalOpen || pathname === '/hold';
+    }
     if (item.matchPath === '/reports') {
       return pathname.startsWith('/reports') && activeReportTab === (item.matchTab ?? 'branches');
     }
@@ -105,6 +110,7 @@ function PosSidebarInner() {
     const isActive = isItemActive(item);
     const isSale = item.href === '/sale';
     const isReturn = item.href === '/returns';
+    const isHold = item.href === '/hold';
 
     if (isSale) {
       return (
@@ -152,6 +158,44 @@ function PosSidebarInner() {
             }`}
           />
           <span className={collapsed ? 'lg:hidden' : 'flex-1 truncate'}>{item.label}</span>
+        </button>
+      );
+    }
+
+    if (isHold) {
+      return (
+        <button
+          key={item.href}
+          type="button"
+          onClick={() => openHoldRecallModal()}
+          title={collapsed ? item.label : undefined}
+          className={`group flex w-full cursor-pointer items-center justify-between rounded-lg px-2.5 py-1 text-left text-[12.5px] font-semibold transition ${
+            collapsed ? 'lg:justify-center lg:px-2' : ''
+          } ${
+            isActive
+              ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-xs'
+              : 'text-slate-700 hover:bg-slate-100/80 hover:text-slate-900'
+          }`}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <Icon
+              className={`h-3.5 w-3.5 shrink-0 ${
+                isActive ? 'text-white' : 'text-slate-400 group-hover:text-amber-600'
+              }`}
+            />
+            <span className={collapsed ? 'lg:hidden' : 'truncate'}>{item.label}</span>
+          </div>
+          {heldCount > 0 && (
+            <span
+              className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold tabular-nums ${
+                collapsed ? 'lg:hidden' : ''
+              } ${
+                isActive ? 'bg-white text-amber-900' : 'bg-amber-100 text-amber-900 border border-amber-300'
+              }`}
+            >
+              {heldCount}
+            </span>
+          )}
         </button>
       );
     }

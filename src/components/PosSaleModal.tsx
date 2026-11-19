@@ -99,6 +99,8 @@ export function PosSaleModal() {
     inventoryRefreshNonce,
     selectedProductIdForPos,
     setSelectedProductIdForPos,
+    recalledCartForPos,
+    setRecalledCartForPos,
   } = usePosContext();
 
   const router = useRouter();
@@ -235,6 +237,69 @@ export function PosSaleModal() {
       }
     }
   }, [selectedProductIdForPos, products, setSelectedProductIdForPos]);
+
+  useEffect(() => {
+    if (!recalledCartForPos) return;
+    try {
+      const items =
+        (JSON.parse(recalledCartForPos.items_json) as Array<{
+          productId?: number;
+          product_id?: number;
+          sku?: string;
+          name?: string;
+          itemName?: string;
+          unitPrice?: number;
+          unit_price?: number;
+          quantity?: number;
+          discountAmount?: number;
+          discount_amount?: number;
+          taxRate?: number;
+          tax_rate?: number;
+        }>) || [];
+
+      if (items.length > 0) {
+        const newRows: RowItem[] = items.map((it) => {
+          const pid = it.productId ?? it.product_id ?? 0;
+          const matched = products.find((p) => p.id === pid || (it.sku && p.sku === it.sku));
+          const qty = it.quantity ?? 1;
+          const rate = it.unitPrice ?? it.unit_price ?? matched?.sale_price ?? 0;
+          return {
+            id: Math.random().toString(36).slice(2, 9),
+            productId: pid,
+            itemCode: it.sku || matched?.sku || '',
+            hsCode: matched?.hs_code || '3917.2390',
+            description: it.name || it.itemName || matched?.name || '',
+            pieces: qty,
+            qty: qty,
+            unit: matched?.unit || 'Pcs',
+            rate: rate,
+            taxRate: it.taxRate ?? it.tax_rate ?? matched?.tax_rate ?? 18,
+            discountAmount: it.discountAmount ?? it.discount_amount ?? 0,
+          };
+        });
+
+        while (newRows.length < DEFAULT_ROW_COUNT) {
+          newRows.push(createEmptyRow());
+        }
+
+        setRows(newRows);
+        setInvoiceDiscount(recalledCartForPos.discount_total || 0);
+        setNotes(recalledCartForPos.notes || '');
+        setHeldCartId(recalledCartForPos.id);
+        if (recalledCartForPos.customer_id) {
+          setSelectedCustomerId(recalledCartForPos.customer_id);
+        }
+        setMessage({
+          type: 'success',
+          text: `Parked bill ${recalledCartForPos.hold_code} loaded into POS Sale.`,
+        });
+      }
+    } catch {
+      // ignore JSON parse errors
+    } finally {
+      setRecalledCartForPos(null);
+    }
+  }, [recalledCartForPos, products, setRecalledCartForPos]);
 
   useEffect(() => {
     if (contextCustomerId) {
