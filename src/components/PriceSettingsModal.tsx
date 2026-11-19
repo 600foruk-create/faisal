@@ -12,11 +12,13 @@ import {
   Minimize2,
   Minus,
   Package,
+  Percent,
   Printer,
   RefreshCw,
   Search,
   Sparkles,
   Tag,
+  TrendingUp,
   X,
 } from 'lucide-react';
 import { usePosContext } from './PosContext';
@@ -60,8 +62,7 @@ export function PriceSettingsModal() {
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'MODIFIED'>('ALL');
 
-  // Quick Bulk Adjuster Drawer Toggle
-  const [showBulkTool, setShowBulkTool] = useState(false);
+  // Bulk Price Adjuster State
   const [bulkMode, setBulkMode] = useState<'INCREASE_PCT' | 'DECREASE_PCT' | 'TARGET_MARGIN'>('INCREASE_PCT');
   const [bulkValue, setBulkValue] = useState<string>('5');
 
@@ -281,7 +282,7 @@ export function PriceSettingsModal() {
     return count > 0 ? totalMargin / count : 0;
   }, [rows]);
 
-  // Apply Bulk Price Adjustment
+  // Apply Bulk Price Adjustment to currently filtered items
   const handleApplyBulkAdjustment = () => {
     const val = parseFloat(bulkValue);
     if (isNaN(val) || val <= 0) {
@@ -319,8 +320,7 @@ export function PriceSettingsModal() {
       })
     );
 
-    setShowBulkTool(false);
-    showToast(`Applied ${bulkValue}% adjustment across ${filteredRows.length} items.`);
+    showToast(`Applied ${bulkValue}% adjustment across ${filteredRows.length} filtered items.`);
   };
 
   // Save / Commit all prices
@@ -358,7 +358,7 @@ export function PriceSettingsModal() {
       triggerInventoryRefresh();
       triggerRefresh();
       showToast(
-        `Successfully saved prices for ${itemsToCommit.length} products!`
+        `Successfully updated prices for ${itemsToCommit.length} products!`
       );
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error updating prices';
@@ -372,7 +372,7 @@ export function PriceSettingsModal() {
   const handleReset = () => {
     if (
       modifiedCount > 0 &&
-      !window.confirm('Discard all unsaved price edits and reload original database prices?')
+      !window.confirm('Discard all unsaved price adjustments and reset to current prices?')
     ) {
       return;
     }
@@ -385,7 +385,7 @@ export function PriceSettingsModal() {
         is_dirty: false,
       }))
     );
-    showToast('Prices restored to original database values.');
+    showToast('Prices reset to original database values.');
   };
 
   // Export CSV
@@ -397,10 +397,10 @@ export function PriceSettingsModal() {
       'Category',
       'Unit',
       'Cost Price (Rs)',
-      'Retail Price (Rs)',
-      'Wholesale Price (Rs)',
+      'Retail Sale Price (Rs)',
+      'Wholesale Rate (Rs)',
       'Profit Margin (%)',
-      'Profit per Unit (Rs)',
+      'Net Profit (Rs)',
     ];
 
     const csvLines = [headers.join(',')];
@@ -445,7 +445,7 @@ export function PriceSettingsModal() {
     window.print();
   };
 
-  // Global Keyboard shortcuts
+  // Keyboard shortcut Ctrl+S and Escape
   useEffect(() => {
     const handleKeyDownGlobal = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -461,7 +461,7 @@ export function PriceSettingsModal() {
   }, [closePriceSettingsModal, handleSaveAllPrices]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-2 sm:p-4 backdrop-blur-xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-2 sm:p-4 backdrop-blur-xs font-sans">
       {/* WINDOW CONTAINER - Uniform Sizing */}
       <div
         className={`flex flex-col rounded-xl border border-slate-700/80 bg-white shadow-2xl transition-all duration-150 relative ${
@@ -554,144 +554,128 @@ export function PriceSettingsModal() {
         )}
 
         {/* ========================================================= */}
-        {/* 2. SINGLE CLEAN TOOLBAR (Ultra-Simple & Uncluttered)      */}
+        {/* 2. SLIM & CLEAN CONTROL TOOLBAR & BULK ADJUSTER           */}
         {/* ========================================================= */}
-        <div className="shrink-0 border-b border-slate-200 bg-white px-4 py-2 flex flex-wrap items-center justify-between gap-2.5">
-          {/* Left Controls: Branch, Category, Search */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Branch Selector */}
-            <div className="flex items-center gap-1.5">
-              <label className="text-xs font-bold text-slate-700">Branch:</label>
-              <select
-                value={selectedBranchId}
-                onChange={(e) => {
-                  const nextId = parseInt(e.target.value, 10);
-                  if (
-                    modifiedCount > 0 &&
-                    !window.confirm('Discard unsaved price edits and switch branch?')
-                  ) {
-                    return;
-                  }
-                  setSelectedBranchId(nextId);
-                }}
-                className="h-8 rounded-lg border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-900 focus:border-emerald-600 focus:outline-none cursor-pointer"
-              >
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.display_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Category Dropdown */}
-            <div className="flex items-center gap-1.5">
-              <label className="text-xs font-bold text-slate-700">Category:</label>
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="h-8 rounded-lg border border-slate-300 bg-white px-2.5 text-xs font-medium text-slate-800 focus:border-emerald-600 focus:outline-none cursor-pointer"
-              >
-                <option value="ALL">All Categories ({categoriesList.length})</option>
-                {categoriesList.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Search Box */}
-            <div className="relative w-44 sm:w-56">
-              <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search SKU or Name..."
-                className="h-8 w-full rounded-lg border border-slate-300 bg-white pl-8 pr-6 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2 top-2 text-slate-400 hover:text-slate-600"
+        <div className="shrink-0 border-b border-slate-200 bg-white px-4 py-2.5 space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* Left Controls: Branch, Category, Search */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Branch Selector */}
+              <div className="flex items-center gap-1.5">
+                <label className="text-xs font-bold text-slate-700">Branch:</label>
+                <select
+                  value={selectedBranchId}
+                  onChange={(e) => {
+                    const nextId = parseInt(e.target.value, 10);
+                    if (
+                      modifiedCount > 0 &&
+                      !window.confirm('Discard unsaved price edits and switch branch?')
+                    ) {
+                      return;
+                    }
+                    setSelectedBranchId(nextId);
+                  }}
+                  className="h-8 rounded-lg border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-900 focus:border-emerald-600 focus:outline-none cursor-pointer"
                 >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.display_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Category Dropdown */}
+              <div className="flex items-center gap-1.5">
+                <label className="text-xs font-bold text-slate-700">Category:</label>
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="h-8 rounded-lg border border-slate-300 bg-white px-2.5 text-xs font-medium text-slate-800 focus:border-emerald-600 focus:outline-none cursor-pointer"
+                >
+                  <option value="ALL">All Categories ({categoriesList.length})</option>
+                  {categoriesList.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Search Box */}
+              <div className="relative w-48 sm:w-60">
+                <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search SKU or Name..."
+                  className="h-8 w-full rounded-lg border border-slate-300 bg-white pl-8 pr-6 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2 top-2 text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Right Controls: Bulk Adjust Tool Toggle, Filters & Refresh */}
-          <div className="flex items-center gap-2">
-            {/* Quick Bulk Tool Toggle Button */}
-            <button
-              type="button"
-              onClick={() => setShowBulkTool((prev) => !prev)}
-              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold transition border cursor-pointer ${
-                showBulkTool
-                  ? 'bg-emerald-600 text-white border-emerald-700 shadow-2xs'
-                  : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-              }`}
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Bulk Adjust</span>
-            </button>
-
-            {/* Filter Tabs */}
-            <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+            {/* Right Status Tabs & Refresh */}
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => setStatusFilter('ALL')}
-                className={`rounded-md px-2.5 py-0.5 text-xs font-bold transition cursor-pointer ${
+                className={`rounded-md px-2.5 py-1 text-xs font-bold transition cursor-pointer ${
                   statusFilter === 'ALL'
-                    ? 'bg-white text-slate-900 shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-slate-900 text-white'
+                    : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
-                All ({rows.length})
+                All Products ({rows.length})
               </button>
 
               {modifiedCount > 0 && (
                 <button
                   type="button"
                   onClick={() => setStatusFilter('MODIFIED')}
-                  className={`rounded-md px-2.5 py-0.5 text-xs font-bold transition cursor-pointer ${
+                  className={`rounded-md px-2.5 py-1 text-xs font-bold transition cursor-pointer ${
                     statusFilter === 'MODIFIED'
-                      ? 'bg-amber-500 text-slate-950 shadow-2xs'
-                      : 'text-amber-800 font-extrabold'
+                      ? 'bg-amber-500 text-slate-950'
+                      : 'bg-amber-100 text-amber-900 border border-amber-300'
                   }`}
                 >
                   Modified ({modifiedCount})
                 </button>
               )}
+
+              <button
+                type="button"
+                onClick={() => void loadBranchProducts(selectedBranchId)}
+                title="Reload Products"
+                disabled={loading}
+                className="ml-1 flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 hover:text-emerald-700 cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin text-emerald-600' : ''}`} />
+              </button>
             </div>
-
-            <button
-              type="button"
-              onClick={() => void loadBranchProducts(selectedBranchId)}
-              title="Reload Products"
-              disabled={loading}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 hover:text-emerald-700 cursor-pointer disabled:opacity-50"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin text-emerald-600' : ''}`} />
-            </button>
           </div>
-        </div>
 
-        {/* Collapsible Clean Bulk Tool Bar (Only shows when user clicks 'Bulk Adjust') */}
-        {showBulkTool && (
-          <div className="shrink-0 border-b border-emerald-200 bg-emerald-50/60 px-4 py-2 flex flex-wrap items-center justify-between gap-2.5 animate-fade-in text-xs">
+          {/* Quick Bulk Price Adjuster Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-slate-100 text-xs">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-bold text-emerald-950">
-                Bulk Price Adjustment:
+              <span className="font-bold text-slate-700 flex items-center gap-1">
+                <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
+                <span>Bulk Price Adjuster:</span>
               </span>
 
               <select
                 value={bulkMode}
                 onChange={(e) => setBulkMode(e.target.value as typeof bulkMode)}
-                className="h-7.5 rounded-lg border border-emerald-300 bg-white px-2 text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer"
+                className="h-7.5 rounded-lg border border-slate-300 bg-white px-2 text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer"
               >
                 <option value="INCREASE_PCT">Increase Retail Prices by %</option>
                 <option value="DECREASE_PCT">Decrease Retail Prices by %</option>
@@ -705,36 +689,34 @@ export function PriceSettingsModal() {
                   value={bulkValue}
                   onChange={(e) => setBulkValue(e.target.value)}
                   placeholder="5"
-                  className="h-7.5 w-16 rounded-lg border border-emerald-300 bg-white px-2 text-center text-xs font-bold text-slate-900 tabular-nums focus:border-emerald-600 focus:outline-none"
+                  className="h-7.5 w-16 rounded-lg border border-slate-300 bg-white px-2 text-center text-xs font-bold text-slate-900 tabular-nums focus:border-emerald-600 focus:outline-none"
                 />
-                <span className="font-bold text-emerald-800">%</span>
+                <span className="font-bold text-slate-500">%</span>
               </div>
 
               <button
                 type="button"
                 onClick={handleApplyBulkAdjustment}
-                className="rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1 text-xs font-bold shadow-2xs cursor-pointer transition"
+                className="rounded-lg bg-slate-900 hover:bg-slate-800 text-white px-3 py-1 text-xs font-bold shadow-2xs cursor-pointer transition"
               >
                 Apply to Filtered Items ({filteredRows.length})
               </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setShowBulkTool(false)}
-              className="text-xs font-semibold text-slate-500 hover:text-slate-800"
-            >
-              Cancel
-            </button>
+            {modifiedCount > 0 && (
+              <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-300 px-2.5 py-0.5 rounded-md">
+                {modifiedCount} items pending save
+              </span>
+            )}
           </div>
-        )}
+        </div>
 
         {/* ========================================================= */}
         {/* 3. PURE SPREADSHEET TABLE (Dead Center Headers & Cells)   */}
         {/* ========================================================= */}
         <div className="flex-1 overflow-auto bg-white">
           <table className="w-full text-left border-collapse text-xs">
-            {/* Table Header - DEAD CENTER & NO ASTERISKS */}
+            {/* Table Header - DEAD CENTER */}
             <thead className="bg-[#0e1f3d] text-white text-[11px] font-bold uppercase tracking-wider sticky top-0 z-20 select-none shadow-xs border-b border-slate-700">
               <tr>
                 <th className="py-2.5 px-3 w-10 text-center border-r border-slate-700/80">#</th>
@@ -751,10 +733,13 @@ export function PriceSettingsModal() {
                   Retail Sale Price (Rs)
                 </th>
                 <th className="py-2.5 px-3 w-32 text-center border-r border-slate-700/80">
-                  Wholesale Price (Rs)
+                  Wholesale Rate (Rs)
                 </th>
-                <th className="py-2.5 px-3 w-32 text-center">
+                <th className="py-2.5 px-3 w-28 text-center border-r border-slate-700/80">
                   Profit Margin
+                </th>
+                <th className="py-2.5 px-3 w-28 text-center">
+                  Net Profit (Rs)
                 </th>
               </tr>
             </thead>
@@ -763,14 +748,14 @@ export function PriceSettingsModal() {
             <tbody className="divide-y divide-slate-200">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="py-16 text-center text-slate-500 font-semibold">
+                  <td colSpan={10} className="py-16 text-center text-slate-500 font-semibold">
                     <RefreshCw className="h-6 w-6 animate-spin text-emerald-600 mx-auto mb-2" />
                     Loading price records...
                   </td>
                 </tr>
               ) : filteredRows.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-16 text-center text-slate-500">
+                  <td colSpan={10} className="py-16 text-center text-slate-500">
                     <Package className="h-8 w-8 text-slate-300 mx-auto mb-2" />
                     <p className="font-bold text-slate-700">No products found</p>
                     <p className="text-xs text-slate-400">
@@ -788,7 +773,7 @@ export function PriceSettingsModal() {
                   return (
                     <tr
                       key={row.id}
-                      className={`h-9 transition-colors border-b border-slate-200 hover:bg-sky-50/50 ${
+                      className={`h-8.5 transition-colors border-b border-slate-200 hover:bg-sky-50/50 ${
                         isRowDirty
                           ? 'bg-amber-50/60 border-l-4 border-l-amber-500'
                           : idx % 2 === 0
@@ -840,11 +825,11 @@ export function PriceSettingsModal() {
                           onFocus={(e) => e.target.select()}
                           onKeyDown={(e) => handleKeyDown(e, idx, 'cost')}
                           placeholder="0.00"
-                          className="h-9 w-full bg-transparent px-3 text-center text-xs font-semibold text-slate-700 tabular-nums focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-600 focus:bg-white"
+                          className="h-8.5 w-full bg-transparent px-3 text-center text-xs font-semibold text-slate-700 tabular-nums focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-600 focus:bg-white"
                         />
                       </td>
 
-                      {/* Seamless Editable Retail Sale Price (Centered, Highlighted) */}
+                      {/* Seamless Editable Retail Sale Price (Centered, Primary) */}
                       <td className="p-0 border-r border-slate-200 bg-emerald-50/20 relative focus-within:bg-emerald-100/40">
                         <input
                           ref={(el) => {
@@ -858,7 +843,7 @@ export function PriceSettingsModal() {
                           onFocus={(e) => e.target.select()}
                           onKeyDown={(e) => handleKeyDown(e, idx, 'sale')}
                           placeholder="0.00"
-                          className="h-9 w-full bg-transparent px-3 text-center text-xs font-bold text-slate-950 tabular-nums focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-600 focus:bg-white"
+                          className="h-8.5 w-full bg-transparent px-3 text-center text-xs font-bold text-slate-950 tabular-nums focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-600 focus:bg-white"
                         />
                       </td>
 
@@ -876,30 +861,30 @@ export function PriceSettingsModal() {
                           onFocus={(e) => e.target.select()}
                           onKeyDown={(e) => handleKeyDown(e, idx, 'wholesale')}
                           placeholder="0.00"
-                          className="h-9 w-full bg-transparent px-3 text-center text-xs font-semibold text-slate-800 tabular-nums focus:outline-none focus:ring-2 focus:ring-inset focus:ring-teal-600 focus:bg-white"
+                          className="h-8.5 w-full bg-transparent px-3 text-center text-xs font-semibold text-slate-800 tabular-nums focus:outline-none focus:ring-2 focus:ring-inset focus:ring-teal-600 focus:bg-white"
                         />
                       </td>
 
-                      {/* Profit Margin (Centered - Clean Percentage & Net Gain) */}
-                      <td className="py-1 px-3 text-center">
-                        <div className="inline-flex items-center gap-1.5">
-                          {marginPct > 0 ? (
-                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800 tabular-nums">
-                              +{marginPct.toFixed(1)}%
-                            </span>
-                          ) : marginPct === 0 ? (
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 tabular-nums">
-                              0.0%
-                            </span>
-                          ) : (
-                            <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-bold text-rose-700 tabular-nums">
-                              {marginPct.toFixed(1)}%
-                            </span>
-                          )}
-                          <span className="text-[11px] font-medium text-slate-500 tabular-nums">
-                            (+Rs. {netProfit.toFixed(0)})
+                      {/* Profit Margin (%) Badge (Centered) */}
+                      <td className="py-1 px-3 text-center border-r border-slate-200">
+                        {marginPct > 0 ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800 tabular-nums">
+                            +{marginPct.toFixed(1)}%
                           </span>
-                        </div>
+                        ) : marginPct === 0 ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 tabular-nums">
+                            0.0%
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-bold text-rose-700 tabular-nums">
+                            {marginPct.toFixed(1)}%
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Net Profit (Rs) (Centered) */}
+                      <td className="py-1 px-3 text-center font-bold text-slate-900 tabular-nums">
+                        Rs. {netProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </td>
                     </tr>
                   );
@@ -910,7 +895,7 @@ export function PriceSettingsModal() {
         </div>
 
         {/* ========================================================= */}
-        {/* 4. CLEAN FLAT ACTION FOOTER                               */}
+        {/* 4. CLEAN FLAT ACTION FOOTER (Integrated Summary)          */}
         {/* ========================================================= */}
         <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 px-4 py-2.5">
           {/* Left Actions: Export, Print, Reset */}
@@ -921,7 +906,7 @@ export function PriceSettingsModal() {
               className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-indigo-700 shadow-2xs cursor-pointer"
             >
               <Download className="h-3.5 w-3.5 text-indigo-600" />
-              <span>Export CSV</span>
+              <span>Export Price List</span>
             </button>
 
             <button
