@@ -23,6 +23,7 @@ import { InventoryBalanceModal } from './InventoryBalanceModal';
 import { CompanyProfileModal } from './CompanyProfileModal';
 import { BranchesCountersModal } from './BranchesCountersModal';
 import { UserLoginsModal } from './UserLoginsModal';
+import { UserRightsModal } from './UserRightsModal';
 
 export function PosLayoutShell({ children }: { children: React.ReactNode }) {
   const {
@@ -43,6 +44,7 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
     isCompanyModalOpen,
     isBranchesCountersModalOpen,
     isUserLoginsModalOpen,
+    isUserRightsModalOpen,
   } = usePosContext();
 
   return (
@@ -114,6 +116,9 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
 
       {/* FLOATING USER LOGINS & MULTI-TENANT CASHIER DIRECTORY MODAL */}
       {isUserLoginsModalOpen && <UserLoginsModal />}
+
+      {/* FLOATING USER RIGHTS & PERMISSIONS MATRIX MODAL */}
+      {isUserRightsModalOpen && <UserRightsModal />}
     </div>
   );
 }

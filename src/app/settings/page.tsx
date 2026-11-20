@@ -109,7 +109,7 @@ function SettingsContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab') as SettingsTab | null;
 
-  const { branches, terminals, users, settings, activeUser, reloadContext, refreshNonce, openCompanyModal, openBranchesCountersModal, openUserLoginsModal } =
+  const { branches, terminals, users, settings, activeUser, reloadContext, refreshNonce, openCompanyModal, openBranchesCountersModal, openUserLoginsModal, openUserRightsModal } =
     usePosContext();
 
   const [tab, setTab] = useState<SettingsTab>('business');
@@ -1221,13 +1221,23 @@ function SettingsContent() {
       {tab === 'rights' && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-7">
-            <h2 className="mb-3 text-sm font-bold text-slate-900">
-              Role Rights &amp; Access Permissions
-            </h2>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-3">
+              <h2 className="text-sm font-bold text-slate-900">
+                Role Rights &amp; Access Permissions
+              </h2>
+              <button
+                type="button"
+                onClick={() => openUserRightsModal()}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:from-emerald-700 hover:to-teal-800 transition"
+              >
+                <ShieldCheck className="h-3.5 w-3.5" />
+                <span>Open Desktop ERP User Rights Window</span>
+              </button>
+            </div>
             <table className="w-full border-collapse text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">
-                  <th className="px-3 py-2.5">POS Module / Permission</th>
+                  <th className="px-3 py-2.5 text-center">POS Module / Permission</th>
                   <th className="px-3 py-2.5 text-center">ADMIN</th>
                   <th className="px-3 py-2.5 text-center">MANAGER</th>
                   <th className="px-3 py-2.5 text-center">CASHIER</th>
