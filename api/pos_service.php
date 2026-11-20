@@ -153,6 +153,10 @@ function mysql_get_business_settings(PDO $pdo): array
         'footer_text' => $map['footer_text'] ?? 'Designed & Developed by Softifyx Technologies',
         'ntn' => $map['ntn'] ?? '',
         'strn' => $map['strn'] ?? '',
+        'phone' => $map['phone'] ?? '0945-822140',
+        'email' => $map['email'] ?? 'info@seastone.pk',
+        'address' => $map['address'] ?? 'Industrial Estate, Timergara, Lower Dir, KP',
+        'owner_name' => $map['owner_name'] ?? 'Faisal (Owner)',
         'default_tax_rate' => (float)($map['default_tax_rate'] ?? 18),
         'default_opening_cash' => (float)($map['default_opening_cash'] ?? 5000),
         'receipt_footer' => $map['receipt_footer'] ?? '',
@@ -169,6 +173,10 @@ function mysql_update_business_settings(PDO $pdo, array $updates): array
         'footer_text',
         'ntn',
         'strn',
+        'phone',
+        'email',
+        'address',
+        'owner_name',
         'default_tax_rate',
         'default_opening_cash',
         'receipt_footer',
@@ -193,6 +201,117 @@ function mysql_update_business_settings(PDO $pdo, array $updates): array
         throw $e;
     }
     return mysql_get_business_settings($pdo);
+}
+
+function mysql_get_companies(PDO $pdo): array
+{
+    try {
+        $pdo->exec(
+            'CREATE TABLE IF NOT EXISTS companies (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                company_code VARCHAR(50) NOT NULL UNIQUE,
+                business_name VARCHAR(150) NOT NULL,
+                owner_name VARCHAR(100) NOT NULL DEFAULT "",
+                ntn VARCHAR(50) NOT NULL DEFAULT "",
+                strn VARCHAR(50) NOT NULL DEFAULT "",
+                phone VARCHAR(50) NOT NULL DEFAULT "",
+                email VARCHAR(100) NOT NULL DEFAULT "",
+                address VARCHAR(255) NOT NULL DEFAULT "",
+                currency_symbol VARCHAR(20) NOT NULL DEFAULT "Rs.",
+                default_tax_rate DECIMAL(5,2) NOT NULL DEFAULT 18.00,
+                is_active TINYINT(1) NOT NULL DEFAULT 1,
+                created_at DATETIME NOT NULL
+            )'
+        );
+        $count = (int)$pdo->query('SELECT COUNT(*) FROM companies')->fetchColumn();
+        if ($count === 0) {
+            $now = date('Y-m-d H:i:s');
+            $s = mysql_get_business_settings($pdo);
+            $ins = $pdo->prepare(
+                'INSERT INTO companies (id, company_code, business_name, owner_name, ntn, strn, phone, email, address, currency_symbol, default_tax_rate, is_active, created_at)
+                 VALUES (1, "SEASTONE", ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)'
+            );
+            $ins->execute([
+                $s['business_name'],
+                $s['owner_name'],
+                $s['ntn'],
+                $s['strn'],
+                $s['phone'],
+                $s['email'],
+                $s['address'],
+                $s['currency_symbol'],
+                $s['default_tax_rate'],
+                $now,
+            ]);
+        }
+        $branchCount = (int)$pdo->query('SELECT COUNT(*) FROM branches WHERE is_active = 1')->fetchColumn();
+        $rows = $pdo->query('SELECT * FROM companies ORDER BY id ASC')->fetchAll();
+        return array_map(function ($r) use ($branchCount) {
+            $r['id'] = (int)$r['id'];
+            $r['default_tax_rate'] = (float)$r['default_tax_rate'];
+            $r['is_active'] = (int)$r['is_active'];
+            $r['branch_count'] = $branchCount;
+            return $r;
+        }, $rows);
+    } catch (Throwable $e) {
+        $s = mysql_get_business_settings($pdo);
+        return [
+            [
+                'id' => 1,
+                'company_code' => 'SEASTONE',
+                'business_name' => $s['business_name'],
+                'owner_name' => $s['owner_name'],
+                'ntn' => $s['ntn'],
+                'strn' => $s['strn'],
+                'phone' => $s['phone'],
+                'email' => $s['email'],
+                'address' => $s['address'],
+                'currency_symbol' => $s['currency_symbol'],
+                'default_tax_rate' => $s['default_tax_rate'],
+                'branch_count' => 2,
+                'is_active' => 1,
+            ],
+        ];
+    }
+}
+
+function mysql_save_company(PDO $pdo, array $input): array
+{
+    mysql_get_companies($pdo); // ensures table exists
+    $code = trim((string)($input['company_code'] ?? ''));
+    $name = trim((string)($input['business_name'] ?? ''));
+    if ($code === '' || $name === '') {
+        throw new InvalidArgumentException('Company code and business name are required');
+    }
+    $id = !empty($input['id']) ? (int)$input['id'] : null;
+    $owner = trim((string)($input['owner_name'] ?? ''));
+    $ntn = trim((string)($input['ntn'] ?? ''));
+    $strn = trim((string)($input['strn'] ?? ''));
+    $phone = trim((string)($input['phone'] ?? ''));
+    $email = trim((string)($input['email'] ?? ''));
+    $addr = trim((string)($input['address'] ?? ''));
+    $curr = trim((string)($input['currency_symbol'] ?? 'Rs.'));
+    $tax = (float)($input['default_tax_rate'] ?? 18);
+
+    if ($id) {
+        $stmt = $pdo->prepare(
+            'UPDATE companies SET company_code = ?, business_name = ?, owner_name = ?, ntn = ?, strn = ?,
+             phone = ?, email = ?, address = ?, currency_symbol = ?, default_tax_rate = ? WHERE id = ?'
+        );
+        $stmt->execute([$code, $name, $owner, $ntn, $strn, $phone, $email, $addr, $curr, $tax, $id]);
+    } else {
+        $now = date('Y-m-d H:i:s');
+        $stmt = $pdo->prepare(
+            'INSERT INTO companies (company_code, business_name, owner_name, ntn, strn, phone, email, address, currency_symbol, default_tax_rate, is_active, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)'
+        );
+        $stmt->execute([$code, $name, $owner, $ntn, $strn, $phone, $email, $addr, $curr, $tax, $now]);
+    }
+    $all = mysql_get_companies($pdo);
+    foreach ($all as $c) {
+        if ($c['company_code'] === $code) return $c;
+    }
+    return $all[0];
 }
 
 function mysql_get_users(PDO $pdo): array

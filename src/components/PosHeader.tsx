@@ -33,6 +33,7 @@ type MenuAction =
   | 'about_software'
   | 'about_license'
   | 'about_contact'
+  | 'open_company_modal'
   | 'open_customers_modal'
   | 'open_inventory_modal'
   | 'open_stock_opening_modal'
@@ -61,7 +62,7 @@ const ADMIN_SUBHEADER_MENUS: DropdownGroup[] = [
     label: 'Administrator',
     adminOnly: true,
     items: [
-      { label: 'My Company', href: '/settings?tab=business', icon: Building2 },
+      { label: 'My Company', action: 'open_company_modal', icon: Building2 },
       { label: 'My Logo', href: '/settings?tab=logo', icon: ImagePlus },
       { label: 'Branches & Counters', href: '/settings?tab=branches', icon: Store },
       { label: 'User Logins', href: '/settings?tab=users', icon: UserCheck },
@@ -110,6 +111,7 @@ export function PosHeader() {
     openStockOpeningModal,
     openPriceSettingsModal,
     openSalesTaxRatesModal,
+    openCompanyModal,
   } = usePosContext();
 
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -239,6 +241,22 @@ export function PosHeader() {
                             type="button"
                             onClick={() => void handleDownloadBackup()}
                             className="flex w-full cursor-pointer items-center gap-2.5 border-t border-slate-100 px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700"
+                          >
+                            <Icon className="h-3.5 w-3.5 text-emerald-600" />
+                            <span>{item.label}</span>
+                          </button>
+                        );
+                      }
+                      if (item.action === 'open_company_modal') {
+                        return (
+                          <button
+                            key={item.label}
+                            type="button"
+                            onClick={() => {
+                              setOpenMenu(null);
+                              openCompanyModal();
+                            }}
+                            className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700"
                           >
                             <Icon className="h-3.5 w-3.5 text-emerald-600" />
                             <span>{item.label}</span>

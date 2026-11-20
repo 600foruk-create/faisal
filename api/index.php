@@ -355,6 +355,7 @@ try {
                 'branches' => $bt['branches'],
                 'terminals' => $bt['terminals'],
                 'users' => mysql_get_users($pdo),
+                'companies' => mysql_get_companies($pdo),
             ]);
         }
         if ($method === 'POST') {
@@ -363,6 +364,12 @@ try {
             $data = is_array($body['data'] ?? null) ? $body['data'] : [];
             if ($action === 'business') {
                 json_out(['settings' => mysql_update_business_settings($pdo, $data)]);
+            }
+            if ($action === 'company') {
+                json_out([
+                    'company' => mysql_save_company($pdo, $data),
+                    'companies' => mysql_get_companies($pdo),
+                ]);
             }
             if ($action === 'branch_terminal') {
                 json_out(mysql_save_branch_and_terminal($pdo, $data));

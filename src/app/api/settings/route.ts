@@ -7,12 +7,14 @@ import {
   exportSystemBackup,
   getBranchesWithTerminals,
   getBusinessSettings,
+  getCompanies,
   getUsers,
   saveBranchAndTerminal,
+  saveCompanyTenant,
   updateBusinessSettings,
   updateUser,
 } from '../../../lib/pos-service.ts';
-import type { BusinessSettings, FbrMode, UserRole } from '../../../lib/types.ts';
+import type { BusinessSettings, CompanyTenant, FbrMode, UserRole } from '../../../lib/types.ts';
 
 export async function GET(req: NextRequest) {
   try {
@@ -23,7 +25,8 @@ export async function GET(req: NextRequest) {
     const { branches, terminals } = getBranchesWithTerminals(db);
     const settings = getBusinessSettings(db);
     const users = getUsers(db);
-    return jsonOk({ settings, branches, terminals, users });
+    const companies = getCompanies(db);
+    return jsonOk({ settings, branches, terminals, users, companies });
   } catch (err) {
     return jsonError(err, 500);
   }
@@ -33,6 +36,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as
       | { action: 'business'; data: Partial<BusinessSettings> }
+      | { action: 'company'; data: Parameters<typeof saveCompanyTenant>[1] }
       | {
           action: 'branch_terminal';
           data: {
@@ -76,6 +80,10 @@ export async function POST(req: NextRequest) {
     if (body.action === 'business') {
       const settings = updateBusinessSettings(db, body.data);
       return jsonOk({ settings });
+    }
+    if (body.action === 'company') {
+      const company = saveCompanyTenant(db, body.data);
+      return jsonOk({ company, companies: getCompanies(db) });
     }
     if (body.action === 'branch_terminal') {
       const res = saveBranchAndTerminal(db, body.data);

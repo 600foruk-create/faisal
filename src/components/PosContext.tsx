@@ -1,18 +1,23 @@
 'use client';
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import type { Branch, BusinessSettings, HeldCartRecord, PosTerminal, UserSummary } from '@/lib/types';
+import type { Branch, BusinessSettings, CompanyTenant, HeldCartRecord, PosTerminal, UserSummary } from '@/lib/types';
 
 interface PosContextValue {
   branches: Branch[];
   terminals: PosTerminal[];
   users: UserSummary[];
+  companies: CompanyTenant[];
   settings: BusinessSettings;
   activeBranchId: number | null;
   activeUser: UserSummary | null;
   heldCount: number;
   loading: boolean;
   refreshNonce: number;
+  isCompanyModalOpen: boolean;
+  setIsCompanyModalOpen: (open: boolean) => void;
+  openCompanyModal: () => void;
+  closeCompanyModal: () => void;
   isPosModalOpen: boolean;
   setIsPosModalOpen: (open: boolean) => void;
   openPosSale: () => void;
@@ -113,12 +118,14 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [terminals, setTerminals] = useState<PosTerminal[]>([]);
   const [users, setUsers] = useState<UserSummary[]>([]);
+  const [companies, setCompanies] = useState<CompanyTenant[]>([]);
   const [settings, setSettings] = useState<BusinessSettings>(DEFAULT_SETTINGS);
   const [activeBranchId, setActiveBranchIdState] = useState<number | null>(null);
   const [activeUser, setActiveUserState] = useState<UserSummary | null>(null);
   const [heldCount, setHeldCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshNonce, setRefreshNonce] = useState(0);
+  const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
   const [isPosModalOpen, setIsPosModalOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
@@ -184,6 +191,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const closeGstTaxSummaryModal = useCallback(() => setIsGstTaxSummaryModalOpen(false), []);
   const openInventoryBalanceModal = useCallback(() => setIsInventoryBalanceModalOpen(true), []);
   const closeInventoryBalanceModal = useCallback(() => setIsInventoryBalanceModalOpen(false), []);
+  const openCompanyModal = useCallback(() => setIsCompanyModalOpen(true), []);
+  const closeCompanyModal = useCallback(() => setIsCompanyModalOpen(false), []);
 
   const refreshHeldCount = useCallback(async () => {
     try {
@@ -199,7 +208,14 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
 
   const reloadContext = useCallback(async () => {
     try {
-      const res = await fetch('/api/context');
+      const [res, settRes] = await Promise.all([
+        fetch('/api/context'),
+        fetch('/api/settings'),
+      ]);
+      if (settRes.ok) {
+        const sData = (await settRes.json()) as { companies?: CompanyTenant[] };
+        if (sData.companies) setCompanies(sData.companies);
+      }
       if (!res.ok) return;
       const data = (await res.json()) as {
         branches?: Branch[];
@@ -353,6 +369,11 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         setIsInventoryBalanceModalOpen,
         openInventoryBalanceModal,
         closeInventoryBalanceModal,
+        companies,
+        isCompanyModalOpen,
+        setIsCompanyModalOpen,
+        openCompanyModal,
+        closeCompanyModal,
         selectedProductIdForPos,
         setSelectedProductIdForPos,
         setActiveBranchId,

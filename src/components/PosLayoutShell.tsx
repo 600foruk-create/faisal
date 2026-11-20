@@ -20,6 +20,7 @@ import { SaleSummaryModal } from './SaleSummaryModal';
 import { TopProductsModal } from './TopProductsModal';
 import { GstTaxSummaryModal } from './GstTaxSummaryModal';
 import { InventoryBalanceModal } from './InventoryBalanceModal';
+import { CompanyProfileModal } from './CompanyProfileModal';
 
 export function PosLayoutShell({ children }: { children: React.ReactNode }) {
   const {
@@ -37,6 +38,7 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
     isTopProductsModalOpen,
     isGstTaxSummaryModalOpen,
     isInventoryBalanceModalOpen,
+    isCompanyModalOpen,
   } = usePosContext();
 
   return (
@@ -99,6 +101,9 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
 
       {/* FLOATING INVENTORY BALANCE & MULTI-TENANT STOCK VALUATION MODAL */}
       {isInventoryBalanceModalOpen && <InventoryBalanceModal />}
+
+      {/* FLOATING MY COMPANY & MULTI-TENANT ORGANIZATION MANAGER MODAL */}
+      {isCompanyModalOpen && <CompanyProfileModal />}
     </div>
   );
 }

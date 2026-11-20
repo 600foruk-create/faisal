@@ -6,6 +6,7 @@ import { getLocalIsoDate, getLocalIsoDateTime, roundMoney } from './format.ts';
 import type {
   Branch,
   BusinessSettings,
+  CompanyTenant,
   Customer,
   DashboardSummary,
   DayClosingPreview,
@@ -55,11 +56,140 @@ export function getBusinessSettings(db: DatabaseSync): BusinessSettings {
     footer_text: map.get('footer_text') ?? 'Designed & Developed by Softifyx Technologies',
     ntn: map.get('ntn') ?? '',
     strn: map.get('strn') ?? '',
+    phone: map.get('phone') ?? '0945-822140',
+    email: map.get('email') ?? 'info@seastone.pk',
+    address: map.get('address') ?? 'Industrial Estate, Timergara, Lower Dir, KP',
+    owner_name: map.get('owner_name') ?? 'Faisal (Owner)',
     default_tax_rate: Number(map.get('default_tax_rate') ?? '18') || 18,
     default_opening_cash: Number(map.get('default_opening_cash') ?? '5000') || 0,
     receipt_footer: map.get('receipt_footer') ?? '',
     currency_symbol: map.get('currency_symbol') ?? 'Rs.',
   };
+}
+
+export function getCompanies(db: DatabaseSync): CompanyTenant[] {
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS companies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        company_code TEXT NOT NULL UNIQUE,
+        business_name TEXT NOT NULL,
+        owner_name TEXT NOT NULL DEFAULT '',
+        ntn TEXT NOT NULL DEFAULT '',
+        strn TEXT NOT NULL DEFAULT '',
+        phone TEXT NOT NULL DEFAULT '',
+        email TEXT NOT NULL DEFAULT '',
+        address TEXT NOT NULL DEFAULT '',
+        currency_symbol TEXT NOT NULL DEFAULT 'Rs.',
+        default_tax_rate REAL NOT NULL DEFAULT 18,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL
+      );
+    `);
+    const countRow = db.prepare('SELECT COUNT(*) as cnt FROM companies').get() as { cnt: number };
+    if (!countRow || countRow.cnt === 0) {
+      const now = getLocalIsoDateTime();
+      const s = getBusinessSettings(db);
+      db.prepare(`
+        INSERT INTO companies (id, company_code, business_name, owner_name, ntn, strn, phone, email, address, currency_symbol, default_tax_rate, is_active, created_at)
+        VALUES (1, 'SEASTONE', ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+      `).run(
+        s.business_name,
+        s.owner_name || 'Faisal (Owner)',
+        s.ntn,
+        s.strn,
+        s.phone || '0945-822140',
+        s.email || 'info@seastone.pk',
+        s.address || 'Industrial Estate, Timergara, Lower Dir, KP',
+        s.currency_symbol || 'Rs.',
+        s.default_tax_rate || 18,
+        now
+      );
+    }
+    const branchCount = (db.prepare('SELECT COUNT(*) as c FROM branches WHERE is_active = 1').get() as { c: number }).c;
+    const rows = db.prepare('SELECT * FROM companies ORDER BY id ASC').all() as unknown as Array<CompanyTenant & { id: number }>;
+    return rows.map((r) => ({
+      ...r,
+      branch_count: branchCount,
+    }));
+  } catch {
+    const s = getBusinessSettings(db);
+    return [
+      {
+        id: 1,
+        company_code: 'SEASTONE',
+        business_name: s.business_name,
+        owner_name: s.owner_name || 'Faisal (Owner)',
+        ntn: s.ntn,
+        strn: s.strn,
+        phone: s.phone || '0945-822140',
+        email: s.email || 'info@seastone.pk',
+        address: s.address || 'Industrial Estate, Timergara, Lower Dir, KP',
+        currency_symbol: s.currency_symbol,
+        default_tax_rate: s.default_tax_rate,
+        branch_count: 2,
+        is_active: 1,
+      },
+    ];
+  }
+}
+
+export function saveCompanyTenant(
+  db: DatabaseSync,
+  input: {
+    id?: number;
+    company_code: string;
+    business_name: string;
+    owner_name?: string;
+    ntn?: string;
+    strn?: string;
+    phone?: string;
+    email?: string;
+    address?: string;
+    currency_symbol?: string;
+    default_tax_rate?: number;
+  }
+): CompanyTenant {
+  const now = getLocalIsoDateTime();
+  getCompanies(db); // ensures table exists
+  if (input.id) {
+    db.prepare(`
+      UPDATE companies
+      SET company_code = ?, business_name = ?, owner_name = ?, ntn = ?, strn = ?,
+          phone = ?, email = ?, address = ?, currency_symbol = ?, default_tax_rate = ?
+      WHERE id = ?
+    `).run(
+      input.company_code.trim(),
+      input.business_name.trim(),
+      (input.owner_name ?? '').trim(),
+      (input.ntn ?? '').trim(),
+      (input.strn ?? '').trim(),
+      (input.phone ?? '').trim(),
+      (input.email ?? '').trim(),
+      (input.address ?? '').trim(),
+      input.currency_symbol?.trim() || 'Rs.',
+      Number(input.default_tax_rate ?? 18) || 18,
+      input.id
+    );
+  } else {
+    db.prepare(`
+      INSERT INTO companies (company_code, business_name, owner_name, ntn, strn, phone, email, address, currency_symbol, default_tax_rate, is_active, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+    `).run(
+      input.company_code.trim(),
+      input.business_name.trim(),
+      (input.owner_name ?? '').trim(),
+      (input.ntn ?? '').trim(),
+      (input.strn ?? '').trim(),
+      (input.phone ?? '').trim(),
+      (input.email ?? '').trim(),
+      (input.address ?? '').trim(),
+      input.currency_symbol?.trim() || 'Rs.',
+      Number(input.default_tax_rate ?? 18) || 18,
+      now
+    );
+  }
+  return getCompanies(db).find((c) => c.company_code === input.company_code.trim()) || getCompanies(db)[0];
 }
 
 export function updateBusinessSettings(

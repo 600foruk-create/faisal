@@ -1,4 +1,4 @@
-export type UserRole = 'ADMIN' | 'MANAGER' | 'CASHIER';
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'CASHIER';
 
 export type FbrMode = 'MOCK' | 'SANDBOX' | 'PRODUCTION';
 
@@ -236,10 +236,31 @@ export interface BusinessSettings {
   footer_text: string;
   ntn: string;
   strn: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  owner_name?: string;
   default_tax_rate: number;
   default_opening_cash: number;
   receipt_footer: string;
   currency_symbol: string;
+}
+
+export interface CompanyTenant {
+  id: number;
+  company_code: string;
+  business_name: string;
+  owner_name?: string;
+  ntn?: string;
+  strn?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  currency_symbol: string;
+  default_tax_rate: number;
+  branch_count: number;
+  is_active: number;
+  created_at?: string;
 }
 
 export interface HeldCartRecord {
