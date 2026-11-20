@@ -562,16 +562,17 @@ export function UserRightsModal() {
   const [isMinimized, setIsMinimized] = useState(false);
   const [viewMode, setViewMode] = useState<'rights' | 'matrix'>('rights');
 
-  // Company Filter (Default: SEASTONE)
+  // Filter 1: Company Selector (Default: SEASTONE)
   const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>('SEASTONE');
-  const [staffSearch, setStaffSearch] = useState('');
-  const [matrixSearch, setMatrixSearch] = useState('');
 
-  // Selected User for Rights Configuration
+  // Filter 2: Selected User / Staff Member
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+
+  // Custom Permissions State for Selected User
   const [customPermissions, setCustomPermissions] = useState<Record<string, boolean>>({});
   const [selectedUserRole, setSelectedUserRole] = useState<UserRole>('CASHIER');
   const [savingRights, setSavingRights] = useState(false);
+  const [matrixSearch, setMatrixSearch] = useState('');
 
   // Toast State
   const [toastMessage, setToastMessage] = useState<{
@@ -595,64 +596,47 @@ export function UserRightsModal() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [closeUserRightsModal]);
 
-  // Staff list filtered by Company
-  const companyStaff = useMemo(() => {
+  // Filter 2 User Options: Strictly filtered by selected Company
+  const companyUsers = useMemo(() => {
     return users.filter((u) => {
       const isSuper = isSuperAdminUser(u);
 
-      // Super Admin (Faisal) is always present across all companies
+      // Super Admin (Faisal) is available across all companies
       if (isSuper) return true;
 
-      // Filter other staff by company
-      if (selectedCompanyCode !== 'ALL') {
-        const comp = tenantCompanies.find(
-          (c) => c.company_code.toLowerCase() === selectedCompanyCode.toLowerCase()
-        );
-        const compName = (comp?.business_name || '').toLowerCase();
-        const codeLower = selectedCompanyCode.toLowerCase();
-        const bName = (u.branch_name || '').toLowerCase();
+      if (selectedCompanyCode === 'ALL') return true;
 
-        const matchesBranch =
-          bName.includes(codeLower) || (compName && bName.includes(compName));
-        const isPrimarySeastone =
-          codeLower === 'seastone' &&
-          (bName.includes('timergara') ||
-            bName.includes('mingora') ||
-            bName.includes('retail') ||
-            !u.branch_id);
+      const comp = tenantCompanies.find(
+        (c) => c.company_code.toLowerCase() === selectedCompanyCode.toLowerCase()
+      );
+      const compName = (comp?.business_name || '').toLowerCase();
+      const codeLower = selectedCompanyCode.toLowerCase();
+      const bName = (u.branch_name || '').toLowerCase();
 
-        if (!matchesBranch && !isPrimarySeastone) {
-          return false;
-        }
-      }
+      const matchesBranch =
+        bName.includes(codeLower) || (compName && bName.includes(compName));
+      const isPrimarySeastone =
+        codeLower === 'seastone' &&
+        (bName.includes('timergara') ||
+          bName.includes('mingora') ||
+          bName.includes('retail') ||
+          !u.branch_id);
 
-      // Search filter
-      if (staffSearch.trim()) {
-        const q = staffSearch.toLowerCase().trim();
-        const matchName = u.full_name.toLowerCase().includes(q);
-        const matchUser = u.username.toLowerCase().includes(q);
-        const matchRole = u.role.toLowerCase().includes(q);
-        const matchBranch = u.branch_name && u.branch_name.toLowerCase().includes(q);
-        if (!matchName && !matchUser && !matchRole && !matchBranch) {
-          return false;
-        }
-      }
-
-      return true;
+      return matchesBranch || isPrimarySeastone;
     });
-  }, [users, selectedCompanyCode, staffSearch, tenantCompanies]);
+  }, [users, selectedCompanyCode, tenantCompanies]);
 
-  // Initial user selection: auto-select first staff member or Faisal
+  // Keep selected user valid whenever company filter changes
   useEffect(() => {
-    if (companyStaff.length > 0) {
-      const exists = companyStaff.some((u) => u.id === selectedUserId);
+    if (companyUsers.length > 0) {
+      const exists = companyUsers.some((u) => u.id === selectedUserId);
       if (!exists) {
         // Prefer first staff member (e.g. Bilal Khan) so user immediately sees customizable rights
-        const nonSuper = companyStaff.find((u) => !isSuperAdminUser(u));
-        setSelectedUserId(nonSuper ? nonSuper.id : companyStaff[0].id);
+        const nonSuper = companyUsers.find((u) => !isSuperAdminUser(u));
+        setSelectedUserId(nonSuper ? nonSuper.id : companyUsers[0].id);
       }
     }
-  }, [companyStaff, selectedUserId]);
+  }, [companyUsers, selectedUserId]);
 
   const selectedUserObj = useMemo(() => {
     return users.find((u) => u.id === selectedUserId);
@@ -871,7 +855,7 @@ export function UserRightsModal() {
             : 'h-[95vh] max-h-[920px] w-full max-w-6xl'
         }`}
       >
-        {/* Midnight Navy Header */}
+        {/* Executive Midnight Navy Header */}
         <div className="flex select-none items-center justify-between border-b border-slate-800 bg-gradient-to-r from-[#0a1829] via-[#0f243e] to-[#0a1829] px-5 py-3.5 text-white rounded-t-2xl shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20 ring-1 ring-emerald-400/30">
@@ -887,7 +871,7 @@ export function UserRightsModal() {
                 </span>
               </div>
               <p className="text-xs text-slate-300">
-                Configure customized operational rights for staff across companies and physical branches
+                Grant or revoke operational module permissions per staff member across companies
               </p>
             </div>
           </div>
@@ -905,7 +889,7 @@ export function UserRightsModal() {
                 }`}
               >
                 <Users className="h-3.5 w-3.5" />
-                <span>Configure Staff Rights</span>
+                <span>Configure Rights</span>
               </button>
               <button
                 type="button"
@@ -955,7 +939,7 @@ export function UserRightsModal() {
           </div>
         </div>
 
-        {/* Toast Alert */}
+        {/* Floating Toast Notification */}
         {toastMessage && (
           <div
             className={`mx-5 mt-2.5 flex items-center justify-between rounded-xl px-4 py-2 text-xs font-semibold shadow-md transition-all shrink-0 ${
@@ -982,67 +966,130 @@ export function UserRightsModal() {
           </div>
         )}
 
-        {/* Main Content Area */}
+        {/* Main Workspace */}
         {viewMode === 'rights' ? (
           <div className="flex flex-1 flex-col overflow-hidden">
-            {/* Top Toolbar: Company Filter & Quick Actions */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50/80 px-5 py-3 shrink-0">
-              {/* Company Selector */}
-              <div className="flex items-center gap-2.5">
-                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+            {/* Top Section: The 2 Linked Dropdown Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-slate-200 bg-slate-50/95 p-4 shrink-0 shadow-2xs">
+              {/* Filter 1: Company Selector */}
+              <div>
+                <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
                   <Building2 className="h-4 w-4 text-emerald-600" />
-                  Select Company:
-                </span>
+                  1. Select Company:
+                </label>
                 <select
                   value={selectedCompanyCode}
                   onChange={(e) => setSelectedCompanyCode(e.target.value)}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-xs transition hover:border-emerald-500 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-800 shadow-2xs transition hover:border-emerald-500 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
                 >
                   <option value="SEASTONE">
-                    M/S SEASTONE PVC PIPE INDUSTRY (SEASTONE)
+                    🏢 M/S SEASTONE PVC PIPE INDUSTRY (SEASTONE)
                   </option>
                   {tenantCompanies
                     .filter((c) => c.company_code !== 'SEASTONE')
                     .map((c) => (
                       <option key={c.id} value={c.company_code}>
-                        {c.business_name} ({c.company_code})
+                        🏢 {c.business_name} ({c.company_code})
                       </option>
                     ))}
                   <option value="ALL">🏢 All Companies (Global Directory)</option>
                 </select>
               </div>
 
-              {/* Action Toolbar on Right */}
+              {/* Filter 2: User Selector (Strictly filtered by Company above) */}
+              <div>
+                <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
+                  <Users className="h-4 w-4 text-emerald-600" />
+                  2. Select Staff Member / User:
+                </label>
+                <select
+                  value={selectedUserId ?? ''}
+                  onChange={(e) => setSelectedUserId(Number(e.target.value))}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-800 shadow-2xs transition hover:border-emerald-500 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                >
+                  {companyUsers.map((u) => {
+                    const isSuper = isSuperAdminUser(u);
+                    return (
+                      <option key={u.id} value={u.id}>
+                        {isSuper ? '👑' : '👤'} {u.full_name} (@{u.username}) — Role: {u.role} — Branch: {u.branch_name || 'All Outlets (HQ)'}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            </div>
+
+            {/* Action Bar: User Details, Presets & Prominent Save Button */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-5 py-3 shrink-0 shadow-2xs">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Configuring Rights For:
+                  </span>
+                  <h3 className="text-sm font-extrabold text-slate-900">
+                    {selectedUserObj?.full_name}
+                  </h3>
+                  <span className="text-xs font-semibold text-slate-500">
+                    (@{selectedUserObj?.username})
+                  </span>
+                  {isSelectedUserSuper ? (
+                    <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-[10px] font-bold text-purple-800 ring-1 ring-purple-300">
+                      Super Admin
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 ring-1 ring-emerald-300">
+                      {selectedUserRole}
+                    </span>
+                  )}
+                </div>
+
+                {!isSelectedUserSuper && (
+                  <div className="hidden sm:flex items-center gap-1.5 pl-3 border-l border-slate-200">
+                    <span className="text-xs font-bold text-slate-600">Base Role:</span>
+                    <select
+                      value={selectedUserRole}
+                      onChange={(e) => setSelectedUserRole(e.target.value as UserRole)}
+                      className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-800 shadow-2xs"
+                    >
+                      <option value="CASHIER">CASHIER (Front Desk)</option>
+                      <option value="MANAGER">MANAGER (Store Incharge)</option>
+                      <option value="ADMIN">ADMIN (Company Admin)</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons: Super Admin Status or Staff Save & Presets */}
               <div className="flex items-center gap-2">
                 {isSelectedUserSuper ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-purple-200 bg-purple-50 px-3.5 py-1.5 text-xs font-bold text-purple-700">
-                    <Shield className="h-4 w-4 text-purple-600" />
-                    Super Admin Rights Are Permanently Active
+                  <span className="inline-flex items-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50 px-4 py-2 text-xs font-bold text-purple-700 shadow-2xs">
+                    <ShieldCheck className="h-4 w-4 text-purple-600" />
+                    Super Admin Rights Are 100% Permanently Active
                   </span>
                 ) : (
                   <>
-                    <div className="flex items-center gap-1.5 text-xs">
-                      <span className="text-slate-500 font-semibold">Presets:</span>
+                    <div className="hidden md:flex items-center gap-1.5 text-xs mr-2">
+                      <span className="text-slate-400 font-semibold">Presets:</span>
                       <button
                         type="button"
                         onClick={handleGrantAll}
-                        className="cursor-pointer rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-emerald-700 transition"
+                        className="cursor-pointer rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-emerald-700 transition shadow-2xs"
                       >
                         Grant All
                       </button>
                       <button
                         type="button"
                         onClick={handleBillingOnly}
-                        className="cursor-pointer rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-emerald-700 transition"
+                        className="cursor-pointer rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-emerald-700 transition shadow-2xs"
                       >
                         Billing Only
                       </button>
                       <button
                         type="button"
                         onClick={handleResetDefault}
-                        className="cursor-pointer rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-emerald-700 transition"
+                        className="cursor-pointer rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-emerald-700 transition shadow-2xs"
                       >
-                        Reset Role
+                        Reset Default
                       </button>
                     </div>
 
@@ -1050,17 +1097,17 @@ export function UserRightsModal() {
                       type="button"
                       onClick={handleSaveUserRights}
                       disabled={savingRights}
-                      className="flex cursor-pointer items-center gap-2 rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 active:scale-98 transition disabled:opacity-50"
+                      className="flex cursor-pointer items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 active:scale-98 transition disabled:opacity-50"
                     >
                       {savingRights ? (
                         <>
-                          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                          <span>Saving...</span>
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                          <span>Saving Rights...</span>
                         </>
                       ) : (
                         <>
-                          <Save className="h-3.5 w-3.5" />
-                          <span>Save Rights</span>
+                          <Save className="h-4 w-4" />
+                          <span>Save Rights for {selectedUserObj?.full_name?.split(' ')[0] || 'User'}</span>
                         </>
                       )}
                     </button>
@@ -1069,308 +1116,158 @@ export function UserRightsModal() {
               </div>
             </div>
 
-            {/* Workspace: Left Staff List & Right Unified Table */}
-            <div className="flex flex-1 overflow-hidden">
-              {/* Left Column: Staff Directory */}
-              <div className="w-80 border-r border-slate-200 bg-slate-50/50 flex flex-col shrink-0">
-                {/* Search Header */}
-                <div className="p-3 border-b border-slate-200 bg-white">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Company Staff ({companyStaff.length})
-                    </span>
-                    <span className="text-[11px] font-semibold text-slate-400">
-                      Click to Select
-                    </span>
-                  </div>
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Search staff name..."
-                      value={staffSearch}
-                      onChange={(e) => setStaffSearch(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 bg-slate-50 py-1.5 pl-8 pr-3 text-xs text-slate-800 placeholder-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Staff Cards List */}
-                <div className="flex-1 overflow-y-auto p-2.5 space-y-2">
-                  {companyStaff.map((u) => {
-                    const isSuper = isSuperAdminUser(u);
-                    const isSelected = u.id === selectedUserId;
-
-                    return (
-                      <button
-                        key={u.id}
-                        type="button"
-                        onClick={() => setSelectedUserId(u.id)}
-                        className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer ${
-                          isSelected
-                            ? 'border-emerald-500 bg-emerald-50/70 shadow-xs ring-1 ring-emerald-400'
-                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              {isSuper ? (
-                                <Shield className="h-4 w-4 text-purple-600 shrink-0" />
-                              ) : (
-                                <Users className="h-4 w-4 text-slate-500 shrink-0" />
-                              )}
-                              <h4 className="text-xs font-bold text-slate-900 truncate">
-                                {u.full_name}
-                              </h4>
-                            </div>
-                            <p className="text-[11px] text-slate-500 mt-0.5 truncate">
-                              @{u.username} • {u.branch_name || 'All Company Outlets'}
-                            </p>
-                          </div>
-                          <div>
-                            {isSuper ? (
-                              <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-800">
-                                Super Admin
-                              </span>
-                            ) : (
-                              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">
-                                {u.role}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="mt-2 flex items-center justify-between text-[11px] border-t border-slate-100 pt-1.5">
-                          <span className="text-slate-500">Access:</span>
-                          <span
-                            className={`font-bold ${
-                              isSuper ? 'text-purple-700' : 'text-emerald-700'
-                            }`}
-                          >
-                            {isSuper ? 'Permanent 100%' : 'Customizable'}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-
-                  {companyStaff.length === 0 && (
-                    <div className="p-4 text-center text-xs text-slate-500">
-                      No staff members match the selected filter.
-                    </div>
-                  )}
+            {/* Super Admin Informative Banner */}
+            {isSelectedUserSuper && (
+              <div className="m-4 mb-1 flex items-center gap-3 rounded-xl border border-purple-200 bg-purple-50/80 p-3 text-xs text-purple-900 shrink-0">
+                <ShieldCheck className="h-5 w-5 text-purple-700 shrink-0" />
+                <div>
+                  <p className="font-bold">
+                    Super Admin (Faisal) Possesses Permanent Full Rights
+                  </p>
+                  <p className="text-purple-700 text-[11px]">
+                    As Platform Super Admin, all 21 capabilities are permanently active with NO option to turn OFF. Other staff members can be individually configured and toggled.
+                  </p>
                 </div>
               </div>
+            )}
 
-              {/* Right Column: Unified Permissions Workspace */}
-              <div className="flex-1 flex flex-col overflow-hidden bg-white">
-                {/* Active Staff Summary Bar */}
-                {selectedUserObj && (
-                  <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-3 flex items-center justify-between shrink-0">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                          Configuring Rights For:
-                        </span>
-                        <h3 className="text-sm font-extrabold text-slate-900">
-                          {selectedUserObj.full_name}
-                        </h3>
-                        <span className="text-xs font-semibold text-slate-500">
-                          (@{selectedUserObj.username})
-                        </span>
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                          {selectedUserRole}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        Branch: {selectedUserObj.branch_name || 'All Company Outlets (Headquarters)'}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      {/* Role Modifier Dropdown for regular staff */}
-                      {!isSelectedUserSuper && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-slate-600">Base Role:</span>
-                          <select
-                            value={selectedUserRole}
-                            onChange={(e) => setSelectedUserRole(e.target.value as UserRole)}
-                            className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-800"
-                          >
-                            <option value="CASHIER">CASHIER (Front Desk)</option>
-                            <option value="MANAGER">MANAGER (Store Incharge)</option>
-                            <option value="ADMIN">ADMIN (Company Admin)</option>
-                          </select>
-                        </div>
-                      )}
-
-                      <div className="rounded-xl border border-slate-200 bg-white px-3 py-1 text-center shadow-2xs">
-                        <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                          Granted Modules
-                        </span>
-                        <span className="text-xs font-extrabold text-slate-800 tabular-nums">
-                          {grantedCount} / 21
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Informative Notice for Super Admin */}
-                {isSelectedUserSuper && (
-                  <div className="m-4 mb-2 flex items-center gap-3 rounded-xl border border-purple-200 bg-purple-50/80 p-3.5 text-xs text-purple-900">
-                    <ShieldCheck className="h-5 w-5 text-purple-700 shrink-0" />
-                    <div>
-                      <p className="font-bold">
-                        Super Admin (Faisal) Possesses Permanent Full Rights
-                      </p>
-                      <p className="text-purple-700 text-[11px]">
-                        As Platform Super Admin, all 21 capabilities are permanently active with NO option to turn OFF. Regular staff below can be individually toggled.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Single Unified Capabilities Table */}
-                <div className="flex-1 overflow-y-auto px-5 py-3">
-                  <div className="rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
-                    <table className="w-full border-collapse text-left">
-                      <thead>
-                        <tr className="border-b border-slate-300 bg-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-700 select-none">
-                          <th className="py-2.5 px-3 text-center w-14">Sr #</th>
-                          <th className="py-2.5 px-4 text-center">Module / Capability</th>
-                          <th className="py-2.5 px-3 text-center w-40">Category</th>
-                          <th className="py-2.5 px-3 text-center w-28">Status</th>
-                          <th className="py-2.5 px-4 text-center w-40">Action</th>
+            {/* Single Full-Width Unified Capabilities Table */}
+            <div className="flex-1 overflow-y-auto px-5 py-3">
+              <div className="rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
+                <table className="w-full border-collapse text-left">
+                  <thead>
+                    <tr className="border-b border-slate-300 bg-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-700 select-none">
+                      <th className="py-2.5 px-3 text-center w-14">Sr #</th>
+                      <th className="py-2.5 px-4 text-center">Module / Capability</th>
+                      <th className="py-2.5 px-3 text-center w-40">Category</th>
+                      <th className="py-2.5 px-3 text-center w-28">Status</th>
+                      <th className="py-2.5 px-4 text-center w-44">Action / Switch</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 text-xs">
+                    {categorizedPermissions.map((cat, catIdx) => (
+                      <React.Fragment key={cat.id}>
+                        {/* Category Section Header Divider */}
+                        <tr className="bg-slate-50 border-t border-b border-slate-200">
+                          <td colSpan={5} className="py-2 px-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-700">
+                                  {catIdx + 1}
+                                </span>
+                                <span className="font-bold text-slate-800 text-xs">
+                                  {cat.title}
+                                </span>
+                              </div>
+                              <span className="text-[11px] text-slate-500">
+                                {cat.items.length} Modules
+                              </span>
+                            </div>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200 text-xs">
-                        {categorizedPermissions.map((cat, catIdx) => (
-                          <React.Fragment key={cat.id}>
-                            {/* Category Section Header Divider */}
-                            <tr className="bg-slate-50 border-t border-b border-slate-200">
-                              <td colSpan={5} className="py-2 px-4">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-700">
-                                      {catIdx + 1}
-                                    </span>
-                                    <span className="font-bold text-slate-800 text-xs">
-                                      {cat.title}
-                                    </span>
-                                  </div>
-                                  <span className="text-[11px] text-slate-500">
-                                    {cat.items.length} Modules
-                                  </span>
+
+                        {/* Category Module Rows */}
+                        {cat.items.map((def) => {
+                          const overallSr =
+                            ALL_PERMISSION_DEFINITIONS.findIndex(
+                              (d) => d.key === def.key
+                            ) + 1;
+                          const isGranted = isSelectedUserSuper
+                            ? true
+                            : Boolean(customPermissions[def.key]);
+                          const isSuperReserved = Boolean(def.superAdminOnly);
+
+                          return (
+                            <tr
+                              key={def.key}
+                              className={`transition-colors ${
+                                isGranted ? 'bg-white hover:bg-slate-50/80' : 'bg-slate-50/40 hover:bg-slate-100/50'
+                              }`}
+                            >
+                              {/* Sr # */}
+                              <td className="py-3 px-3 text-center font-bold text-slate-500 tabular-nums">
+                                {overallSr}
+                              </td>
+
+                              {/* Module Title & Description */}
+                              <td className="py-3 px-4">
+                                <div className="font-bold text-slate-900 text-xs">
+                                  {def.name}
+                                </div>
+                                <div className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                                  {def.description}
                                 </div>
                               </td>
-                            </tr>
 
-                            {/* Category Module Rows */}
-                            {cat.items.map((def, itemIdx) => {
-                              const overallSr =
-                                ALL_PERMISSION_DEFINITIONS.findIndex(
-                                  (d) => d.key === def.key
-                                ) + 1;
-                              const isGranted = isSelectedUserSuper
-                                ? true
-                                : Boolean(customPermissions[def.key]);
-                              const isSuperReserved = Boolean(def.superAdminOnly);
+                              {/* Category Badge */}
+                              <td className="py-3 px-3 text-center">
+                                <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-700 border border-slate-200">
+                                  {def.categoryLabel}
+                                </span>
+                              </td>
 
-                              return (
-                                <tr
-                                  key={def.key}
-                                  className={`transition-colors ${
-                                    isGranted ? 'bg-white hover:bg-slate-50/80' : 'bg-slate-50/40 hover:bg-slate-100/50'
-                                  }`}
-                                >
-                                  {/* Sr # */}
-                                  <td className="py-3 px-3 text-center font-bold text-slate-500 tabular-nums">
-                                    {overallSr}
-                                  </td>
+                              {/* Status Pill */}
+                              <td className="py-3 px-3 text-center">
+                                {isGranted ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
+                                    <Check className="h-3 w-3 text-emerald-600" />
+                                    Granted
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-500 ring-1 ring-slate-200">
+                                    <X className="h-3 w-3 text-slate-400" />
+                                    Restricted
+                                  </span>
+                                )}
+                              </td>
 
-                                  {/* Module Title & Description */}
-                                  <td className="py-3 px-4">
-                                    <div className="font-bold text-slate-900 text-xs">
-                                      {def.name}
-                                    </div>
-                                    <div className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                                      {def.description}
-                                    </div>
-                                  </td>
-
-                                  {/* Category Badge */}
-                                  <td className="py-3 px-3 text-center">
-                                    <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-700 border border-slate-200">
-                                      {def.categoryLabel}
+                              {/* Action Column: Permanent Active for Faisal, Toggles for Staff */}
+                              <td className="py-3 px-4 text-center">
+                                {isSelectedUserSuper ? (
+                                  /* Super Admin has NO right-off option! Permanent Active only */
+                                  <div className="flex items-center justify-center">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-3 py-1 text-xs font-bold text-purple-800 ring-1 ring-purple-300">
+                                      <Shield className="h-3.5 w-3.5 text-purple-600" />
+                                      Permanent Active
                                     </span>
-                                  </td>
-
-                                  {/* Status Pill */}
-                                  <td className="py-3 px-3 text-center">
-                                    {isGranted ? (
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-                                        <Check className="h-3 w-3 text-emerald-600" />
-                                        Granted
-                                      </span>
-                                    ) : (
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-500 ring-1 ring-slate-200">
-                                        <X className="h-3 w-3 text-slate-400" />
-                                        Restricted
-                                      </span>
-                                    )}
-                                  </td>
-
-                                  {/* Action Column: Permanent Active for Faisal, Toggles for Staff */}
-                                  <td className="py-3 px-4 text-center">
-                                    {isSelectedUserSuper ? (
-                                      /* Super Admin has NO right-off option! Permanent Active only */
-                                      <div className="flex items-center justify-center">
-                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-3 py-1 text-xs font-bold text-purple-800 ring-1 ring-purple-300">
-                                          <Shield className="h-3.5 w-3.5 text-purple-600" />
-                                          Permanent Active
-                                        </span>
-                                      </div>
-                                    ) : isSuperReserved ? (
-                                      /* Platform Super Admin Reserved Powers */
-                                      <div className="flex items-center justify-center">
-                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 ring-1 ring-slate-200">
-                                          <Lock className="h-3 w-3 text-slate-500" />
-                                          Faisal Only (Reserved)
-                                        </span>
-                                      </div>
-                                    ) : (
-                                      /* Regular staff interactive green switch */
-                                      <div className="flex items-center justify-center">
-                                        <button
-                                          type="button"
-                                          onClick={() => handleTogglePermission(def.key)}
-                                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${
-                                            isGranted ? 'bg-emerald-600' : 'bg-slate-300'
-                                          }`}
-                                          title={`Click to turn ${
-                                            isGranted ? 'OFF' : 'ON'
-                                          } ${def.name}`}
-                                        >
-                                          <span
-                                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                                              isGranted ? 'translate-x-5.5' : 'translate-x-0.5'
-                                            } mt-0.5`}
-                                          />
-                                        </button>
-                                      </div>
-                                    )}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </React.Fragment>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                                  </div>
+                                ) : isSuperReserved ? (
+                                  /* Platform Super Admin Reserved Powers */
+                                  <div className="flex items-center justify-center">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 ring-1 ring-slate-200">
+                                      <Lock className="h-3 w-3 text-slate-500" />
+                                      Faisal Only (Reserved)
+                                    </span>
+                                  </div>
+                                ) : (
+                                  /* Regular staff interactive green switch */
+                                  <div className="flex items-center justify-center">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleTogglePermission(def.key)}
+                                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${
+                                        isGranted ? 'bg-emerald-600' : 'bg-slate-300'
+                                      }`}
+                                      title={`Click to turn ${
+                                        isGranted ? 'OFF' : 'ON'
+                                      } ${def.name}`}
+                                    >
+                                      <span
+                                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                                          isGranted ? 'translate-x-5.5' : 'translate-x-0.5'
+                                        } mt-0.5`}
+                                      />
+                                    </button>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -1426,33 +1323,33 @@ export function UserRightsModal() {
                         </td>
                         <td className="py-3 px-3 text-center">
                           {row.companyAdmin === 'YES' ? (
-                            <span className="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                            <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
                               YES
                             </span>
                           ) : (
-                            <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                            <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-500">
                               RESTRICTED
                             </span>
                           )}
                         </td>
                         <td className="py-3 px-3 text-center">
                           {row.manager === 'YES' ? (
-                            <span className="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                            <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
                               YES
                             </span>
                           ) : (
-                            <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                            <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-500">
                               RESTRICTED
                             </span>
                           )}
                         </td>
                         <td className="py-3 px-3 text-center">
                           {row.cashier === 'YES' ? (
-                            <span className="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                            <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
                               YES
                             </span>
                           ) : (
-                            <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                            <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-500">
                               RESTRICTED
                             </span>
                           )}
@@ -1469,8 +1366,8 @@ export function UserRightsModal() {
           </div>
         )}
 
-        {/* Executive Modal Footer */}
-        <div className="flex select-none items-center justify-between border-t border-slate-200 bg-slate-50 px-5 py-2.5 text-xs text-slate-500 rounded-b-2xl shrink-0">
+        {/* Executive Modal Footer with Bottom Save Option */}
+        <div className="flex select-none items-center justify-between border-t border-slate-200 bg-slate-50 px-5 py-3 text-xs text-slate-500 rounded-b-2xl shrink-0">
           <div className="flex items-center gap-2">
             <span>Keyboard Shortcut:</span>
             <kbd className="rounded border border-slate-300 bg-white px-2 py-0.5 font-bold text-slate-700 shadow-2xs">
@@ -1478,13 +1375,37 @@ export function UserRightsModal() {
             </kbd>
             <span>closes this window</span>
           </div>
-          <button
-            type="button"
-            onClick={closeUserRightsModal}
-            className="cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-1.5 font-bold text-slate-700 hover:bg-slate-100 transition shadow-2xs"
-          >
-            Close Window
-          </button>
+
+          <div className="flex items-center gap-3">
+            {!isSelectedUserSuper && (
+              <button
+                type="button"
+                onClick={handleSaveUserRights}
+                disabled={savingRights}
+                className="flex cursor-pointer items-center gap-2 rounded-lg bg-emerald-600 px-4 py-1.5 font-bold text-white shadow-xs hover:bg-emerald-700 active:scale-98 transition disabled:opacity-50"
+              >
+                {savingRights ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-3.5 w-3.5" />
+                    <span>Save Rights</span>
+                  </>
+                )}
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={closeUserRightsModal}
+              className="cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-1.5 font-bold text-slate-700 hover:bg-slate-100 transition shadow-2xs"
+            >
+              Close Window
+            </button>
+          </div>
         </div>
       </div>
     </div>
