@@ -206,9 +206,11 @@ export function seedInitialData(db: DatabaseSync): void {
   );
   const adminHash = hashPassword('admin123');
   const cashierHash = hashPassword('1234');
-  const uAdmin = insertUser.run('admin', 'Faisal (Owner / Admin)', adminHash, 'ADMIN', null, nowTs);
+  const uFaisal = insertUser.run('faisal', 'Faisal (Super Admin)', adminHash, 'SUPER_ADMIN', null, nowTs);
+  const uAdmin = insertUser.run('admin', 'Company Admin (Demo Tenant Admin)', adminHash, 'ADMIN', null, nowTs);
   const uTimergara = insertUser.run('cashier.timergara', 'Bilal Khan (Timergara POS)', cashierHash, 'CASHIER', branch1Id, nowTs);
   const uMingora = insertUser.run('cashier.mingora', 'Hamza Ali (Mingora POS)', cashierHash, 'CASHIER', branch2Id, nowTs);
+  const faisalId = Number(uFaisal.lastInsertRowid);
   const adminId = Number(uAdmin.lastInsertRowid);
   const cashier1Id = Number(uTimergara.lastInsertRowid);
   const cashier2Id = Number(uMingora.lastInsertRowid);

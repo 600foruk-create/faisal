@@ -11,6 +11,7 @@ import {
   getUsers,
   saveBranchAndTerminal,
   saveCompanyTenant,
+  saveUserRights,
   updateBusinessSettings,
   updateUser,
 } from '../../../lib/pos-service.ts';
@@ -74,6 +75,7 @@ export async function POST(req: NextRequest) {
             password?: string;
           };
         }
+      | { action: 'save_user_rights'; data: { user_id: number; permissions: Record<string, boolean> } }
       | { action: 'clear_transactions'; data?: { confirm?: string } };
 
     const db = getDb();
@@ -96,6 +98,10 @@ export async function POST(req: NextRequest) {
     if (body.action === 'user_update') {
       const user = updateUser(db, body.data);
       return jsonOk({ user });
+    }
+    if (body.action === 'save_user_rights') {
+      const res = saveUserRights(db, Number(body.data?.user_id), body.data?.permissions ?? {});
+      return jsonOk(res);
     }
     if (body.action === 'clear_transactions') {
       if (body.data?.confirm !== 'CLEAR') {

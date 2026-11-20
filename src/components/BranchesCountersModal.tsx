@@ -63,6 +63,7 @@ export function BranchesCountersModal() {
     if (!activeUser) return true; // Default admin
     return (
       activeUser.role === 'SUPER_ADMIN' ||
+      activeUser.username.toLowerCase() === 'faisal' ||
       activeUser.username.toLowerCase() === 'admin'
     );
   }, [activeUser]);

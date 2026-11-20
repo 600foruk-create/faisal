@@ -103,7 +103,10 @@ function seed_initial_mysql_data(PDO $pdo): void
         $adminHash = password_hash('admin123', PASSWORD_BCRYPT);
         $cashierHash = password_hash('1234', PASSWORD_BCRYPT);
 
-        $stmtUser->execute(['admin', 'Faisal (Owner / Admin)', $adminHash, 'ADMIN', null, $nowTs]);
+        $stmtUser->execute(['faisal', 'Faisal (Super Admin)', $adminHash, 'SUPER_ADMIN', null, $nowTs]);
+        $faisalId = (int)$pdo->lastInsertId();
+
+        $stmtUser->execute(['admin', 'Company Admin (Demo Tenant Admin)', $adminHash, 'ADMIN', null, $nowTs]);
         $adminId = (int)$pdo->lastInsertId();
 
         $stmtUser->execute(['cashier.timergara', 'Bilal Khan (Timergara POS)', $cashierHash, 'CASHIER', $branch1Id, $nowTs]);

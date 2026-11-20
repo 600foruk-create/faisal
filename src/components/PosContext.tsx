@@ -252,13 +252,19 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
       if (data.settings) setSettings(data.settings);
 
       setActiveUserState((prev) => {
-        if (prev) return prev;
+        if (prev) {
+          const refreshed = data.users?.find((u) => u.id === prev.id);
+          if (refreshed) return refreshed;
+          return prev;
+        }
         const savedUserId =
           typeof window !== 'undefined' ? window.localStorage.getItem('pos_user_id') : null;
         if (savedUserId && data.users) {
           const found = data.users.find((u) => u.id === Number(savedUserId));
           if (found) return found;
         }
+        const faisal = data.users?.find((u) => u.username.toLowerCase() === 'faisal');
+        if (faisal) return faisal;
         return data.users?.[0] ?? null;
       });
 

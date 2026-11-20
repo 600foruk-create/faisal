@@ -80,6 +80,7 @@ export function UserLoginsModal() {
     if (!activeUser) return true;
     return (
       activeUser.role === 'SUPER_ADMIN' ||
+      activeUser.username.toLowerCase() === 'faisal' ||
       activeUser.username.toLowerCase() === 'admin'
     );
   }, [activeUser]);

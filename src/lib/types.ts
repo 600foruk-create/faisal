@@ -41,6 +41,7 @@ export interface UserSummary {
   branch_id: number | null;
   branch_name?: string | null;
   is_active: number;
+  permissions?: Record<string, boolean>;
 }
 
 export interface InventoryCategory {

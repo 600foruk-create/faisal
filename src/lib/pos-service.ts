@@ -716,14 +716,62 @@ export function deleteCustomer(db: DatabaseSync, id: number): boolean {
 }
 
 export function getUsers(db: DatabaseSync): UserSummary[] {
-  return db
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_rights (
+      user_id INTEGER PRIMARY KEY REFERENCES users(id),
+      rights_json TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+  `);
+
+  const rows = db
     .prepare(
-      `SELECT u.id, u.username, u.full_name, u.role, u.branch_id, b.display_name AS branch_name, u.is_active
+      `SELECT u.id, u.username, u.full_name, u.role, u.branch_id, b.display_name AS branch_name, u.is_active, r.rights_json
        FROM users u
        LEFT JOIN branches b ON b.id = u.branch_id
+       LEFT JOIN user_rights r ON r.user_id = u.id
        ORDER BY u.id ASC`
     )
-    .all() as unknown as UserSummary[];
+    .all() as unknown as Array<UserSummary & { rights_json?: string | null }>;
+
+  return rows.map((u) => {
+    let permissions: Record<string, boolean> | undefined = undefined;
+    if (u.rights_json) {
+      try {
+        permissions = JSON.parse(u.rights_json);
+      } catch {}
+    }
+    const { rights_json, ...rest } = u;
+    return {
+      ...rest,
+      permissions,
+    };
+  });
+}
+
+export function saveUserRights(
+  db: DatabaseSync,
+  userId: number,
+  permissions: Record<string, boolean>
+): { success: boolean; permissions: Record<string, boolean> } {
+  const now = getLocalIsoDateTime();
+  const jsonStr = JSON.stringify(permissions);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_rights (
+      user_id INTEGER PRIMARY KEY REFERENCES users(id),
+      rights_json TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+  `);
+
+  db.prepare(`
+    INSERT INTO user_rights (user_id, rights_json, updated_at)
+    VALUES (?, ?, ?)
+    ON CONFLICT(user_id) DO UPDATE SET rights_json = excluded.rights_json, updated_at = excluded.updated_at
+  `).run(userId, jsonStr, now);
+
+  return { success: true, permissions };
 }
 
 export function createUser(

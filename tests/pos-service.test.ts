@@ -218,6 +218,10 @@ describe('Multi-Branch POS & FBR Integration Service', () => {
 
   it('authenticates seeded admin and cashier accounts', () => {
     const db = createInMemoryDb(true);
+    const faisal = authenticateUser(db, 'faisal', 'admin123');
+    assert.ok(faisal);
+    assert.equal(faisal.role, 'SUPER_ADMIN');
+
     const admin = authenticateUser(db, 'admin', 'admin123');
     assert.ok(admin);
     assert.equal(admin.role, 'ADMIN');
