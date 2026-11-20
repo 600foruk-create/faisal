@@ -18,6 +18,10 @@ interface PosContextValue {
   setIsCompanyModalOpen: (open: boolean) => void;
   openCompanyModal: () => void;
   closeCompanyModal: () => void;
+  isBranchesCountersModalOpen: boolean;
+  setIsBranchesCountersModalOpen: (open: boolean) => void;
+  openBranchesCountersModal: () => void;
+  closeBranchesCountersModal: () => void;
   isPosModalOpen: boolean;
   setIsPosModalOpen: (open: boolean) => void;
   openPosSale: () => void;
@@ -126,6 +130,7 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [refreshNonce, setRefreshNonce] = useState(0);
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
+  const [isBranchesCountersModalOpen, setIsBranchesCountersModalOpen] = useState(false);
   const [isPosModalOpen, setIsPosModalOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
@@ -193,6 +198,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const closeInventoryBalanceModal = useCallback(() => setIsInventoryBalanceModalOpen(false), []);
   const openCompanyModal = useCallback(() => setIsCompanyModalOpen(true), []);
   const closeCompanyModal = useCallback(() => setIsCompanyModalOpen(false), []);
+  const openBranchesCountersModal = useCallback(() => setIsBranchesCountersModalOpen(true), []);
+  const closeBranchesCountersModal = useCallback(() => setIsBranchesCountersModalOpen(false), []);
 
   const refreshHeldCount = useCallback(async () => {
     try {
@@ -374,6 +381,10 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         setIsCompanyModalOpen,
         openCompanyModal,
         closeCompanyModal,
+        isBranchesCountersModalOpen,
+        setIsBranchesCountersModalOpen,
+        openBranchesCountersModal,
+        closeBranchesCountersModal,
         selectedProductIdForPos,
         setSelectedProductIdForPos,
         setActiveBranchId,
