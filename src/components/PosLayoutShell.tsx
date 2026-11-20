@@ -17,6 +17,7 @@ import { HoldRecallModal } from './HoldRecallModal';
 import { DayClosingModal } from './DayClosingModal';
 import { SalesRegisterModal } from './SalesRegisterModal';
 import { SaleSummaryModal } from './SaleSummaryModal';
+import { TopProductsModal } from './TopProductsModal';
 
 export function PosLayoutShell({ children }: { children: React.ReactNode }) {
   const {
@@ -31,6 +32,7 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
     isDayClosingModalOpen,
     isSalesRegisterModalOpen,
     isSaleSummaryModalOpen,
+    isTopProductsModalOpen,
   } = usePosContext();
 
   return (
@@ -84,6 +86,9 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
 
       {/* FLOATING SALE SUMMARY & REVENUE ANALYTICS MODAL */}
       {isSaleSummaryModalOpen && <SaleSummaryModal />}
+
+      {/* FLOATING TOP PRODUCTS & VELOCITY ANALYTICS MODAL */}
+      {isTopProductsModalOpen && <TopProductsModal />}
     </div>
   );
 }

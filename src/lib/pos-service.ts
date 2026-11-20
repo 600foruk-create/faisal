@@ -1884,7 +1884,7 @@ export function getReportsData(
        WHERE i.invoice_date >= ? AND i.invoice_date <= ? ${branchWhere}
        GROUP BY ii.product_id, ii.sku, ii.item_name
        ORDER BY net_revenue DESC
-       LIMIT 20`
+       LIMIT 100`
     )
     .all(...baseParams) as Array<{
       product_id: number;
