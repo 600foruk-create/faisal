@@ -380,6 +380,11 @@ try {
             if ($action === 'user_update') {
                 json_out(['user' => mysql_update_user($pdo, $data)]);
             }
+            if ($action === 'save_user_rights') {
+                $userId = (int)($data['user_id'] ?? 0);
+                $perms = is_array($data['permissions'] ?? null) ? $data['permissions'] : [];
+                json_out(mysql_save_user_rights($pdo, $userId, $perms));
+            }
             if ($action === 'clear_transactions') {
                 if ((string)($data['confirm'] ?? '') !== 'CLEAR') {
                     json_out(['error' => 'Type CLEAR to confirm clearing transactions'], 400);

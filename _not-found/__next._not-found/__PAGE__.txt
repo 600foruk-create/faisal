@@ -2,8 +2,8 @@
 2:"static/chunks/532-01000c6d6ad38e28.js"
 3:"static/chunks/565-db6d26a4a9d57205.js"
 4:"static/chunks/827-8eb0a7f6ad5962e4.js"
-5:"static/chunks/287-c8c7c631b0132b1f.js"
-6:"static/chunks/app/layout-b6e5254718894f57.js"
+5:"static/chunks/287-8b6ea39529dbe977.js"
+6:"static/chunks/app/layout-6efce488a049cf4b.js"
 7:I[3057,["532","$2","565","$3","827","$4","287","$5","177","$6"],"PosProvider"]
 8:I[4678,["532","$2","565","$3","827","$4","287","$5","177","$6"],"PosLayoutShell"]
 9:I[7121,[],""]
@@ -14,13 +14,13 @@ a:I[4581,[],""]
 16:I[484,[],"$15"]
 17:"MetadataBoundary"
 18:I[484,[],"$17"]
-:HL["/_next/static/css/2f5acde6d8b1a7c8.css","style"]
+:HL["/_next/static/css/86425ba0b8b3dfee.css","style"]
 c:X
 f:X
 f:C
 10:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$1","c",{"children":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],null,["$","$L11",null,{"children":["$","$12",null,{"name":"Next.MetadataOutlet","children":"$@13"}]}]]}],"p":"$@14","v":null,"s":"$c"}}]]
 d:[["children",{"s":"_not-found","h":96,"d":{"r":["$","$1","c",{"children":[null,["$","$L9",null,{"parallelRouterKey":"children","template":["$","$La",null,{}]}]]}],"p":"$@e","v":"$f","s":"$c"},"c":"$Q10"}]]
-0:{"t":{"t":{"s":"","h":80,"d":{"r":["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/2f5acde6d8b1a7c8.css","precedence":"next"}]],["$","html",null,{"lang":"en","children":["$","body",null,{"className":"antialiased","children":["$","$L7",null,{"children":["$","$L8",null,{"children":["$","$L9",null,{"parallelRouterKey":"children","template":["$","$La",null,{}]}]}]}]}]}]]}],"p":"$@b","v":null,"s":"$c"},"c":"$Qd"},"h":{"r":["$","$1","h",{"children":[["$","meta",null,{"name":"robots","content":"noindex"}],["$","$L16",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L18",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$12",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Softifyx - M/S Seastone PVC Pipe Industry | Retail POS"}],["$","meta","1",{"name":"description","content":"Multi-Branch Retail POS & Inventory Management System"}]]}]}],null]}],null]}],"p":"$@19","v":null,"s":"$c"}},"a":"$@1a","u":"$@1b","b":"8kFULCKDkIjeJjWKG815y"}
+0:{"t":{"t":{"s":"","h":80,"d":{"r":["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/86425ba0b8b3dfee.css","precedence":"next"}]],["$","html",null,{"lang":"en","children":["$","body",null,{"className":"antialiased","children":["$","$L7",null,{"children":["$","$L8",null,{"children":["$","$L9",null,{"parallelRouterKey":"children","template":["$","$La",null,{}]}]}]}]}]}]]}],"p":"$@b","v":null,"s":"$c"},"c":"$Qd"},"h":{"r":["$","$1","h",{"children":[["$","meta",null,{"name":"robots","content":"noindex"}],["$","$L16",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L18",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$12",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Softifyx - M/S Seastone PVC Pipe Industry | Retail POS"}],["$","meta","1",{"name":"description","content":"Multi-Branch Retail POS & Inventory Management System"}]]}]}],null]}],null]}],"p":"$@19","v":null,"s":"$c"}},"a":"$@1a","u":"$@1b","b":"7RxYraBXc0uqQjipJ5bwq"}
 13:null
 c:300
 1b:true

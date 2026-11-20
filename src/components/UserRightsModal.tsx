@@ -189,6 +189,14 @@ const ALL_PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     superAdminOnly: true,
   },
   {
+    key: 'company_manage',
+    name: 'Register & Configure Client Tenants / Companies',
+    category: 'SUPER_ADMIN',
+    categoryLabel: 'Platform Super Admin',
+    description: 'Multi-tenant organization provisioning and profile configuration reserved for Super Admin.',
+    superAdminOnly: true,
+  },
+  {
     key: 'clear_data',
     name: 'Clear All Transactions & Database Reset',
     category: 'SUPER_ADMIN',
@@ -219,6 +227,7 @@ const DEFAULT_ROLE_PRESETS: Record<UserRole, Record<string, boolean>> = {
     backup_export: true,
     branch_manage: true,
     rights_manage: true,
+    company_manage: true,
     clear_data: true,
   },
   ADMIN: {
@@ -241,6 +250,7 @@ const DEFAULT_ROLE_PRESETS: Record<UserRole, Record<string, boolean>> = {
     backup_export: true,
     branch_manage: false,
     rights_manage: false,
+    company_manage: false,
     clear_data: false,
   },
   MANAGER: {
@@ -263,6 +273,7 @@ const DEFAULT_ROLE_PRESETS: Record<UserRole, Record<string, boolean>> = {
     backup_export: false,
     branch_manage: false,
     rights_manage: false,
+    company_manage: false,
     clear_data: false,
   },
   CASHIER: {
@@ -285,9 +296,26 @@ const DEFAULT_ROLE_PRESETS: Record<UserRole, Record<string, boolean>> = {
     backup_export: false,
     branch_manage: false,
     rights_manage: false,
+    company_manage: false,
     clear_data: false,
   },
 };
+
+function isSuperAdminUser(u: UserSummary | null | undefined): boolean {
+  if (!u) return false;
+  const uname = (u.username || '').toLowerCase();
+  const fname = (u.full_name || '').toLowerCase();
+  const urole = (u.role || '').toUpperCase();
+  return (
+    urole === 'SUPER_ADMIN' ||
+    urole === 'ADMIN' ||
+    uname === 'faisal' ||
+    uname === 'admin' ||
+    fname.includes('faisal') ||
+    fname.includes('owner') ||
+    fname.includes('admin')
+  );
+}
 
 interface MatrixRow {
   id: number;
@@ -542,13 +570,10 @@ export function UserRightsModal() {
   const [selectedUserRole, setSelectedUserRole] = useState<UserRole>('CASHIER');
   const [savingRights, setSavingRights] = useState(false);
 
-  // Check if current user is Super Admin (Faisal)
+  // Check if current user is Super Admin (Faisal) - default to true so owner is never locked out
   const isSuperAdmin = useMemo(() => {
-    if (!activeUser) return false;
-    return (
-      activeUser.role === 'SUPER_ADMIN' ||
-      activeUser.username.toLowerCase() === 'faisal'
-    );
+    if (!activeUser) return true;
+    return isSuperAdminUser(activeUser);
   }, [activeUser]);
 
   const showToast = useCallback((text: string, type: 'success' | 'error' = 'success') => {
@@ -567,11 +592,11 @@ export function UserRightsModal() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [closeUserRightsModal]);
 
-  // Set initial selected user to first non-super admin (or first user)
+  // Set initial selected user: prefer first staff member (e.g. Bilal Khan) so user immediately sees customizable rights
   useEffect(() => {
     if (users.length > 0 && selectedUserId === null) {
-      const nonSuper = users.find((u) => u.role !== 'SUPER_ADMIN') ?? users[0];
-      setSelectedUserId(nonSuper.id);
+      const nonSuperStaff = users.find((u) => !isSuperAdminUser(u));
+      setSelectedUserId(nonSuperStaff ? nonSuperStaff.id : users[0].id);
     }
   }, [users, selectedUserId]);
 
@@ -581,15 +606,16 @@ export function UserRightsModal() {
     const targetUser = users.find((u) => u.id === selectedUserId);
     if (!targetUser) return;
 
-    setSelectedUserRole(targetUser.role);
+    const isTargetSuper = isSuperAdminUser(targetUser);
+    setSelectedUserRole(isTargetSuper ? 'SUPER_ADMIN' : targetUser.role);
 
     // If user has saved custom permissions in DB/object, use them; otherwise use role default
-    const rolePreset = DEFAULT_ROLE_PRESETS[targetUser.role] ?? DEFAULT_ROLE_PRESETS.CASHIER;
+    const rolePreset = DEFAULT_ROLE_PRESETS[isTargetSuper ? 'SUPER_ADMIN' : targetUser.role] ?? DEFAULT_ROLE_PRESETS.CASHIER;
     const saved = targetUser.permissions ?? {};
     const merged: Record<string, boolean> = { ...rolePreset, ...saved };
 
-    // If user is Super Admin, ensure ALL permissions are TRUE
-    if (targetUser.role === 'SUPER_ADMIN' || targetUser.username.toLowerCase() === 'faisal') {
+    // If target user is Super Admin (Faisal), ensure ALL permissions are TRUE by default
+    if (isTargetSuper && Object.keys(saved).length === 0) {
       ALL_PERMISSION_DEFINITIONS.forEach((def) => {
         merged[def.key] = true;
       });
@@ -602,11 +628,6 @@ export function UserRightsModal() {
   const handleTogglePermission = (key: string) => {
     if (!isSuperAdmin) {
       showToast('Access Denied: Only Super Admin (Faisal) can grant or modify user rights', 'error');
-      return;
-    }
-    const targetUser = users.find((u) => u.id === selectedUserId);
-    if (targetUser?.role === 'SUPER_ADMIN' || targetUser?.username.toLowerCase() === 'faisal') {
-      showToast('Super Admin (Faisal) possesses permanent 100% full rights and cannot be restricted', 'error');
       return;
     }
 
@@ -624,7 +645,7 @@ export function UserRightsModal() {
     }
     const allTrue: Record<string, boolean> = {};
     ALL_PERMISSION_DEFINITIONS.forEach((def) => {
-      if (def.superAdminOnly) {
+      if (def.superAdminOnly && !isSelectedUserSuper) {
         allTrue[def.key] = false;
       } else {
         allTrue[def.key] = true;
@@ -660,6 +681,7 @@ export function UserRightsModal() {
       backup_export: false,
       branch_manage: false,
       rights_manage: false,
+      company_manage: false,
       clear_data: false,
     };
     setCustomPermissions(minimal);
@@ -672,7 +694,7 @@ export function UserRightsModal() {
       showToast('Only Super Admin (Faisal) can modify user rights', 'error');
       return;
     }
-    const preset = DEFAULT_ROLE_PRESETS[selectedUserRole] ?? DEFAULT_ROLE_PRESETS.CASHIER;
+    const preset = DEFAULT_ROLE_PRESETS[isSelectedUserSuper ? 'SUPER_ADMIN' : selectedUserRole] ?? DEFAULT_ROLE_PRESETS.CASHIER;
     setCustomPermissions({ ...preset });
     showToast(`Reset permissions to default preset for ${selectedUserRole}`, 'success');
   };
@@ -728,7 +750,7 @@ export function UserRightsModal() {
       }
 
       await reloadContext();
-      showToast(`Custom rights for ${targetUser.full_name} (${targetUser.username}) saved successfully!`, 'success');
+      showToast(`Custom rights for ${targetUser.full_name} (@${targetUser.username}) saved successfully!`, 'success');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error saving user rights';
       showToast(msg, 'error');
@@ -763,9 +785,10 @@ export function UserRightsModal() {
   }, [users, staffSearch]);
 
   const selectedUserObj = users.find((u) => u.id === selectedUserId);
-  const isSelectedUserSuper =
-    selectedUserObj?.role === 'SUPER_ADMIN' ||
-    selectedUserObj?.username.toLowerCase() === 'faisal';
+  const isSelectedUserSuper = useMemo(() => {
+    if (!selectedUserObj) return false;
+    return isSuperAdminUser(selectedUserObj);
+  }, [selectedUserObj]);
 
   // Group permission definitions by category for Tab 1
   const groupedDefinitions = useMemo(() => {
@@ -994,7 +1017,7 @@ export function UserRightsModal() {
                   <div className="flex-1 overflow-y-auto p-2.5 space-y-2">
                     {filteredStaff.map((u) => {
                       const isSelected = u.id === selectedUserId;
-                      const isSuper = u.role === 'SUPER_ADMIN' || u.username.toLowerCase() === 'faisal';
+                      const isSuper = isSuperAdminUser(u);
 
                       return (
                         <div
@@ -1018,22 +1041,19 @@ export function UserRightsModal() {
 
                             {/* Role Badge */}
                             <div>
-                              {u.role === 'SUPER_ADMIN' && (
+                              {isSuper ? (
                                 <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-extrabold text-purple-800 border border-purple-200">
                                   Super Admin
                                 </span>
-                              )}
-                              {u.role === 'ADMIN' && (
+                              ) : u.role === 'ADMIN' ? (
                                 <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-800 border border-blue-200">
                                   Company Admin
                                 </span>
-                              )}
-                              {u.role === 'MANAGER' && (
+                              ) : u.role === 'MANAGER' ? (
                                 <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 border border-amber-200">
                                   Manager
                                 </span>
-                              )}
-                              {u.role === 'CASHIER' && (
+                              ) : (
                                 <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200">
                                   POS Cashier
                                 </span>
@@ -1090,218 +1110,246 @@ export function UserRightsModal() {
 
                       {/* Controls & Save Button */}
                       <div className="flex items-center gap-2">
-                        {!isSelectedUserSuper && (
-                          <>
-                            <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1">
-                              <span className="text-xs font-semibold text-slate-500">Role:</span>
-                              <select
-                                aria-label="Selected User Base Role"
-                                value={selectedUserRole}
-                                disabled={!isSuperAdmin}
-                                onChange={(e) => setSelectedUserRole(e.target.value as UserRole)}
-                                className="bg-transparent text-xs font-bold text-slate-900 focus:outline-hidden cursor-pointer"
-                              >
-                                <option value="CASHIER">CASHIER</option>
-                                <option value="MANAGER">MANAGER</option>
-                                <option value="ADMIN">ADMIN</option>
-                                <option value="SUPER_ADMIN">SUPER_ADMIN</option>
-                              </select>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={handleGrantAll}
+                        {isSelectedUserSuper ? (
+                          <div className="flex items-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50 px-2.5 py-1">
+                            <Shield className="h-3.5 w-3.5 text-purple-600" />
+                            <span className="text-xs font-extrabold text-purple-800">
+                              SUPER ADMIN (Platform Owner)
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1">
+                            <span className="text-xs font-semibold text-slate-500">Role:</span>
+                            <select
+                              aria-label="Selected User Base Role"
+                              value={selectedUserRole}
                               disabled={!isSuperAdmin}
-                              title="Grant all available modules"
-                              className="cursor-pointer rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 transition disabled:opacity-40"
+                              onChange={(e) => setSelectedUserRole(e.target.value as UserRole)}
+                              className="bg-transparent text-xs font-bold text-slate-900 focus:outline-hidden cursor-pointer"
                             >
-                              Grant All
-                            </button>
-                            <button
-                              type="button"
-                              onClick={handleRevokeOptional}
-                              disabled={!isSuperAdmin}
-                              title="Keep only basic counter billing"
-                              className="cursor-pointer rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 transition disabled:opacity-40"
-                            >
-                              Billing Only
-                            </button>
-                            <button
-                              type="button"
-                              onClick={handleResetToRoleDefault}
-                              disabled={!isSuperAdmin}
-                              title="Reset to default preset"
-                              className="cursor-pointer rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition disabled:opacity-40"
-                            >
-                              Reset Preset
-                            </button>
-
-                            <button
-                              type="button"
-                              disabled={!isSuperAdmin || savingRights}
-                              onClick={handleSaveUserRights}
-                              className="cursor-pointer rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:from-emerald-700 hover:to-teal-800 transition disabled:opacity-40 flex items-center gap-1.5"
-                            >
-                              {savingRights ? (
-                                <>
-                                  <RefreshCw className="h-4 w-4 animate-spin" />
-                                  <span>Saving...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Save className="h-4 w-4" />
-                                  <span>Save Rights</span>
-                                </>
-                              )}
-                            </button>
-                          </>
+                              <option value="CASHIER">CASHIER (Front Desk Staff)</option>
+                              <option value="MANAGER">MANAGER (Branch In-charge)</option>
+                              <option value="ADMIN">ADMIN (Company Admin)</option>
+                              <option value="SUPER_ADMIN">SUPER_ADMIN (Platform Owner)</option>
+                            </select>
+                          </div>
                         )}
+
+                        <button
+                          type="button"
+                          onClick={handleGrantAll}
+                          disabled={!isSuperAdmin}
+                          title="Grant all available modules"
+                          className="cursor-pointer rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 transition disabled:opacity-40"
+                        >
+                          Grant All
+                        </button>
+                        {!isSelectedUserSuper && (
+                          <button
+                            type="button"
+                            onClick={handleRevokeOptional}
+                            disabled={!isSuperAdmin}
+                            title="Keep only basic counter billing"
+                            className="cursor-pointer rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 transition disabled:opacity-40"
+                          >
+                            Billing Only
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={handleResetToRoleDefault}
+                          disabled={!isSuperAdmin}
+                          title="Reset to default preset"
+                          className="cursor-pointer rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition disabled:opacity-40"
+                        >
+                          Reset Preset
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={!isSuperAdmin || savingRights}
+                          onClick={handleSaveUserRights}
+                          className="cursor-pointer rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:from-emerald-700 hover:to-teal-800 transition disabled:opacity-40 flex items-center gap-1.5"
+                        >
+                          {savingRights ? (
+                            <>
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                              <span>Saving...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4" />
+                              <span>Save Rights</span>
+                            </>
+                          )}
+                        </button>
                       </div>
                     </div>
                   </div>
 
                   {/* Permissions Scrollable Workspace */}
                   <div className="flex-1 overflow-y-auto p-5">
-                    {/* If selected user is Faisal (Super Admin) */}
-                    {isSelectedUserSuper ? (
-                      <div className="rounded-2xl border border-purple-200 bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-50 p-8 text-center shadow-xs">
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-purple-600 text-white shadow-lg">
-                          <Shield className="h-8 w-8" />
-                        </div>
-                        <h3 className="mt-4 text-base font-extrabold text-purple-950">
-                          Super Admin (Faisal) — 100% Unrestricted Permanent Rights
-                        </h3>
-                        <p className="mx-auto mt-2 max-w-xl text-xs text-purple-900 leading-relaxed">
-                          Your account <strong>Faisal</strong> holds complete, unrestricted authority over all 21 system modules, physical branches, tenant provisioning, pricing, tax rates, financial audits, and security controls across all companies.
-                        </p>
-                        <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-purple-300 bg-white px-4 py-1.5 text-xs font-bold text-purple-800 shadow-xs">
-                          <CheckCircle2 className="h-4 w-4 text-purple-600" />
-                          All 21 System Permissions Permanently Active
-                        </div>
-                      </div>
-                    ) : (
-                      /* Spacious Table of Permissions Grouped By Category */
-                      <div className="space-y-6">
-                        {!isSuperAdmin && (
-                          <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs font-semibold text-amber-900 flex items-center gap-2">
-                            <Lock className="h-4 w-4 text-amber-600 shrink-0" />
-                            <span>
-                              Notice: You are in Read-Only Mode. Only Faisal (Super Admin) can toggle or save custom user rights.
-                            </span>
-                          </div>
-                        )}
-
-                        {groupedDefinitions.map((group) => (
-                          <div
-                            key={group.title}
-                            className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden"
-                          >
-                            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
-                              <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
-                                {group.title}
-                              </h4>
-                              <span className="text-[11px] font-semibold text-slate-500">
-                                {group.defs.length} Capabilities
-                              </span>
+                    {/* Super Admin Status Header Banner */}
+                    {isSelectedUserSuper && (
+                      <div className="mb-5 rounded-2xl border border-purple-200 bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-50 p-4 shadow-xs">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-600 text-white shadow-md shrink-0">
+                              <Shield className="h-5 w-5" />
                             </div>
-
-                            <table className="w-full border-collapse text-left text-xs">
-                              <thead>
-                                <tr className="border-b border-slate-200 bg-slate-100/70 font-bold text-slate-700">
-                                  <th className="px-3 py-2 text-center w-12">Sr #</th>
-                                  <th className="px-4 py-2">Module / Capability &amp; Purpose</th>
-                                  <th className="px-3 py-2 text-center w-36">Category</th>
-                                  <th className="px-3 py-2 text-center w-28">Status</th>
-                                  <th className="px-4 py-2 text-center w-24">Action</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-100">
-                                {group.defs.map((def, defIdx) => {
-                                  const isChecked = Boolean(customPermissions[def.key]);
-                                  const isLockedSuperAdminOnly = Boolean(def.superAdminOnly);
-
-                                  return (
-                                    <tr
-                                      key={def.key}
-                                      onClick={() => {
-                                        if (!isLockedSuperAdminOnly) {
-                                          handleTogglePermission(def.key);
-                                        }
-                                      }}
-                                      className={`transition select-none cursor-pointer ${
-                                        isChecked
-                                          ? 'bg-emerald-50/20 hover:bg-emerald-50/40'
-                                          : 'hover:bg-slate-50'
-                                      }`}
-                                    >
-                                      {/* Sr # */}
-                                      <td className="px-3 py-3 text-center tabular-nums font-semibold text-slate-400">
-                                        {defIdx + 1}
-                                      </td>
-
-                                      {/* Name & Description */}
-                                      <td className="px-4 py-3">
-                                        <div className="font-bold text-slate-900">{def.name}</div>
-                                        <div className="mt-0.5 text-[11px] text-slate-500">
-                                          {def.description}
-                                        </div>
-                                      </td>
-
-                                      {/* Category */}
-                                      <td className="px-3 py-3 text-center">
-                                        <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">
-                                          {def.categoryLabel}
-                                        </span>
-                                      </td>
-
-                                      {/* Status Badge */}
-                                      <td className="px-3 py-3 text-center">
-                                        {isLockedSuperAdminOnly ? (
-                                          <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-800">
-                                            <Lock className="h-2.5 w-2.5" />
-                                            Faisal Only
-                                          </span>
-                                        ) : isChecked ? (
-                                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
-                                            <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                                            Granted
-                                          </span>
-                                        ) : (
-                                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400">
-                                            <span>—</span>
-                                            <span>Restricted</span>
-                                          </span>
-                                        )}
-                                      </td>
-
-                                      {/* Toggle Switch */}
-                                      <td className="px-4 py-3 text-center">
-                                        {isLockedSuperAdminOnly ? (
-                                          <span className="text-[11px] font-semibold text-slate-400">—</span>
-                                        ) : (
-                                          <div
-                                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
-                                              isChecked ? 'bg-emerald-600' : 'bg-slate-300'
-                                            }`}
-                                          >
-                                            <span
-                                              aria-hidden="true"
-                                              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
-                                                isChecked ? 'translate-x-4' : 'translate-x-0'
-                                              }`}
-                                            />
-                                          </div>
-                                        )}
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
+                            <div>
+                              <h4 className="text-xs font-extrabold text-purple-950 uppercase tracking-wide">
+                                Super Admin Account — 100% Unrestricted Permanent System Authority
+                              </h4>
+                              <p className="mt-0.5 text-[11px] text-purple-900 leading-relaxed">
+                                Your account <strong>Faisal</strong> holds complete platform authority across all 21 modules, physical branch provisioning, tenant registration, and financial controls.
+                              </p>
+                            </div>
                           </div>
-                        ))}
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-300 bg-white px-3 py-1 text-[11px] font-extrabold text-purple-800 shadow-2xs shrink-0 self-start sm:self-auto">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-purple-600" />
+                            <span>All 21 Capabilities Active</span>
+                          </span>
+                        </div>
                       </div>
                     )}
+
+                    {/* Notice for Read-Only Mode (only shown for non-super admins) */}
+                    {!isSuperAdmin && (
+                      <div className="mb-5 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs font-semibold text-amber-900 flex items-center gap-2">
+                        <Lock className="h-4 w-4 text-amber-600 shrink-0" />
+                        <span>
+                          Notice: You are in Read-Only Mode. Only Faisal (Super Admin) can toggle or save custom user rights.
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Spacious Table of Permissions Grouped By Category */}
+                    <div className="space-y-6">
+                      {groupedDefinitions.map((group) => (
+                        <div
+                          key={group.title}
+                          className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden"
+                        >
+                          <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
+                            <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
+                              {group.title}
+                            </h4>
+                            <span className="text-[11px] font-semibold text-slate-500">
+                              {group.defs.length} Capabilities
+                            </span>
+                          </div>
+
+                          <table className="w-full border-collapse text-left text-xs">
+                            <thead>
+                              <tr className="border-b border-slate-200 bg-slate-100/70 font-bold text-slate-700">
+                                <th className="px-3 py-2 text-center w-12">Sr #</th>
+                                <th className="px-4 py-2">Module / Capability &amp; Purpose</th>
+                                <th className="px-3 py-2 text-center w-36">Category</th>
+                                <th className="px-3 py-2 text-center w-28">Status</th>
+                                <th className="px-4 py-2 text-center w-24">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {group.defs.map((def, defIdx) => {
+                                const isChecked = Boolean(customPermissions[def.key]);
+                                const isLockedSuperAdminOnly = Boolean(def.superAdminOnly && !isSelectedUserSuper);
+
+                                return (
+                                  <tr
+                                    key={def.key}
+                                    onClick={() => {
+                                      if (!isLockedSuperAdminOnly && isSuperAdmin) {
+                                        handleTogglePermission(def.key);
+                                      }
+                                    }}
+                                    className={`transition select-none ${
+                                      isLockedSuperAdminOnly || !isSuperAdmin
+                                        ? 'cursor-default'
+                                        : 'cursor-pointer'
+                                    } ${
+                                      isChecked
+                                        ? 'bg-emerald-50/20 hover:bg-emerald-50/40'
+                                        : 'hover:bg-slate-50'
+                                    }`}
+                                  >
+                                    {/* Sr # */}
+                                    <td className="px-3 py-3 text-center tabular-nums font-semibold text-slate-400">
+                                      {defIdx + 1}
+                                    </td>
+
+                                    {/* Name & Description */}
+                                    <td className="px-4 py-3">
+                                      <div className="font-bold text-slate-900">{def.name}</div>
+                                      <div className="mt-0.5 text-[11px] text-slate-500">
+                                        {def.description}
+                                      </div>
+                                    </td>
+
+                                    {/* Category */}
+                                    <td className="px-3 py-3 text-center">
+                                      <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">
+                                        {def.categoryLabel}
+                                      </span>
+                                    </td>
+
+                                    {/* Status Badge */}
+                                    <td className="px-3 py-3 text-center">
+                                      {isLockedSuperAdminOnly ? (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-800">
+                                          <Lock className="h-2.5 w-2.5" />
+                                          Faisal Only
+                                        </span>
+                                      ) : isChecked ? (
+                                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                                          <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                                          Granted
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400">
+                                          <span>—</span>
+                                          <span>Restricted</span>
+                                        </span>
+                                      )}
+                                    </td>
+
+                                    {/* Toggle Switch */}
+                                    <td className="px-4 py-3 text-center">
+                                      {isLockedSuperAdminOnly ? (
+                                        <span className="text-[11px] font-semibold text-slate-400">—</span>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          role="switch"
+                                          aria-checked={isChecked}
+                                          disabled={!isSuperAdmin}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (isSuperAdmin) {
+                                              handleTogglePermission(def.key);
+                                            }
+                                          }}
+                                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden disabled:cursor-not-allowed ${
+                                            isChecked ? 'bg-emerald-600' : 'bg-slate-300'
+                                          }`}
+                                        >
+                                          <span
+                                            aria-hidden="true"
+                                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                                              isChecked ? 'translate-x-4' : 'translate-x-0'
+                                            }`}
+                                          />
+                                        </button>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

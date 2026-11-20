@@ -263,7 +263,11 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
           const found = data.users.find((u) => u.id === Number(savedUserId));
           if (found) return found;
         }
-        const faisal = data.users?.find((u) => u.username.toLowerCase() === 'faisal');
+        const faisal = data.users?.find((u) => {
+          const uname = (u.username || '').toLowerCase();
+          const fname = (u.full_name || '').toLowerCase();
+          return uname === 'faisal' || uname === 'admin' || fname.includes('faisal');
+        });
         if (faisal) return faisal;
         return data.users?.[0] ?? null;
       });
