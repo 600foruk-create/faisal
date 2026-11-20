@@ -221,6 +221,19 @@ export function getProducts(
 
   const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
 
+  const invRows = db.prepare('SELECT branch_id, product_id, stock_qty FROM branch_inventory').all() as Array<{
+    branch_id: number;
+    product_id: number;
+    stock_qty: number;
+  }>;
+  const invMap = new Map<number, Record<number, number>>();
+  for (const inv of invRows) {
+    if (!invMap.has(inv.product_id)) {
+      invMap.set(inv.product_id, {});
+    }
+    invMap.get(inv.product_id)![inv.branch_id] = inv.stock_qty;
+  }
+
   if (branchId) {
     const sql = `
       SELECT p.id, p.sku, p.barcode, p.name, p.category, p.unit,
@@ -244,6 +257,7 @@ export function getProducts(
       }
       r.wholesale_price = r.wholesale_price || (r.sale_price > 0 ? roundMoney(r.sale_price * 0.9) : 0);
       r.hs_code = r.hs_code || '3917.2390';
+      r.branch_stocks = invMap.get(r.id) || {};
       return r;
     });
   }
@@ -271,6 +285,7 @@ export function getProducts(
     }
     r.wholesale_price = r.wholesale_price || (r.sale_price > 0 ? roundMoney(r.sale_price * 0.9) : 0);
     r.hs_code = r.hs_code || '3917.2390';
+    r.branch_stocks = invMap.get(r.id) || {};
     return r;
   });
 }

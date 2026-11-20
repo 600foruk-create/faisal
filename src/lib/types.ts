@@ -76,6 +76,7 @@ export interface ProductWithStock {
   order_quantity?: number;
   qty_per_piece?: number;
   stock_qty: number;
+  branch_stocks?: Record<number, number>;
   is_active: number;
 }
 

@@ -81,6 +81,10 @@ interface PosContextValue {
   setIsGstTaxSummaryModalOpen: (open: boolean) => void;
   openGstTaxSummaryModal: () => void;
   closeGstTaxSummaryModal: () => void;
+  isInventoryBalanceModalOpen: boolean;
+  setIsInventoryBalanceModalOpen: (open: boolean) => void;
+  openInventoryBalanceModal: () => void;
+  closeInventoryBalanceModal: () => void;
   selectedProductIdForPos: number | null;
   setSelectedProductIdForPos: (id: number | null) => void;
   setActiveBranchId: (branchId: number | null) => void;
@@ -137,6 +141,7 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const [isSaleSummaryModalOpen, setIsSaleSummaryModalOpen] = useState(false);
   const [isTopProductsModalOpen, setIsTopProductsModalOpen] = useState(false);
   const [isGstTaxSummaryModalOpen, setIsGstTaxSummaryModalOpen] = useState(false);
+  const [isInventoryBalanceModalOpen, setIsInventoryBalanceModalOpen] = useState(false);
 
   const openPosSale = useCallback(() => setIsPosModalOpen(true), []);
   const closePosSale = useCallback(() => setIsPosModalOpen(false), []);
@@ -177,6 +182,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const closeTopProductsModal = useCallback(() => setIsTopProductsModalOpen(false), []);
   const openGstTaxSummaryModal = useCallback(() => setIsGstTaxSummaryModalOpen(true), []);
   const closeGstTaxSummaryModal = useCallback(() => setIsGstTaxSummaryModalOpen(false), []);
+  const openInventoryBalanceModal = useCallback(() => setIsInventoryBalanceModalOpen(true), []);
+  const closeInventoryBalanceModal = useCallback(() => setIsInventoryBalanceModalOpen(false), []);
 
   const refreshHeldCount = useCallback(async () => {
     try {
@@ -342,6 +349,10 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         setIsGstTaxSummaryModalOpen,
         openGstTaxSummaryModal,
         closeGstTaxSummaryModal,
+        isInventoryBalanceModalOpen,
+        setIsInventoryBalanceModalOpen,
+        openInventoryBalanceModal,
+        closeInventoryBalanceModal,
         selectedProductIdForPos,
         setSelectedProductIdForPos,
         setActiveBranchId,

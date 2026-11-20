@@ -334,6 +334,24 @@ function mysql_get_products(PDO $pdo, array $options = []): array
     }
     $whereSql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
 
+    $invMap = [];
+    try {
+        $invStmt = $pdo->query('SELECT branch_id, product_id, stock_qty FROM branch_inventory');
+        if ($invStmt) {
+            foreach ($invStmt->fetchAll() as $inv) {
+                $pid = (int)$inv['product_id'];
+                $bid = (int)$inv['branch_id'];
+                $qty = (float)$inv['stock_qty'];
+                if (!isset($invMap[$pid])) {
+                    $invMap[$pid] = [];
+                }
+                $invMap[$pid][$bid] = $qty;
+            }
+        }
+    } catch (Throwable $t) {
+        // ignore if table missing
+    }
+
     if ($branchId) {
         $sql = "SELECT p.id, p.sku, p.barcode, p.name, p.category, p.unit,
                        p.sale_price, p.cost_price, p.tax_rate, p.is_active,
@@ -344,7 +362,12 @@ function mysql_get_products(PDO $pdo, array $options = []): array
                 ORDER BY p.category ASC, p.name ASC";
         $stmt = $pdo->prepare($sql);
         $stmt->execute(array_merge([(int)$branchId], $params));
-        return array_map('cast_product', $stmt->fetchAll());
+        $rows = array_map('cast_product', $stmt->fetchAll());
+        foreach ($rows as &$item) {
+            $item['branch_stocks'] = $invMap[$item['id']] ?? [];
+        }
+        unset($item);
+        return $rows;
     }
 
     $sql = "SELECT p.id, p.sku, p.barcode, p.name, p.category, p.unit,
@@ -357,7 +380,12 @@ function mysql_get_products(PDO $pdo, array $options = []): array
             ORDER BY p.category ASC, p.name ASC";
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
-    return array_map('cast_product', $stmt->fetchAll());
+    $rows = array_map('cast_product', $stmt->fetchAll());
+    foreach ($rows as &$item) {
+        $item['branch_stocks'] = $invMap[$item['id']] ?? [];
+    }
+    unset($item);
+    return $rows;
 }
 
 function mysql_save_product(PDO $pdo, array $input): array

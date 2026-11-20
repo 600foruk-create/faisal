@@ -94,6 +94,8 @@ function PosSidebarInner() {
     isTopProductsModalOpen,
     openGstTaxSummaryModal,
     isGstTaxSummaryModalOpen,
+    openInventoryBalanceModal,
+    isInventoryBalanceModalOpen,
   } = usePosContext();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -133,6 +135,12 @@ function PosSidebarInner() {
         (pathname.startsWith('/reports') && activeReportTab === 'tax')
       );
     }
+    if (item.label === 'Inventory Balance') {
+      return (
+        isInventoryBalanceModalOpen ||
+        (pathname.startsWith('/reports') && activeReportTab === 'inventory')
+      );
+    }
     if (item.matchPath === '/reports') {
       return pathname.startsWith('/reports') && activeReportTab === (item.matchTab ?? 'branches');
     }
@@ -150,6 +158,7 @@ function PosSidebarInner() {
     const isSaleSummary = item.label === 'Sale Summary';
     const isTopProducts = item.label === 'Top Products';
     const isTaxSummary = item.label === 'GST / Tax Summary';
+    const isInventoryBalance = item.label === 'Inventory Balance';
 
     if (isSale) {
       return (
@@ -345,6 +354,31 @@ function PosSidebarInner() {
           key={item.href}
           type="button"
           onClick={() => openGstTaxSummaryModal()}
+          title={collapsed ? item.label : undefined}
+          className={`group flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1 text-left text-[12.5px] font-semibold transition ${
+            collapsed ? 'lg:justify-center lg:px-2' : ''
+          } ${
+            isActive
+              ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-xs'
+              : 'text-slate-700 hover:bg-slate-100/80 hover:text-slate-900'
+          }`}
+        >
+          <Icon
+            className={`h-3.5 w-3.5 shrink-0 ${
+              isActive ? 'text-white' : 'text-slate-400 group-hover:text-emerald-600'
+            }`}
+          />
+          <span className={collapsed ? 'lg:hidden' : 'flex-1 truncate'}>{item.label}</span>
+        </button>
+      );
+    }
+
+    if (isInventoryBalance) {
+      return (
+        <button
+          key={item.href}
+          type="button"
+          onClick={() => openInventoryBalanceModal()}
           title={collapsed ? item.label : undefined}
           className={`group flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1 text-left text-[12.5px] font-semibold transition ${
             collapsed ? 'lg:justify-center lg:px-2' : ''

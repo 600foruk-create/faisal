@@ -48,6 +48,7 @@ function ReportsContent() {
     openSaleSummaryModal,
     openTopProductsModal,
     openGstTaxSummaryModal,
+    openInventoryBalanceModal,
   } = usePosContext();
   const range = getDateRangeForPreset('month');
 
@@ -131,6 +132,15 @@ function ReportsContent() {
               >
                 <ReceiptText className="h-3.5 w-3.5" />
                 <span>Open Desktop ERP GST / Tax Summary Window</span>
+              </button>
+            ) : tab === 'inventory' ? (
+              <button
+                type="button"
+                onClick={() => openInventoryBalanceModal()}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:from-emerald-700 hover:to-teal-800 transition"
+              >
+                <Boxes className="h-3.5 w-3.5" />
+                <span>Open Desktop ERP Inventory Balance Window</span>
               </button>
             ) : (
               <button
