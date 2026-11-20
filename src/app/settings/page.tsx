@@ -109,7 +109,7 @@ function SettingsContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab') as SettingsTab | null;
 
-  const { branches, terminals, users, settings, activeUser, reloadContext, refreshNonce, openCompanyModal, openBranchesCountersModal, openUserLoginsModal, openUserRightsModal } =
+  const { branches, terminals, users, settings, activeUser, reloadContext, refreshNonce, openCompanyModal, openBranchesCountersModal, openUserLoginsModal, openUserRightsModal, openPasswordsModal } =
     usePosContext();
 
   const [tab, setTab] = useState<SettingsTab>('business');
@@ -1296,9 +1296,19 @@ function SettingsContent() {
           onSubmit={handlePasswordReset}
           className="max-w-lg space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
         >
-          <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-            <KeyRound className="h-4 w-4 text-amber-600" />
-            <h2 className="text-sm font-bold text-slate-900">Change / Reset User Passwords</h2>
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <div className="flex items-center gap-2">
+              <KeyRound className="h-4 w-4 text-amber-600" />
+              <h2 className="text-sm font-bold text-slate-900">Change / Reset User Passwords</h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => openPasswordsModal()}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:from-amber-700 hover:to-amber-800 transition"
+            >
+              <KeyRound className="h-3.5 w-3.5" />
+              <span>Open Desktop ERP Passwords Window</span>
+            </button>
           </div>
 
           <div>

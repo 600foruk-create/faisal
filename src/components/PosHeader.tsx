@@ -37,6 +37,7 @@ type MenuAction =
   | 'open_branches_modal'
   | 'open_users_modal'
   | 'open_user_rights_modal'
+  | 'open_passwords_modal'
   | 'open_customers_modal'
   | 'open_inventory_modal'
   | 'open_stock_opening_modal'
@@ -70,7 +71,7 @@ const ADMIN_SUBHEADER_MENUS: DropdownGroup[] = [
       { label: 'Branches & Counters', action: 'open_branches_modal', icon: Store },
       { label: 'User Logins', action: 'open_users_modal', icon: UserCheck },
       { label: 'User Rights', action: 'open_user_rights_modal', icon: ShieldCheck },
-      { label: 'Passwords', href: '/settings?tab=passwords', icon: KeyRound },
+      { label: 'Passwords', action: 'open_passwords_modal', icon: KeyRound },
       { label: 'System Settings & Currency', href: '/settings?tab=system', icon: SlidersHorizontal },
       { label: 'Clear Transactions', href: '/settings?tab=clear', icon: Trash2 },
       { label: 'BackUp Utility', action: 'backup', icon: DatabaseBackup },
@@ -118,6 +119,7 @@ export function PosHeader() {
     openBranchesCountersModal,
     openUserLoginsModal,
     openUserRightsModal,
+    openPasswordsModal,
   } = usePosContext();
 
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -313,6 +315,22 @@ export function PosHeader() {
                             className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700"
                           >
                             <Icon className="h-3.5 w-3.5 text-emerald-600" />
+                            <span>{item.label}</span>
+                          </button>
+                        );
+                      }
+                      if (item.action === 'open_passwords_modal') {
+                        return (
+                          <button
+                            key={item.label}
+                            type="button"
+                            onClick={() => {
+                              setOpenMenu(null);
+                              openPasswordsModal();
+                            }}
+                            className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700"
+                          >
+                            <Icon className="h-3.5 w-3.5 text-amber-600" />
                             <span>{item.label}</span>
                           </button>
                         );

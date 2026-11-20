@@ -30,6 +30,10 @@ interface PosContextValue {
   setIsUserRightsModalOpen: (open: boolean) => void;
   openUserRightsModal: () => void;
   closeUserRightsModal: () => void;
+  isPasswordsModalOpen: boolean;
+  setIsPasswordsModalOpen: (open: boolean) => void;
+  openPasswordsModal: () => void;
+  closePasswordsModal: () => void;
   isPosModalOpen: boolean;
   setIsPosModalOpen: (open: boolean) => void;
   openPosSale: () => void;
@@ -141,6 +145,7 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const [isBranchesCountersModalOpen, setIsBranchesCountersModalOpen] = useState(false);
   const [isUserLoginsModalOpen, setIsUserLoginsModalOpen] = useState(false);
   const [isUserRightsModalOpen, setIsUserRightsModalOpen] = useState(false);
+  const [isPasswordsModalOpen, setIsPasswordsModalOpen] = useState(false);
   const [isPosModalOpen, setIsPosModalOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
@@ -214,6 +219,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const closeUserLoginsModal = useCallback(() => setIsUserLoginsModalOpen(false), []);
   const openUserRightsModal = useCallback(() => setIsUserRightsModalOpen(true), []);
   const closeUserRightsModal = useCallback(() => setIsUserRightsModalOpen(false), []);
+  const openPasswordsModal = useCallback(() => setIsPasswordsModalOpen(true), []);
+  const closePasswordsModal = useCallback(() => setIsPasswordsModalOpen(false), []);
 
   const refreshHeldCount = useCallback(async () => {
     try {
@@ -417,6 +424,10 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         setIsUserRightsModalOpen,
         openUserRightsModal,
         closeUserRightsModal,
+        isPasswordsModalOpen,
+        setIsPasswordsModalOpen,
+        openPasswordsModal,
+        closePasswordsModal,
         selectedProductIdForPos,
         setSelectedProductIdForPos,
         setActiveBranchId,
