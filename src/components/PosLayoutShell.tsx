@@ -22,6 +22,7 @@ import { GstTaxSummaryModal } from './GstTaxSummaryModal';
 import { InventoryBalanceModal } from './InventoryBalanceModal';
 import { CompanyProfileModal } from './CompanyProfileModal';
 import { BranchesCountersModal } from './BranchesCountersModal';
+import { UserLoginsModal } from './UserLoginsModal';
 
 export function PosLayoutShell({ children }: { children: React.ReactNode }) {
   const {
@@ -41,6 +42,7 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
     isInventoryBalanceModalOpen,
     isCompanyModalOpen,
     isBranchesCountersModalOpen,
+    isUserLoginsModalOpen,
   } = usePosContext();
 
   return (
@@ -109,6 +111,9 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
 
       {/* FLOATING BRANCHES & POS COUNTERS MANAGEMENT MODAL */}
       {isBranchesCountersModalOpen && <BranchesCountersModal />}
+
+      {/* FLOATING USER LOGINS & MULTI-TENANT CASHIER DIRECTORY MODAL */}
+      {isUserLoginsModalOpen && <UserLoginsModal />}
     </div>
   );
 }

@@ -109,7 +109,7 @@ function SettingsContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab') as SettingsTab | null;
 
-  const { branches, terminals, users, settings, activeUser, reloadContext, refreshNonce, openCompanyModal, openBranchesCountersModal } =
+  const { branches, terminals, users, settings, activeUser, reloadContext, refreshNonce, openCompanyModal, openBranchesCountersModal, openUserLoginsModal } =
     usePosContext();
 
   const [tab, setTab] = useState<SettingsTab>('business');
@@ -1077,26 +1077,38 @@ function SettingsContent() {
       {tab === 'users' && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-8">
-            <h2 className="mb-3 text-sm font-bold text-slate-900">User Logins &amp; Branches</h2>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-3">
+              <h2 className="text-sm font-bold text-slate-900">
+                User Logins &amp; Staff Accounts Directory
+              </h2>
+              <button
+                type="button"
+                onClick={() => openUserLoginsModal()}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:from-emerald-700 hover:to-teal-800 transition"
+              >
+                <UserCheck className="h-3.5 w-3.5" />
+                <span>Open Desktop ERP User Logins Window</span>
+              </button>
+            </div>
             <table className="w-full border-collapse text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">
-                  <th className="px-3 py-2">Username</th>
-                  <th className="px-3 py-2">Full Name</th>
-                  <th className="px-3 py-2">Role</th>
-                  <th className="px-3 py-2">Assigned Branch</th>
-                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2 text-center">Username</th>
+                  <th className="px-3 py-2 text-center">Full Name</th>
+                  <th className="px-3 py-2 text-center">Role</th>
+                  <th className="px-3 py-2 text-center">Assigned Branch</th>
+                  <th className="px-3 py-2 text-center">Status</th>
                   <th className="px-3 py-2 text-center">Edit</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {users.map((u) => (
                   <tr key={u.id}>
-                    <td className="px-3 py-2 font-mono font-bold">{u.username}</td>
-                    <td className="px-3 py-2">{u.full_name}</td>
-                    <td className="px-3 py-2 font-semibold">{u.role}</td>
-                    <td className="px-3 py-2">{u.branch_name ?? 'All Branches'}</td>
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-2 text-center font-bold">{u.username}</td>
+                    <td className="px-3 py-2 text-center">{u.full_name}</td>
+                    <td className="px-3 py-2 text-center font-semibold">{u.role}</td>
+                    <td className="px-3 py-2 text-center">{u.branch_name ?? 'All Branches'}</td>
+                    <td className="px-3 py-2 text-center">
                       <span
                         className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                           u.is_active
@@ -1142,7 +1154,7 @@ function SettingsContent() {
             </div>
             <input
               type="text"
-              placeholder="Username *"
+              placeholder="Login Username"
               value={uUsername}
               disabled={Boolean(editUserId)}
               onChange={(e) => setUUsername(e.target.value)}
@@ -1151,7 +1163,7 @@ function SettingsContent() {
             />
             <input
               type="text"
-              placeholder="Full Name *"
+              placeholder="Full Name and Staff Title"
               value={uFullName}
               onChange={(e) => setUFullName(e.target.value)}
               className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
@@ -1159,7 +1171,7 @@ function SettingsContent() {
             />
             <input
               type="password"
-              placeholder={editUserId ? 'New Password (optional)' : 'Password / PIN *'}
+              placeholder={editUserId ? 'New Password (optional)' : 'Password / Security PIN'}
               value={uPassword}
               onChange={(e) => setUPassword(e.target.value)}
               className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
