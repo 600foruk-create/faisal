@@ -3,20 +3,31 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
+  BarChart3,
   Building2,
   Check,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Crown,
+  FileText,
   KeyRound,
   Lock,
   Maximize2,
   Minimize2,
   Minus,
+  Package,
+  Receipt,
   RefreshCw,
   Save,
   Search,
   Shield,
   ShieldAlert,
   ShieldCheck,
+  ShoppingCart,
+  SlidersHorizontal,
+  Store,
+  Tag,
   UserCheck,
   Users,
   X,
@@ -37,111 +48,111 @@ const ALL_PERMISSION_DEFINITIONS: PermissionDefinition[] = [
   // 1. Point of Sale & Billing
   {
     key: 'pos_billing',
-    name: 'POS Express Checkout & Billing',
+    name: 'POS Express Checkout & Thermal Billing',
     category: 'POS',
-    categoryLabel: 'Point of Sale & Billing',
+    categoryLabel: 'Point of Sale',
     description: 'Create sales invoices, scan item barcodes, tender cash/card payments, and print thermal receipts.',
   },
   {
     key: 'hold_recall',
-    name: 'Hold & Recall Parked Carts',
+    name: 'Hold & Recall Parked Customer Carts',
     category: 'POS',
-    categoryLabel: 'Point of Sale & Billing',
-    description: 'Temporarily park incomplete customer sales and resume billing anytime without lane delay.',
+    categoryLabel: 'Point of Sale',
+    description: 'Temporarily park incomplete sales tickets to prevent lane bottlenecks and resume checkout anytime.',
   },
   {
     key: 'sales_return',
     name: 'Process Sales Returns & Stock Restoring',
     category: 'POS',
-    categoryLabel: 'Point of Sale & Billing',
-    description: 'Accept item returns against original invoices and automatically return items to branch inventory.',
+    categoryLabel: 'Point of Sale',
+    description: 'Accept item returns against original invoices and automatically return items back into inventory.',
   },
   {
     key: 'customer_manage',
-    name: 'Customer CRM & Credit Ledger',
+    name: 'Customer CRM & Credit Ledger Directory',
     category: 'POS',
-    categoryLabel: 'Point of Sale & Billing',
+    categoryLabel: 'Point of Sale',
     description: 'Register regular or wholesale customer profiles, CNIC/NTN, and manage customer credit balances.',
   },
 
   // 2. Inventory & Catalog
   {
     key: 'inventory_view',
-    name: 'View Inventory Catalog & Stock',
+    name: 'View Master Catalog & Live Branch Stock',
     category: 'INVENTORY',
-    categoryLabel: 'Inventory Catalog & Pricing',
-    description: 'Browse master catalog products, categories, SKU barcodes, and live stock quantities.',
+    categoryLabel: 'Inventory',
+    description: 'Browse master catalog products, categories, SKU barcodes, and live stock quantities per branch.',
   },
   {
     key: 'inventory_manage',
-    name: 'Add / Edit Products & Categories',
+    name: 'Add & Edit Master Products & Categories',
     category: 'INVENTORY',
-    categoryLabel: 'Inventory Catalog & Pricing',
-    description: 'Create new products, modify categories, edit units, and update SKU barcodes.',
+    categoryLabel: 'Inventory',
+    description: 'Create new products, modify categories, edit units, and update SKU barcodes across the catalog.',
   },
   {
     key: 'stock_opening',
-    name: 'Record Stock Opening Balances',
+    name: 'Record Physical Stock Opening Balances',
     category: 'INVENTORY',
-    categoryLabel: 'Inventory Catalog & Pricing',
+    categoryLabel: 'Inventory',
     description: 'Commit initial physical stock opening batches and update cost valuations per branch.',
   },
   {
     key: 'price_settings',
-    name: 'Edit Item Sale Prices & Margins',
+    name: 'Edit Product Sale Prices & Profit Margins',
     category: 'INVENTORY',
-    categoryLabel: 'Inventory Catalog & Pricing',
-    description: 'Modify retail prices, wholesale rates, and markup margins across all catalog products.',
+    categoryLabel: 'Inventory',
+    description: 'Modify retail prices, wholesale rates, and markup calculations across all catalog products.',
   },
   {
     key: 'tax_rates',
-    name: 'Sales Tax Rates & FBR HS Codes',
+    name: 'Sales Tax Rates & FBR HS Tariff Codes',
     category: 'INVENTORY',
-    categoryLabel: 'Inventory Catalog & Pricing',
+    categoryLabel: 'Inventory',
     description: 'Configure standard GST rates, third-schedule items, and FBR fiscal HS tariff codes.',
   },
 
   // 3. Financials & Reports
   {
     key: 'day_closing',
-    name: 'Day Closing & Cash Drawer Count',
+    name: 'Day Closing & Cash Drawer Reconciliation',
     category: 'FINANCIAL',
-    categoryLabel: 'Financial Ledgers & Reports',
+    categoryLabel: 'Financials',
     description: 'Submit end-of-day physical currency counts and reconcile expected vs counted cash drawer.',
   },
   {
     key: 'sales_register',
-    name: 'View Sales Register & Invoice Journal',
+    name: 'Sales Register & Transaction Journal',
     category: 'FINANCIAL',
-    categoryLabel: 'Financial Ledgers & Reports',
+    categoryLabel: 'Financials',
     description: 'Access complete transaction ledger with invoice timestamps, cashier name, and payment modes.',
   },
   {
     key: 'sale_summary',
-    name: 'View Sale Summary & Revenue Analytics',
+    name: 'Sale Summary & Revenue Analytics',
     category: 'FINANCIAL',
-    categoryLabel: 'Financial Ledgers & Reports',
+    categoryLabel: 'Financials',
     description: 'Review period gross sales, returns totals, payment mode splits, and net sales revenue.',
   },
   {
     key: 'top_products',
-    name: 'View Top Selling Products Analytics',
+    name: 'Top Selling Products & Velocity Analysis',
     category: 'FINANCIAL',
-    categoryLabel: 'Financial Ledgers & Reports',
+    categoryLabel: 'Financials',
     description: 'Audit fast-moving items, revenue contribution, and depletion velocities across branches.',
   },
   {
     key: 'gst_tax_summary',
-    name: 'View GST / Tax Summary & FBR Audit',
+    name: 'GST Tax Summary & FBR Audit Journal',
     category: 'FINANCIAL',
-    categoryLabel: 'Financial Ledgers & Reports',
+    categoryLabel: 'Financials',
     description: 'Audit output tax collected, return tax credits, net payable, and FBR sync audit logs.',
   },
   {
     key: 'inventory_balance',
     name: 'Multi-Branch Inventory Valuation Balance',
     category: 'FINANCIAL',
-    categoryLabel: 'Financial Ledgers & Reports',
+    categoryLabel: 'Financials',
     description: 'Analyze cross-branch stock counts, valuation unit cost, and total stock capital worth.',
   },
 
@@ -150,15 +161,15 @@ const ALL_PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     key: 'user_manage',
     name: 'Manage Staff Accounts & Logins',
     category: 'ADMIN',
-    categoryLabel: 'Company Administration',
+    categoryLabel: 'Administration',
     description: 'Create and update staff cashier and manager login accounts for the company.',
   },
   {
     key: 'backup_export',
-    name: 'Export System Backup Utility',
+    name: 'Export System Database Backup Utility',
     category: 'ADMIN',
-    categoryLabel: 'Company Administration',
-    description: 'Download full encrypted system database backup in JSON format.',
+    categoryLabel: 'Administration',
+    description: 'Download full encrypted system database backup in JSON format for offsite security.',
   },
 
   // 5. Super Admin Platform Powers (Faisal Only)
@@ -166,7 +177,7 @@ const ALL_PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     key: 'branch_manage',
     name: 'Provision Physical Branches & Terminals',
     category: 'SUPER_ADMIN',
-    categoryLabel: 'Super Admin Platform Powers',
+    categoryLabel: 'Platform Powers',
     description: 'Register physical branches, assign FBR POS IDs, tokens, and hardware counters.',
     superAdminOnly: true,
   },
@@ -174,7 +185,7 @@ const ALL_PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     key: 'rights_manage',
     name: 'Grant User Rights & Permissions',
     category: 'SUPER_ADMIN',
-    categoryLabel: 'Super Admin Platform Powers',
+    categoryLabel: 'Platform Powers',
     description: 'Exclusive right to customize and grant module permissions to any staff member.',
     superAdminOnly: true,
   },
@@ -182,7 +193,7 @@ const ALL_PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     key: 'company_manage',
     name: 'Register & Configure Client Tenants',
     category: 'SUPER_ADMIN',
-    categoryLabel: 'Super Admin Platform Powers',
+    categoryLabel: 'Platform Powers',
     description: 'Multi-tenant organization provisioning and profile configuration reserved for Super Admin.',
     superAdminOnly: true,
   },
@@ -190,7 +201,7 @@ const ALL_PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     key: 'clear_data',
     name: 'Clear All Transactions & Database Reset',
     category: 'SUPER_ADMIN',
-    categoryLabel: 'Super Admin Platform Powers',
+    categoryLabel: 'Platform Powers',
     description: 'Reset transaction ledgers for fresh fiscal year or test data purging.',
     superAdminOnly: true,
   },
@@ -306,229 +317,14 @@ function isSuperAdminUser(u: UserSummary | null | undefined): boolean {
   );
 }
 
-interface MatrixRow {
-  id: number;
-  module: string;
-  categoryLabel: string;
-  superAdmin: string;
-  companyAdmin: string;
-  manager: string;
-  cashier: string;
-  ruleNote: string;
+interface CategoryGroup {
+  id: string;
+  title: string;
+  subtitle: string;
+  color: 'emerald' | 'blue' | 'indigo' | 'amber' | 'purple';
+  icon: React.ComponentType<{ className?: string }>;
+  items: PermissionDefinition[];
 }
-
-const MATRIX_ROWS: MatrixRow[] = [
-  {
-    id: 1,
-    module: 'Create Physical Branches & Terminals',
-    categoryLabel: 'Administration',
-    superAdmin: 'YES',
-    companyAdmin: 'RESTRICTED',
-    manager: 'RESTRICTED',
-    cashier: 'RESTRICTED',
-    ruleNote: 'Super Admin (Faisal) exclusive authority. Physical branch creation is strictly restricted from other roles.',
-  },
-  {
-    id: 2,
-    module: 'Grant User Rights & Permissions',
-    categoryLabel: 'Administration',
-    superAdmin: 'YES',
-    companyAdmin: 'RESTRICTED',
-    manager: 'RESTRICTED',
-    cashier: 'RESTRICTED',
-    ruleNote: 'Super Admin (Faisal) exclusive authority. Only Super Admin can grant or customize user rights.',
-  },
-  {
-    id: 3,
-    module: 'Register New Client Tenant / Company',
-    categoryLabel: 'Administration',
-    superAdmin: 'YES',
-    companyAdmin: 'RESTRICTED',
-    manager: 'RESTRICTED',
-    cashier: 'RESTRICTED',
-    ruleNote: 'Multi-tenant organization provisioning is reserved exclusively for Super Admin (Faisal).',
-  },
-  {
-    id: 4,
-    module: 'Clear Transactions & Ledger Reset',
-    categoryLabel: 'Administration',
-    superAdmin: 'YES',
-    companyAdmin: 'RESTRICTED',
-    manager: 'RESTRICTED',
-    cashier: 'RESTRICTED',
-    ruleNote: 'Critical reset utility requiring Super Admin confirmation to prevent accidental loss.',
-  },
-  {
-    id: 5,
-    module: 'Staff Accounts & Login Creation',
-    categoryLabel: 'Administration',
-    superAdmin: 'YES',
-    companyAdmin: 'YES',
-    manager: 'RESTRICTED',
-    cashier: 'RESTRICTED',
-    ruleNote: 'Company Admins can provision cashiers and store managers for their physical branches.',
-  },
-  {
-    id: 6,
-    module: 'Master Inventory Catalog & Categories',
-    categoryLabel: 'Inventory & Catalog',
-    superAdmin: 'YES',
-    companyAdmin: 'YES',
-    manager: 'RESTRICTED',
-    cashier: 'RESTRICTED',
-    ruleNote: 'Adding and editing master products, categories, SKU barcodes, and units.',
-  },
-  {
-    id: 7,
-    module: 'Edit Item Sale Prices & Margins',
-    categoryLabel: 'Inventory & Catalog',
-    superAdmin: 'YES',
-    companyAdmin: 'YES',
-    manager: 'RESTRICTED',
-    cashier: 'RESTRICTED',
-    ruleNote: 'Updating retail prices, wholesale rates, and markup calculations.',
-  },
-  {
-    id: 8,
-    module: 'Item Sales Tax Rates & FBR HS Codes',
-    categoryLabel: 'Inventory & Catalog',
-    superAdmin: 'YES',
-    companyAdmin: 'YES',
-    manager: 'RESTRICTED',
-    cashier: 'RESTRICTED',
-    ruleNote: 'Assigning GST tax percentages and tariff classifications to catalog lines.',
-  },
-  {
-    id: 9,
-    module: 'Record Stock Opening Balances',
-    categoryLabel: 'Inventory & Catalog',
-    superAdmin: 'YES',
-    companyAdmin: 'YES',
-    manager: 'YES',
-    cashier: 'RESTRICTED',
-    ruleNote: 'Initial stock intake and valuation adjustments per physical branch.',
-  },
-  {
-    id: 10,
-    module: 'View Inventory Catalog & Stock Levels',
-    categoryLabel: 'Inventory & Catalog',
-    superAdmin: 'YES',
-    companyAdmin: 'YES',
-    manager: 'YES',
-    cashier: 'YES',
-    ruleNote: 'Looking up product inventory quantities, barcode search, and item pricing.',
-  },
-  {
-    id: 11,
-    module: 'POS Express Checkout & Thermal Billing',
-    categoryLabel: 'Point of Sale',
-    superAdmin: 'YES',
-    companyAdmin: 'YES',
-    manager: 'YES',
-    cashier: 'YES',
-    ruleNote: 'Standard cashier checkout, barcode scanning, payment receipt, and printing.',
-  },
-  {
-    id: 12,
-    module: 'Hold & Recall Parked Carts',
-    categoryLabel: 'Point of Sale',
-    superAdmin: 'YES',
-    companyAdmin: 'YES',
-    manager: 'YES',
-    cashier: 'YES',
-    ruleNote: 'Temporarily parking active carts to avoid counter bottlenecks.',
-  },
-  {
-    id: 13,
-    module: 'Process Sales Returns & Stock Restoring',
-    categoryLabel: 'Point of Sale',
-    superAdmin: 'YES',
-    companyAdmin: 'YES',
-    manager: 'YES',
-    cashier: 'YES',
-    ruleNote: 'Accepting returned items against original invoices and restoring inventory.',
-  },
-  {
-    id: 14,
-    module: 'Customer CRM & Credit Ledger',
-    categoryLabel: 'Point of Sale',
-    superAdmin: 'YES',
-    companyAdmin: 'YES',
-    manager: 'YES',
-    cashier: 'YES',
-    ruleNote: 'Customer balance tracking and registration of regular/wholesale accounts.',
-  },
-  {
-    id: 15,
-    module: 'Day Closing & Cash Drawer Count',
-    categoryLabel: 'Financials & Reports',
-    superAdmin: 'YES',
-    companyAdmin: 'YES',
-    manager: 'YES',
-    cashier: 'YES',
-    ruleNote: 'Submitting day-end drawer cash reconciliation and variance reporting.',
-  },
-  {
-    id: 16,
-    module: 'View Sales Register & Invoice Journal',
-    categoryLabel: 'Financials & Reports',
-    superAdmin: 'YES',
-    companyAdmin: 'YES',
-    manager: 'YES',
-    cashier: 'YES',
-    ruleNote: 'Invoice history, payment details, and reprint access.',
-  },
-  {
-    id: 17,
-    module: 'View Sale Summary & Revenue Analytics',
-    categoryLabel: 'Financials & Reports',
-    superAdmin: 'YES',
-    companyAdmin: 'YES',
-    manager: 'YES',
-    cashier: 'RESTRICTED',
-    ruleNote: 'Daily, weekly, and monthly aggregate revenue breakdown.',
-  },
-  {
-    id: 18,
-    module: 'Top Selling Products Analytics',
-    categoryLabel: 'Financials & Reports',
-    superAdmin: 'YES',
-    companyAdmin: 'YES',
-    manager: 'YES',
-    cashier: 'RESTRICTED',
-    ruleNote: 'High-velocity items, depletion rates, and product performance analysis.',
-  },
-  {
-    id: 19,
-    module: 'GST Tax Summary & FBR Audit Log',
-    categoryLabel: 'Financials & Reports',
-    superAdmin: 'YES',
-    companyAdmin: 'YES',
-    manager: 'RESTRICTED',
-    cashier: 'RESTRICTED',
-    ruleNote: 'Tax collected, FBR invoice sync logs, and fiscal audit journal.',
-  },
-  {
-    id: 20,
-    module: 'Multi-Branch Inventory Valuation Balance',
-    categoryLabel: 'Financials & Reports',
-    superAdmin: 'YES',
-    companyAdmin: 'YES',
-    manager: 'YES',
-    cashier: 'RESTRICTED',
-    ruleNote: 'Cross-branch stock counts and inventory valuation totals.',
-  },
-  {
-    id: 21,
-    module: 'Export System Backup Utility',
-    categoryLabel: 'Administration',
-    superAdmin: 'YES',
-    companyAdmin: 'YES',
-    manager: 'RESTRICTED',
-    cashier: 'RESTRICTED',
-    ruleNote: 'Full JSON encrypted system backup export.',
-  },
-];
 
 export function UserRightsModal() {
   const {
@@ -557,7 +353,7 @@ export function UserRightsModal() {
     ];
   }, [companies, settings, branches.length]);
 
-  // Window Controls & View State
+  // Window Controls
   const [isMaximized, setIsMaximized] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [viewMode, setViewMode] = useState<'rights' | 'matrix'>('rights');
@@ -572,7 +368,9 @@ export function UserRightsModal() {
   const [customPermissions, setCustomPermissions] = useState<Record<string, boolean>>({});
   const [selectedUserRole, setSelectedUserRole] = useState<UserRole>('CASHIER');
   const [savingRights, setSavingRights] = useState(false);
-  const [matrixSearch, setMatrixSearch] = useState('');
+
+  // Collapsed state per category
+  const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
 
   // Toast State
   const [toastMessage, setToastMessage] = useState<{
@@ -596,7 +394,7 @@ export function UserRightsModal() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [closeUserRightsModal]);
 
-  // Filter 2 User Options: Strictly filtered by selected Company
+  // Filter 2 User Options: Filtered strictly by selected Company
   const companyUsers = useMemo(() => {
     return users.filter((u) => {
       const isSuper = isSuperAdminUser(u);
@@ -682,6 +480,35 @@ export function UserRightsModal() {
       ...prev,
       [key]: !prev[key],
     }));
+  };
+
+  // Toggle all permissions in a specific category
+  const handleToggleCategory = (categoryItems: PermissionDefinition[]) => {
+    if (isSelectedUserSuper) {
+      showToast('Super Admin (Faisal) possesses permanent rights', 'error');
+      return;
+    }
+
+    const availableItems = categoryItems.filter((i) => !i.superAdminOnly);
+    if (availableItems.length === 0) return;
+
+    const allCurrentlyOn = availableItems.every((i) => customPermissions[i.key]);
+    const newState = !allCurrentlyOn;
+
+    setCustomPermissions((prev) => {
+      const updated = { ...prev };
+      availableItems.forEach((i) => {
+        updated[i.key] = newState;
+      });
+      return updated;
+    });
+
+    showToast(
+      newState
+        ? 'Enabled all capabilities in this category'
+        : 'Disabled all capabilities in this category',
+      'success'
+    );
   };
 
   // Quick Action: Grant All Operational Permissions
@@ -792,53 +619,51 @@ export function UserRightsModal() {
     }
   };
 
-  // Permission categories grouped
-  const categorizedPermissions = useMemo(() => {
+  // Categories formatted with rich visual metadata
+  const categoryGroups: CategoryGroup[] = useMemo(() => {
     return [
       {
         id: 'pos',
         title: 'Point of Sale & Billing Operations',
-        description: 'Customer transactions, invoices, cart parking, and returns',
+        subtitle: 'Customer checkout, barcodes, thermal billing, parked carts & returns',
+        color: 'emerald',
+        icon: ShoppingCart,
         items: ALL_PERMISSION_DEFINITIONS.filter((d) => d.category === 'POS'),
       },
       {
         id: 'inventory',
         title: 'Inventory Catalog & Pricing Control',
-        description: 'Master products, categories, stock opening, prices, and tax rates',
+        subtitle: 'Master items, categories, barcodes, stock intake, sales prices & GST rates',
+        color: 'blue',
+        icon: Package,
         items: ALL_PERMISSION_DEFINITIONS.filter((d) => d.category === 'INVENTORY'),
       },
       {
         id: 'financial',
         title: 'Financial Ledgers & Reports',
-        description: 'Day closings, sales registers, analytics summaries, and audits',
+        subtitle: 'Day end drawer closing, sales journals, revenue analytics & valuation',
+        color: 'indigo',
+        icon: BarChart3,
         items: ALL_PERMISSION_DEFINITIONS.filter((d) => d.category === 'FINANCIAL'),
       },
       {
         id: 'admin',
         title: 'Company Administration',
-        description: 'Staff account provisioning and encrypted database backup utility',
+        subtitle: 'Staff user accounts creation and encrypted system database backup export',
+        color: 'amber',
+        icon: Building2,
         items: ALL_PERMISSION_DEFINITIONS.filter((d) => d.category === 'ADMIN'),
       },
       {
         id: 'super_admin',
         title: 'Super Admin Platform Powers (Faisal Only)',
-        description: 'Exclusive multi-tenant infrastructure, branches, and ledger resets',
+        subtitle: 'Multi-tenant organization setup, physical branch provisioning & ledger reset',
+        color: 'purple',
+        icon: Crown,
         items: ALL_PERMISSION_DEFINITIONS.filter((d) => d.category === 'SUPER_ADMIN'),
       },
     ];
   }, []);
-
-  // Filtered Matrix Rows
-  const filteredMatrix = useMemo(() => {
-    if (!matrixSearch.trim()) return MATRIX_ROWS;
-    const q = matrixSearch.toLowerCase().trim();
-    return MATRIX_ROWS.filter(
-      (m) =>
-        m.module.toLowerCase().includes(q) ||
-        m.categoryLabel.toLowerCase().includes(q) ||
-        m.ruleNote.toLowerCase().includes(q)
-    );
-  }, [matrixSearch]);
 
   // Granted count for selected user
   const grantedCount = useMemo(() => {
@@ -846,57 +671,64 @@ export function UserRightsModal() {
     return Object.values(customPermissions).filter(Boolean).length;
   }, [customPermissions, isSelectedUserSuper]);
 
+  const toggleCategoryCollapse = (catId: string) => {
+    setCollapsedCategories((prev) => ({
+      ...prev,
+      [catId]: !prev[catId],
+    }));
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-2 sm:p-4 backdrop-blur-xs">
       <div
         className={`flex flex-col rounded-2xl border border-slate-700/80 bg-white shadow-2xl transition-all duration-200 ${
           isMaximized
             ? 'h-[99vh] w-[99.5vw] max-w-none'
-            : 'h-[95vh] max-h-[920px] w-full max-w-6xl'
+            : 'h-[96vh] max-h-[940px] w-full max-w-6xl'
         }`}
       >
         {/* Executive Midnight Navy Header */}
-        <div className="flex select-none items-center justify-between border-b border-slate-800 bg-gradient-to-r from-[#0a1829] via-[#0f243e] to-[#0a1829] px-5 py-3.5 text-white rounded-t-2xl shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20 ring-1 ring-emerald-400/30">
+        <div className="flex select-none items-center justify-between border-b border-slate-800 bg-gradient-to-r from-[#071322] via-[#0d213a] to-[#071322] px-6 py-3.5 text-white rounded-t-2xl shrink-0">
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/20 ring-1 ring-emerald-400/40 shadow-inner">
               <ShieldCheck className="h-6 w-6 text-emerald-400" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold tracking-wide">
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-base font-extrabold tracking-wide text-white">
                   User Rights &amp; Access Control
                 </h2>
-                <span className="rounded-full bg-purple-500/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-purple-300 ring-1 ring-purple-400/30">
+                <span className="rounded-full bg-purple-500/25 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-purple-200 ring-1 ring-purple-400/40">
                   Super Admin Governed
                 </span>
               </div>
-              <p className="text-xs text-slate-300">
-                Grant or revoke operational module permissions per staff member across companies
+              <p className="text-xs text-slate-300 mt-0.5">
+                Configure module privileges per employee across physical branches and client companies
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             {/* View Mode Toggle Pill */}
-            <div className="flex rounded-lg bg-slate-800/80 p-1 ring-1 ring-slate-700">
+            <div className="flex rounded-xl bg-slate-800/90 p-1 ring-1 ring-slate-700 shadow-inner">
               <button
                 type="button"
                 onClick={() => setViewMode('rights')}
-                className={`flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold transition ${
+                className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
                   viewMode === 'rights'
-                    ? 'bg-emerald-600 text-white shadow-sm'
+                    ? 'bg-emerald-600 text-white shadow-md'
                     : 'text-slate-300 hover:text-white'
                 }`}
               >
-                <Users className="h-3.5 w-3.5" />
+                <SlidersHorizontal className="h-3.5 w-3.5" />
                 <span>Configure Rights</span>
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('matrix')}
-                className={`flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold transition ${
+                className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
                   viewMode === 'matrix'
-                    ? 'bg-emerald-600 text-white shadow-sm'
+                    ? 'bg-emerald-600 text-white shadow-md'
                     : 'text-slate-300 hover:text-white'
                 }`}
               >
@@ -906,7 +738,7 @@ export function UserRightsModal() {
             </div>
 
             {/* Window Controls */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 pl-2 border-l border-slate-700">
               <button
                 type="button"
                 onClick={() => setIsMinimized(!isMinimized)}
@@ -942,45 +774,52 @@ export function UserRightsModal() {
         {/* Floating Toast Notification */}
         {toastMessage && (
           <div
-            className={`mx-5 mt-2.5 flex items-center justify-between rounded-xl px-4 py-2 text-xs font-semibold shadow-md transition-all shrink-0 ${
+            className={`mx-6 mt-3 flex items-center justify-between rounded-xl px-4 py-2.5 text-xs font-semibold shadow-lg transition-all shrink-0 ${
               toastMessage.type === 'success'
                 ? 'border border-emerald-300 bg-emerald-50 text-emerald-900'
                 : 'border border-rose-300 bg-rose-50 text-rose-900'
             }`}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               {toastMessage.type === 'success' ? (
                 <CheckCircle2 className="h-4 w-4 text-emerald-600" />
               ) : (
                 <AlertCircle className="h-4 w-4 text-rose-600" />
               )}
-              <span>{toastMessage.text}</span>
+              <span className="font-bold">{toastMessage.text}</span>
             </div>
             <button
               type="button"
               onClick={() => setToastMessage(null)}
               className="cursor-pointer text-slate-400 hover:text-slate-600"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
         )}
 
         {/* Main Workspace */}
         {viewMode === 'rights' ? (
-          <div className="flex flex-1 flex-col overflow-hidden">
-            {/* Top Section: The 2 Linked Dropdown Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-slate-200 bg-slate-50/95 p-4 shrink-0 shadow-2xs">
-              {/* Filter 1: Company Selector */}
-              <div>
-                <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
-                  <Building2 className="h-4 w-4 text-emerald-600" />
-                  1. Select Company:
-                </label>
+          <div className="flex flex-1 flex-col overflow-hidden bg-slate-50/50">
+            {/* Top Section: The 2 Connected Dropdown Filter Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5 bg-gradient-to-b from-white to-slate-50 border-b border-slate-200/90 shrink-0 shadow-xs">
+              {/* Filter 1: Company Selector Card */}
+              <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs transition hover:border-emerald-300">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-100 text-emerald-700">
+                      <Building2 className="h-3.5 w-3.5" />
+                    </div>
+                    <span>1. Select Company / Tenant:</span>
+                  </label>
+                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    Step 1
+                  </span>
+                </div>
                 <select
                   value={selectedCompanyCode}
                   onChange={(e) => setSelectedCompanyCode(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-800 shadow-2xs transition hover:border-emerald-500 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                  className="w-full rounded-lg border border-slate-300 bg-slate-50/50 px-3 py-2 text-xs font-bold text-slate-900 shadow-2xs transition hover:bg-white focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
                 >
                   <option value="SEASTONE">
                     🏢 M/S SEASTONE PVC PIPE INDUSTRY (SEASTONE)
@@ -996,16 +835,23 @@ export function UserRightsModal() {
                 </select>
               </div>
 
-              {/* Filter 2: User Selector (Strictly filtered by Company above) */}
-              <div>
-                <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
-                  <Users className="h-4 w-4 text-emerald-600" />
-                  2. Select Staff Member / User:
-                </label>
+              {/* Filter 2: User Selector Card (Strictly filtered by Company above) */}
+              <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs transition hover:border-emerald-300">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-100 text-blue-700">
+                      <Users className="h-3.5 w-3.5" />
+                    </div>
+                    <span>2. Select Staff Member / User:</span>
+                  </label>
+                  <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                    Step 2 ({companyUsers.length} Users)
+                  </span>
+                </div>
                 <select
                   value={selectedUserId ?? ''}
                   onChange={(e) => setSelectedUserId(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-800 shadow-2xs transition hover:border-emerald-500 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                  className="w-full rounded-lg border border-slate-300 bg-slate-50/50 px-3 py-2 text-xs font-bold text-slate-900 shadow-2xs transition hover:bg-white focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
                 >
                   {companyUsers.map((u) => {
                     const isSuper = isSuperAdminUser(u);
@@ -1019,28 +865,44 @@ export function UserRightsModal() {
               </div>
             </div>
 
-            {/* Action Bar: User Details, Presets & Prominent Save Button */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-5 py-3 shrink-0 shadow-2xs">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                    Configuring Rights For:
-                  </span>
-                  <h3 className="text-sm font-extrabold text-slate-900">
-                    {selectedUserObj?.full_name}
-                  </h3>
-                  <span className="text-xs font-semibold text-slate-500">
-                    (@{selectedUserObj?.username})
-                  </span>
+            {/* Profile Action Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-6 py-3.5 shrink-0 shadow-2xs">
+              <div className="flex items-center gap-3.5">
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-xl font-bold text-sm shadow-inner ${
+                    isSelectedUserSuper
+                      ? 'bg-purple-100 text-purple-800 ring-1 ring-purple-300'
+                      : 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300'
+                  }`}
+                >
                   {isSelectedUserSuper ? (
-                    <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-[10px] font-bold text-purple-800 ring-1 ring-purple-300">
-                      Super Admin
-                    </span>
+                    <Crown className="h-5 w-5 text-purple-700" />
                   ) : (
-                    <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 ring-1 ring-emerald-300">
-                      {selectedUserRole}
-                    </span>
+                    selectedUserObj?.full_name?.charAt(0) || 'U'
                   )}
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-extrabold text-slate-900">
+                      {selectedUserObj?.full_name}
+                    </h3>
+                    <span className="text-xs font-semibold text-slate-500">
+                      (@{selectedUserObj?.username})
+                    </span>
+                    {isSelectedUserSuper ? (
+                      <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-[10px] font-bold text-purple-800 ring-1 ring-purple-300">
+                        Super Admin
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 ring-1 ring-emerald-300">
+                        {selectedUserRole}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Branch: <span className="font-semibold text-slate-700">{selectedUserObj?.branch_name || 'All Company Outlets (Headquarters)'}</span>
+                  </p>
                 </div>
 
                 {!isSelectedUserSuper && (
@@ -1059,13 +921,13 @@ export function UserRightsModal() {
                 )}
               </div>
 
-              {/* Action Buttons: Super Admin Status or Staff Save & Presets */}
-              <div className="flex items-center gap-2">
+              {/* Action Buttons: Status Badge or Presets + Primary Green Save Button */}
+              <div className="flex items-center gap-2.5">
                 {isSelectedUserSuper ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50 px-4 py-2 text-xs font-bold text-purple-700 shadow-2xs">
+                  <div className="flex items-center gap-2 rounded-xl border border-purple-200 bg-purple-50 px-4 py-2 text-xs font-extrabold text-purple-800 shadow-2xs">
                     <ShieldCheck className="h-4 w-4 text-purple-600" />
-                    Super Admin Rights Are 100% Permanently Active
-                  </span>
+                    <span>Permanent 100% Full Access (No OFF Switch)</span>
+                  </div>
                 ) : (
                   <>
                     <div className="hidden md:flex items-center gap-1.5 text-xs mr-2">
@@ -1089,7 +951,7 @@ export function UserRightsModal() {
                         onClick={handleResetDefault}
                         className="cursor-pointer rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-emerald-700 transition shadow-2xs"
                       >
-                        Reset Default
+                        Reset Role
                       </button>
                     </div>
 
@@ -1097,12 +959,12 @@ export function UserRightsModal() {
                       type="button"
                       onClick={handleSaveUserRights}
                       disabled={savingRights}
-                      className="flex cursor-pointer items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 active:scale-98 transition disabled:opacity-50"
+                      className="flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 px-5 py-2.5 text-xs font-extrabold text-white shadow-md hover:from-emerald-700 hover:to-teal-800 active:scale-98 transition disabled:opacity-50"
                     >
                       {savingRights ? (
                         <>
                           <RefreshCw className="h-4 w-4 animate-spin" />
-                          <span>Saving Rights...</span>
+                          <span>Saving Changes...</span>
                         </>
                       ) : (
                         <>
@@ -1116,57 +978,117 @@ export function UserRightsModal() {
               </div>
             </div>
 
-            {/* Super Admin Informative Banner */}
+            {/* Super Admin Notice Card */}
             {isSelectedUserSuper && (
-              <div className="m-4 mb-1 flex items-center gap-3 rounded-xl border border-purple-200 bg-purple-50/80 p-3 text-xs text-purple-900 shrink-0">
-                <ShieldCheck className="h-5 w-5 text-purple-700 shrink-0" />
+              <div className="mx-6 mt-4 mb-1 flex items-center gap-3 rounded-2xl border border-purple-200 bg-gradient-to-r from-purple-50/90 to-indigo-50/90 p-4 text-xs text-purple-900 shadow-2xs shrink-0">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-700 ring-1 ring-purple-300">
+                  <Crown className="h-5 w-5" />
+                </div>
                 <div>
-                  <p className="font-bold">
-                    Super Admin (Faisal) Possesses Permanent Full Rights
+                  <p className="font-extrabold text-purple-950 text-sm">
+                    Platform Super Admin (Faisal) Holds Permanent Full Authority
                   </p>
-                  <p className="text-purple-700 text-[11px]">
-                    As Platform Super Admin, all 21 capabilities are permanently active with NO option to turn OFF. Other staff members can be individually configured and toggled.
+                  <p className="text-purple-800 text-xs mt-0.5">
+                    As Platform Owner, all 21 system capabilities are permanently active with NO option to turn OFF. You can switch to regular employees above (e.g. Bilal Khan) to toggle individual rights.
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Single Full-Width Unified Capabilities Table */}
-            <div className="flex-1 overflow-y-auto px-5 py-3">
-              <div className="rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
-                <table className="w-full border-collapse text-left">
-                  <thead>
-                    <tr className="border-b border-slate-300 bg-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-700 select-none">
-                      <th className="py-2.5 px-3 text-center w-14">Sr #</th>
-                      <th className="py-2.5 px-4 text-center">Module / Capability</th>
-                      <th className="py-2.5 px-3 text-center w-40">Category</th>
-                      <th className="py-2.5 px-3 text-center w-28">Status</th>
-                      <th className="py-2.5 px-4 text-center w-44">Action / Switch</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 text-xs">
-                    {categorizedPermissions.map((cat, catIdx) => (
-                      <React.Fragment key={cat.id}>
-                        {/* Category Section Header Divider */}
-                        <tr className="bg-slate-50 border-t border-b border-slate-200">
-                          <td colSpan={5} className="py-2 px-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-700">
-                                  {catIdx + 1}
-                                </span>
-                                <span className="font-bold text-slate-800 text-xs">
-                                  {cat.title}
-                                </span>
-                              </div>
-                              <span className="text-[11px] text-slate-500">
-                                {cat.items.length} Modules
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
+            {/* Beautiful Categorized Permissions Workspace */}
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+              {categoryGroups.map((cat, idx) => {
+                const isCollapsed = Boolean(collapsedCategories[cat.id]);
+                const IconComponent = cat.icon;
+                const activeCount = isSelectedUserSuper
+                  ? cat.items.length
+                  : cat.items.filter((i) => customPermissions[i.key]).length;
 
-                        {/* Category Module Rows */}
+                return (
+                  <div
+                    key={cat.id}
+                    className="rounded-2xl border border-slate-200/90 bg-white shadow-xs overflow-hidden transition"
+                  >
+                    {/* Category Header Card */}
+                    <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/80 px-5 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`flex h-9 w-9 items-center justify-center rounded-xl font-bold shadow-2xs ${
+                            cat.color === 'emerald'
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : cat.color === 'blue'
+                              ? 'bg-blue-100 text-blue-700'
+                              : cat.color === 'indigo'
+                              ? 'bg-indigo-100 text-indigo-700'
+                              : cat.color === 'amber'
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-purple-100 text-purple-700'
+                          }`}
+                        >
+                          <IconComponent className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-700">
+                              {idx + 1}
+                            </span>
+                            <h4 className="text-sm font-extrabold text-slate-900">
+                              {cat.title}
+                            </h4>
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            {cat.subtitle}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {/* Granted Pill */}
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${
+                            activeCount === cat.items.length
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : activeCount > 0
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                          <span>
+                            {activeCount} / {cat.items.length} Active
+                          </span>
+                        </span>
+
+                        {/* Category Bulk Toggle (for staff only) */}
+                        {!isSelectedUserSuper && cat.id !== 'super_admin' && (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleCategory(cat.items)}
+                            className="cursor-pointer text-[11px] font-bold text-slate-600 hover:text-emerald-700 px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition"
+                          >
+                            Toggle All
+                          </button>
+                        )}
+
+                        {/* Collapse Button */}
+                        <button
+                          type="button"
+                          onClick={() => toggleCategoryCollapse(cat.id)}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition"
+                          title={isCollapsed ? 'Expand Category' : 'Collapse Category'}
+                        >
+                          {isCollapsed ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronUp className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Category Items List */}
+                    {!isCollapsed && (
+                      <div className="divide-y divide-slate-100">
                         {cat.items.map((def) => {
                           const overallSr =
                             ALL_PERMISSION_DEFINITIONS.findIndex(
@@ -1178,187 +1100,185 @@ export function UserRightsModal() {
                           const isSuperReserved = Boolean(def.superAdminOnly);
 
                           return (
-                            <tr
+                            <div
                               key={def.key}
-                              className={`transition-colors ${
-                                isGranted ? 'bg-white hover:bg-slate-50/80' : 'bg-slate-50/40 hover:bg-slate-100/50'
+                              className={`flex items-center justify-between px-5 py-3.5 transition-colors ${
+                                isGranted
+                                  ? 'bg-white hover:bg-emerald-50/20'
+                                  : 'bg-slate-50/30 hover:bg-slate-50'
                               }`}
                             >
-                              {/* Sr # */}
-                              <td className="py-3 px-3 text-center font-bold text-slate-500 tabular-nums">
-                                {overallSr}
-                              </td>
-
-                              {/* Module Title & Description */}
-                              <td className="py-3 px-4">
-                                <div className="font-bold text-slate-900 text-xs">
-                                  {def.name}
-                                </div>
-                                <div className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                                  {def.description}
-                                </div>
-                              </td>
-
-                              {/* Category Badge */}
-                              <td className="py-3 px-3 text-center">
-                                <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-700 border border-slate-200">
-                                  {def.categoryLabel}
+                              {/* Left Info */}
+                              <div className="flex items-start gap-3.5 flex-1 pr-4">
+                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-500 tabular-nums mt-0.5">
+                                  {overallSr}
                                 </span>
-                              </td>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <h5 className="text-xs font-bold text-slate-900">
+                                      {def.name}
+                                    </h5>
+                                    {isGranted ? (
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-extrabold text-emerald-700 border border-emerald-200">
+                                        <Check className="h-3 w-3 text-emerald-600" />
+                                        Granted
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 border border-slate-200">
+                                        <X className="h-3 w-3 text-slate-400" />
+                                        Restricted
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                                    {def.description}
+                                  </p>
+                                </div>
+                              </div>
 
-                              {/* Status Pill */}
-                              <td className="py-3 px-3 text-center">
-                                {isGranted ? (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-                                    <Check className="h-3 w-3 text-emerald-600" />
-                                    Granted
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-500 ring-1 ring-slate-200">
-                                    <X className="h-3 w-3 text-slate-400" />
-                                    Restricted
-                                  </span>
-                                )}
-                              </td>
-
-                              {/* Action Column: Permanent Active for Faisal, Toggles for Staff */}
-                              <td className="py-3 px-4 text-center">
+                              {/* Right Switch / Lock Badge */}
+                              <div className="shrink-0 flex items-center justify-end w-44">
                                 {isSelectedUserSuper ? (
-                                  /* Super Admin has NO right-off option! Permanent Active only */
-                                  <div className="flex items-center justify-center">
-                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-3 py-1 text-xs font-bold text-purple-800 ring-1 ring-purple-300">
-                                      <Shield className="h-3.5 w-3.5 text-purple-600" />
-                                      Permanent Active
-                                    </span>
-                                  </div>
+                                  /* Super Admin has NO right-off option! Permanent Active badge only */
+                                  <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-3.5 py-1 text-xs font-extrabold text-purple-800 ring-1 ring-purple-300 shadow-2xs">
+                                    <Shield className="h-3.5 w-3.5 text-purple-600" />
+                                    Permanent Active
+                                  </span>
                                 ) : isSuperReserved ? (
-                                  /* Platform Super Admin Reserved Powers */
-                                  <div className="flex items-center justify-center">
-                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 ring-1 ring-slate-200">
-                                      <Lock className="h-3 w-3 text-slate-500" />
-                                      Faisal Only (Reserved)
-                                    </span>
-                                  </div>
+                                  /* Platform Powers reserved for Faisal */
+                                  <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600 ring-1 ring-slate-200">
+                                    <Lock className="h-3.5 w-3.5 text-slate-500" />
+                                    Faisal Only (Reserved)
+                                  </span>
                                 ) : (
-                                  /* Regular staff interactive green switch */
-                                  <div className="flex items-center justify-center">
+                                  /* Regular Staff Smooth Toggle Switch */
+                                  <div className="flex items-center gap-2.5">
+                                    <span
+                                      className={`text-xs font-bold ${
+                                        isGranted
+                                          ? 'text-emerald-700'
+                                          : 'text-slate-400'
+                                      }`}
+                                    >
+                                      {isGranted ? 'ON' : 'OFF'}
+                                    </span>
                                     <button
                                       type="button"
                                       onClick={() => handleTogglePermission(def.key)}
-                                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${
-                                        isGranted ? 'bg-emerald-600' : 'bg-slate-300'
+                                      className={`relative inline-flex h-6.5 w-12 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none shadow-inner ${
+                                        isGranted
+                                          ? 'bg-emerald-600 ring-1 ring-emerald-500'
+                                          : 'bg-slate-300 ring-1 ring-slate-400'
                                       }`}
                                       title={`Click to turn ${
                                         isGranted ? 'OFF' : 'ON'
                                       } ${def.name}`}
                                     >
                                       <span
-                                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                                          isGranted ? 'translate-x-5.5' : 'translate-x-0.5'
+                                        className={`pointer-events-none inline-block h-5.5 w-5.5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                                          isGranted
+                                            ? 'translate-x-6'
+                                            : 'translate-x-0.5'
                                         } mt-0.5`}
                                       />
                                     </button>
                                   </div>
                                 )}
-                              </td>
-                            </tr>
+                              </div>
+                            </div>
                           );
                         })}
-                      </React.Fragment>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         ) : (
           /* Role Permissions Matrix View */
           <div className="flex flex-1 flex-col overflow-hidden bg-white">
-            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-3 shrink-0">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-3.5 shrink-0">
+              <div className="flex items-center gap-2.5">
                 <Shield className="h-4 w-4 text-emerald-600" />
-                <h3 className="text-sm font-bold text-slate-900">
-                  Global Role Permissions Matrix (21 System Capabilities)
+                <h3 className="text-sm font-extrabold text-slate-900">
+                  Global Role Permissions Matrix (21 Capabilities)
                 </h3>
               </div>
-              <div className="w-72 relative">
-                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Filter matrix modules..."
-                  value={matrixSearch}
-                  onChange={(e) => setMatrixSearch(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 bg-white py-1.5 pl-8 pr-3 text-xs text-slate-800 placeholder-slate-400 focus:border-emerald-600 focus:outline-none"
-                />
-              </div>
+              <span className="text-xs font-semibold text-slate-500">
+                Official Multi-Tenant Governance Policy
+              </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5">
-              <div className="rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
                 <table className="w-full border-collapse text-left">
                   <thead>
-                    <tr className="border-b border-slate-300 bg-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-700 select-none">
-                      <th className="py-2.5 px-3 text-center w-12">Sr #</th>
-                      <th className="py-2.5 px-4 text-center">System Module</th>
-                      <th className="py-2.5 px-3 text-center w-28">Super Admin</th>
-                      <th className="py-2.5 px-3 text-center w-28">Company Admin</th>
-                      <th className="py-2.5 px-3 text-center w-28">Store Manager</th>
-                      <th className="py-2.5 px-3 text-center w-28">POS Cashier</th>
-                      <th className="py-2.5 px-4 text-center">Governance Rule</th>
+                    <tr className="border-b border-slate-300 bg-slate-100 text-[11px] font-extrabold uppercase tracking-wider text-slate-700 select-none">
+                      <th className="py-3 px-3 text-center w-12">Sr #</th>
+                      <th className="py-3 px-4 text-center">System Module</th>
+                      <th className="py-3 px-3 text-center w-28">Super Admin</th>
+                      <th className="py-3 px-3 text-center w-28">Company Admin</th>
+                      <th className="py-3 px-3 text-center w-28">Store Manager</th>
+                      <th className="py-3 px-3 text-center w-28">POS Cashier</th>
+                      <th className="py-3 px-4 text-center">Governance Rule</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 text-xs">
-                    {filteredMatrix.map((row) => (
-                      <tr key={row.id} className="hover:bg-slate-50/70 transition">
-                        <td className="py-3 px-3 text-center font-bold text-slate-500 tabular-nums">
-                          {row.id}
-                        </td>
-                        <td className="py-3 px-4 font-bold text-slate-900">
-                          {row.module}
-                        </td>
-                        <td className="py-3 px-3 text-center">
-                          <span className="inline-flex rounded-full bg-purple-100 px-2.5 py-0.5 text-[10px] font-bold text-purple-800">
-                            YES (100%)
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 text-center">
-                          {row.companyAdmin === 'YES' ? (
-                            <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
-                              YES
+                    {ALL_PERMISSION_DEFINITIONS.map((def, idx) => {
+                      const presets = DEFAULT_ROLE_PRESETS;
+                      return (
+                        <tr key={def.key} className="hover:bg-slate-50/70 transition">
+                          <td className="py-3 px-3 text-center font-bold text-slate-500 tabular-nums">
+                            {idx + 1}
+                          </td>
+                          <td className="py-3 px-4 font-bold text-slate-900">
+                            {def.name}
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <span className="inline-flex rounded-full bg-purple-100 px-2.5 py-0.5 text-[10px] font-bold text-purple-800">
+                              YES (100%)
                             </span>
-                          ) : (
-                            <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-500">
-                              RESTRICTED
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-3 text-center">
-                          {row.manager === 'YES' ? (
-                            <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
-                              YES
-                            </span>
-                          ) : (
-                            <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-500">
-                              RESTRICTED
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-3 text-center">
-                          {row.cashier === 'YES' ? (
-                            <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
-                              YES
-                            </span>
-                          ) : (
-                            <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-500">
-                              RESTRICTED
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-[11px] text-slate-600">
-                          {row.ruleNote}
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            {presets.ADMIN[def.key] ? (
+                              <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                                YES
+                              </span>
+                            ) : (
+                              <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-500">
+                                RESTRICTED
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            {presets.MANAGER[def.key] ? (
+                              <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                                YES
+                              </span>
+                            ) : (
+                              <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-500">
+                                RESTRICTED
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            {presets.CASHIER[def.key] ? (
+                              <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                                YES
+                              </span>
+                            ) : (
+                              <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-500">
+                                RESTRICTED
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-[11px] text-slate-600">
+                            {def.description}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1367,7 +1287,7 @@ export function UserRightsModal() {
         )}
 
         {/* Executive Modal Footer with Bottom Save Option */}
-        <div className="flex select-none items-center justify-between border-t border-slate-200 bg-slate-50 px-5 py-3 text-xs text-slate-500 rounded-b-2xl shrink-0">
+        <div className="flex select-none items-center justify-between border-t border-slate-200 bg-slate-50 px-6 py-3 text-xs text-slate-500 rounded-b-2xl shrink-0">
           <div className="flex items-center gap-2">
             <span>Keyboard Shortcut:</span>
             <kbd className="rounded border border-slate-300 bg-white px-2 py-0.5 font-bold text-slate-700 shadow-2xs">
@@ -1382,7 +1302,7 @@ export function UserRightsModal() {
                 type="button"
                 onClick={handleSaveUserRights}
                 disabled={savingRights}
-                className="flex cursor-pointer items-center gap-2 rounded-lg bg-emerald-600 px-4 py-1.5 font-bold text-white shadow-xs hover:bg-emerald-700 active:scale-98 transition disabled:opacity-50"
+                className="flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 px-5 py-2 font-extrabold text-white shadow-md hover:from-emerald-700 hover:to-teal-800 active:scale-98 transition disabled:opacity-50"
               >
                 {savingRights ? (
                   <>
@@ -1401,7 +1321,7 @@ export function UserRightsModal() {
             <button
               type="button"
               onClick={closeUserRightsModal}
-              className="cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-1.5 font-bold text-slate-700 hover:bg-slate-100 transition shadow-2xs"
+              className="cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-2 font-bold text-slate-700 hover:bg-slate-100 transition shadow-2xs"
             >
               Close Window
             </button>
