@@ -77,6 +77,10 @@ interface PosContextValue {
   setIsTopProductsModalOpen: (open: boolean) => void;
   openTopProductsModal: () => void;
   closeTopProductsModal: () => void;
+  isGstTaxSummaryModalOpen: boolean;
+  setIsGstTaxSummaryModalOpen: (open: boolean) => void;
+  openGstTaxSummaryModal: () => void;
+  closeGstTaxSummaryModal: () => void;
   selectedProductIdForPos: number | null;
   setSelectedProductIdForPos: (id: number | null) => void;
   setActiveBranchId: (branchId: number | null) => void;
@@ -132,6 +136,7 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const [isSalesRegisterModalOpen, setIsSalesRegisterModalOpen] = useState(false);
   const [isSaleSummaryModalOpen, setIsSaleSummaryModalOpen] = useState(false);
   const [isTopProductsModalOpen, setIsTopProductsModalOpen] = useState(false);
+  const [isGstTaxSummaryModalOpen, setIsGstTaxSummaryModalOpen] = useState(false);
 
   const openPosSale = useCallback(() => setIsPosModalOpen(true), []);
   const closePosSale = useCallback(() => setIsPosModalOpen(false), []);
@@ -170,6 +175,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const closeSaleSummaryModal = useCallback(() => setIsSaleSummaryModalOpen(false), []);
   const openTopProductsModal = useCallback(() => setIsTopProductsModalOpen(true), []);
   const closeTopProductsModal = useCallback(() => setIsTopProductsModalOpen(false), []);
+  const openGstTaxSummaryModal = useCallback(() => setIsGstTaxSummaryModalOpen(true), []);
+  const closeGstTaxSummaryModal = useCallback(() => setIsGstTaxSummaryModalOpen(false), []);
 
   const refreshHeldCount = useCallback(async () => {
     try {
@@ -331,6 +338,10 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         setIsTopProductsModalOpen,
         openTopProductsModal,
         closeTopProductsModal,
+        isGstTaxSummaryModalOpen,
+        setIsGstTaxSummaryModalOpen,
+        openGstTaxSummaryModal,
+        closeGstTaxSummaryModal,
         selectedProductIdForPos,
         setSelectedProductIdForPos,
         setActiveBranchId,

@@ -18,6 +18,7 @@ import { DayClosingModal } from './DayClosingModal';
 import { SalesRegisterModal } from './SalesRegisterModal';
 import { SaleSummaryModal } from './SaleSummaryModal';
 import { TopProductsModal } from './TopProductsModal';
+import { GstTaxSummaryModal } from './GstTaxSummaryModal';
 
 export function PosLayoutShell({ children }: { children: React.ReactNode }) {
   const {
@@ -33,6 +34,7 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
     isSalesRegisterModalOpen,
     isSaleSummaryModalOpen,
     isTopProductsModalOpen,
+    isGstTaxSummaryModalOpen,
   } = usePosContext();
 
   return (
@@ -89,6 +91,9 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
 
       {/* FLOATING TOP PRODUCTS & VELOCITY ANALYTICS MODAL */}
       {isTopProductsModalOpen && <TopProductsModal />}
+
+      {/* FLOATING GST / TAX SUMMARY & FBR FISCAL AUDIT MODAL */}
+      {isGstTaxSummaryModalOpen && <GstTaxSummaryModal />}
     </div>
   );
 }

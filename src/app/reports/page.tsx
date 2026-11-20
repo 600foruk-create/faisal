@@ -47,6 +47,7 @@ function ReportsContent() {
     refreshNonce,
     openSaleSummaryModal,
     openTopProductsModal,
+    openGstTaxSummaryModal,
   } = usePosContext();
   const range = getDateRangeForPreset('month');
 
@@ -121,6 +122,15 @@ function ReportsContent() {
               >
                 <Package className="h-3.5 w-3.5" />
                 <span>Open Desktop ERP Top Products Window</span>
+              </button>
+            ) : tab === 'tax' ? (
+              <button
+                type="button"
+                onClick={() => openGstTaxSummaryModal()}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:from-emerald-700 hover:to-teal-800 transition"
+              >
+                <ReceiptText className="h-3.5 w-3.5" />
+                <span>Open Desktop ERP GST / Tax Summary Window</span>
               </button>
             ) : (
               <button
