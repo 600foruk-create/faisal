@@ -109,7 +109,7 @@ function SettingsContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab') as SettingsTab | null;
 
-  const { branches, terminals, users, settings, activeUser, reloadContext, refreshNonce, openCompanyModal, openBranchesCountersModal, openUserLoginsModal, openUserRightsModal, openPasswordsModal } =
+  const { branches, terminals, users, settings, activeUser, reloadContext, refreshNonce, openCompanyModal, openBranchesCountersModal, openUserLoginsModal, openUserRightsModal, openPasswordsModal, openSystemSettingsModal } =
     usePosContext();
 
   const [tab, setTab] = useState<SettingsTab>('business');
@@ -878,9 +878,19 @@ function SettingsContent() {
           }}
           className="max-w-3xl space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
         >
-          <h2 className="border-b border-slate-100 pb-2 text-sm font-bold text-slate-900">
-            System Settings &amp; Currency
-          </h2>
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h2 className="text-sm font-bold text-slate-900">
+              System Settings &amp; Currency
+            </h2>
+            <button
+              type="button"
+              onClick={() => openSystemSettingsModal()}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-gradient-to-r from-teal-600 to-teal-700 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:from-teal-700 hover:to-teal-800 transition"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              <span>Open Desktop ERP System Settings Window</span>
+            </button>
+          </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>

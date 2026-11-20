@@ -25,6 +25,7 @@ import { BranchesCountersModal } from './BranchesCountersModal';
 import { UserLoginsModal } from './UserLoginsModal';
 import { UserRightsModal } from './UserRightsModal';
 import { PasswordsModal } from './PasswordsModal';
+import { SystemSettingsModal } from './SystemSettingsModal';
 
 export function PosLayoutShell({ children }: { children: React.ReactNode }) {
   const {
@@ -47,6 +48,7 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
     isUserLoginsModalOpen,
     isUserRightsModalOpen,
     isPasswordsModalOpen,
+    isSystemSettingsModalOpen,
   } = usePosContext();
 
   return (
@@ -124,6 +126,9 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
 
       {/* FLOATING PASSWORDS & SECURITY PIN MANAGER MODAL */}
       {isPasswordsModalOpen && <PasswordsModal />}
+
+      {/* FLOATING SYSTEM SETTINGS & CURRENCY CONFIGURATION MODAL */}
+      {isSystemSettingsModalOpen && <SystemSettingsModal />}
     </div>
   );
 }
