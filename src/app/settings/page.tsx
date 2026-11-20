@@ -109,7 +109,7 @@ function SettingsContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab') as SettingsTab | null;
 
-  const { branches, terminals, users, settings, activeUser, reloadContext, refreshNonce, openCompanyModal, openBranchesCountersModal, openUserLoginsModal, openUserRightsModal, openPasswordsModal, openSystemSettingsModal } =
+  const { branches, terminals, users, settings, activeUser, reloadContext, refreshNonce, openCompanyModal, openBranchesCountersModal, openUserLoginsModal, openUserRightsModal, openPasswordsModal, openSystemSettingsModal, openClearTransactionsModal } =
     usePosContext();
 
   const [tab, setTab] = useState<SettingsTab>('business');
@@ -1399,9 +1399,19 @@ function SettingsContent() {
             onSubmit={handleClearTransactions}
             className="space-y-3 rounded-2xl border border-rose-200 bg-white p-5 shadow-sm"
           >
-            <div className="flex items-center gap-2 border-b border-rose-100 pb-2 text-rose-700">
-              <AlertTriangle className="h-4 w-4" />
-              <h2 className="text-sm font-bold">Clear Transactions (Go-Live Reset)</h2>
+            <div className="flex items-center justify-between border-b border-rose-100 pb-2 text-rose-700">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                <h2 className="text-sm font-bold">Clear Transactions (Go-Live Reset)</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => openClearTransactionsModal()}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-700 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:from-rose-700 hover:to-red-800 transition"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Open Desktop ERP Reset Window</span>
+              </button>
             </div>
             <p className="text-xs text-slate-600">
               Removes all test <strong>sales invoices</strong>, <strong>returns</strong>,{' '}

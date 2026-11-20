@@ -38,6 +38,10 @@ interface PosContextValue {
   setIsSystemSettingsModalOpen: (open: boolean) => void;
   openSystemSettingsModal: () => void;
   closeSystemSettingsModal: () => void;
+  isClearTransactionsModalOpen: boolean;
+  setIsClearTransactionsModalOpen: (open: boolean) => void;
+  openClearTransactionsModal: () => void;
+  closeClearTransactionsModal: () => void;
   isPosModalOpen: boolean;
   setIsPosModalOpen: (open: boolean) => void;
   openPosSale: () => void;
@@ -151,6 +155,7 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const [isUserRightsModalOpen, setIsUserRightsModalOpen] = useState(false);
   const [isPasswordsModalOpen, setIsPasswordsModalOpen] = useState(false);
   const [isSystemSettingsModalOpen, setIsSystemSettingsModalOpen] = useState(false);
+  const [isClearTransactionsModalOpen, setIsClearTransactionsModalOpen] = useState(false);
   const [isPosModalOpen, setIsPosModalOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
@@ -228,6 +233,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const closePasswordsModal = useCallback(() => setIsPasswordsModalOpen(false), []);
   const openSystemSettingsModal = useCallback(() => setIsSystemSettingsModalOpen(true), []);
   const closeSystemSettingsModal = useCallback(() => setIsSystemSettingsModalOpen(false), []);
+  const openClearTransactionsModal = useCallback(() => setIsClearTransactionsModalOpen(true), []);
+  const closeClearTransactionsModal = useCallback(() => setIsClearTransactionsModalOpen(false), []);
 
   const refreshHeldCount = useCallback(async () => {
     try {
@@ -439,6 +446,10 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         setIsSystemSettingsModalOpen,
         openSystemSettingsModal,
         closeSystemSettingsModal,
+        isClearTransactionsModalOpen,
+        setIsClearTransactionsModalOpen,
+        openClearTransactionsModal,
+        closeClearTransactionsModal,
         selectedProductIdForPos,
         setSelectedProductIdForPos,
         setActiveBranchId,

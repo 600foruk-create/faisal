@@ -26,6 +26,7 @@ import { UserLoginsModal } from './UserLoginsModal';
 import { UserRightsModal } from './UserRightsModal';
 import { PasswordsModal } from './PasswordsModal';
 import { SystemSettingsModal } from './SystemSettingsModal';
+import { ClearTransactionsModal } from './ClearTransactionsModal';
 
 export function PosLayoutShell({ children }: { children: React.ReactNode }) {
   const {
@@ -49,6 +50,7 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
     isUserRightsModalOpen,
     isPasswordsModalOpen,
     isSystemSettingsModalOpen,
+    isClearTransactionsModalOpen,
   } = usePosContext();
 
   return (
@@ -129,6 +131,9 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
 
       {/* FLOATING SYSTEM SETTINGS & CURRENCY CONFIGURATION MODAL */}
       {isSystemSettingsModalOpen && <SystemSettingsModal />}
+
+      {/* FLOATING CLEAR TRANSACTIONS & FISCAL RESET MODAL */}
+      {isClearTransactionsModalOpen && <ClearTransactionsModal />}
     </div>
   );
 }
