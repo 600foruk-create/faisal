@@ -19,6 +19,7 @@ import {
   Receipt,
   RefreshCw,
   RotateCcw,
+  ShieldCheck,
   Sparkles,
   Trash2,
   Upload,
@@ -105,7 +106,6 @@ export function CompanyLogoModal() {
   );
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string>(initialLogo);
   const [selectedFileName, setSelectedFileName] = useState<string>('seastone-logo-official.png');
-  const [previewTab, setPreviewTab] = useState<'BRAND' | 'RECEIPT'>('BRAND');
   const [showCheckeredBg, setShowCheckeredBg] = useState<boolean>(true);
   const [saving, setSaving] = useState(false);
 
@@ -151,7 +151,6 @@ export function CompanyLogoModal() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check size limit: 3MB
     if (file.size > 3 * 1024 * 1024) {
       showToast('Image file size exceeds 3MB limit. Please choose a smaller image.', 'error');
       return;
@@ -214,59 +213,61 @@ export function CompanyLogoModal() {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 transition-all duration-200 ${
-        isMinimized ? 'pointer-events-none opacity-0' : 'bg-slate-950/75 backdrop-blur-sm'
+      className={`fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 transition-all duration-200 ${
+        isMinimized ? 'pointer-events-none opacity-0' : 'bg-slate-950/65 backdrop-blur-xs'
       }`}
     >
       <div
-        className={`relative flex flex-col overflow-hidden rounded-2xl border border-slate-700/80 bg-slate-900 shadow-2xl transition-all duration-200 ${
+        className={`flex flex-col rounded-2xl bg-white shadow-2xl transition-all duration-200 border border-slate-300 overflow-hidden ${
           isMaximized
-            ? 'h-[96vh] w-[98vw] max-w-none'
-            : 'h-[92vh] max-h-[860px] w-full max-w-5xl'
+            ? 'fixed inset-1.5 w-[calc(100%-12px)] h-[calc(100%-12px)] max-w-none'
+            : 'w-full max-w-5xl h-[88vh] max-h-[860px]'
         }`}
       >
         {/* =========================================================================
-            1. Title Bar (Executive Midnight Navy — Hamara Wala Color Combination)
+            1. Title Bar (Executive Midnight Navy — Image 2 Standard)
         ========================================================================== */}
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-800 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] px-4 py-2.5 text-white select-none">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30">
-              <ImagePlus className="h-4.5 w-4.5" />
+        <div className="flex shrink-0 items-center justify-between border-b border-sky-500/25 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] px-4 py-2.5 text-white select-none">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/20 text-sky-400 border border-sky-400/30">
+              <ImagePlus className="h-4 w-4 text-emerald-400" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold tracking-tight text-white">
+                <h1 className="text-sm font-black tracking-wide uppercase text-white sm:text-base">
                   Logo Settings &amp; Corporate Branding
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 ring-1 ring-emerald-500/30">
+                </h1>
+                <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-400/30">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   Active Branding Engine
                 </span>
-                <span className="rounded-md bg-indigo-500/20 px-2 py-0.5 text-[10px] font-semibold text-indigo-300 ring-1 ring-indigo-500/30">
-                  Administrator • Visual Identity
-                </span>
               </div>
-              <p className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-slate-300">
                 Configure Company Logo for POS Thermal Receipts, Invoices, Delivery Challans, and Navigation Header
-              </p>
+              </span>
             </div>
           </div>
 
           {/* Window Controls */}
           <div className="flex items-center gap-1.5">
+            <div className="hidden sm:flex items-center gap-1.5 rounded-lg bg-slate-900/60 px-2.5 py-1 text-xs border border-white/10 text-slate-300">
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+              <span className="font-semibold text-white">Administrator Mode</span>
+            </div>
+
             <button
               type="button"
               onClick={() => setIsMinimized(!isMinimized)}
               title="Minimize"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition cursor-pointer"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-slate-300 hover:bg-white/10 hover:text-white transition cursor-pointer"
             >
               <Minus className="h-3.5 w-3.5" />
             </button>
             <button
               type="button"
               onClick={() => setIsMaximized(!isMaximized)}
-              title={isMaximized ? 'Restore' : 'Maximize'}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition cursor-pointer"
+              title={isMaximized ? 'Restore Window' : 'Maximize Window'}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-slate-300 hover:bg-white/10 hover:text-white transition cursor-pointer"
             >
               {isMaximized ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
             </button>
@@ -274,9 +275,9 @@ export function CompanyLogoModal() {
               type="button"
               onClick={closeLogoModal}
               title="Close (Esc)"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-rose-600 hover:text-white transition cursor-pointer"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-slate-300 hover:bg-rose-600 hover:text-white transition cursor-pointer"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -286,42 +287,42 @@ export function CompanyLogoModal() {
           <div
             className={`flex shrink-0 items-center justify-between px-4 py-2 text-xs font-semibold ${
               toastMessage.type === 'success'
-                ? 'bg-emerald-950 text-emerald-200 border-b border-emerald-800'
-                : 'bg-rose-950 text-rose-200 border-b border-rose-800'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-rose-600 text-white'
             }`}
           >
             <div className="flex items-center gap-2">
               {toastMessage.type === 'success' ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                <CheckCircle2 className="h-4 w-4" />
               ) : (
-                <AlertCircle className="h-4 w-4 text-rose-400" />
+                <AlertCircle className="h-4 w-4" />
               )}
               <span>{toastMessage.text}</span>
             </div>
             <button
               type="button"
               onClick={() => setToastMessage(null)}
-              className="text-xs hover:underline cursor-pointer opacity-80 hover:opacity-100"
+              className="text-white hover:text-slate-200 cursor-pointer"
             >
-              Dismiss
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
         )}
 
         {/* =========================================================================
-            2. Top Scope Bar (Target Company Selection)
+            2. Top Scope Bar (Target Company Selection — Clean White & Slate)
         ========================================================================== */}
-        <div className="shrink-0 border-b border-slate-800 bg-[#0b172a] p-3 sm:p-4">
-          <div className="rounded-xl border border-slate-700/80 bg-slate-900/90 p-3 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="shrink-0 border-b border-slate-200 bg-slate-50/80 p-3 sm:p-4">
+          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-2xs flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <Building2 className="h-4 w-4 text-blue-400" />
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+              <Building2 className="h-4 w-4 text-sky-600" />
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
                 Target Business Organization:
               </span>
               <select
                 value={selectedCompanyId}
                 onChange={(e) => setSelectedCompanyId(Number(e.target.value))}
-                className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-bold text-white transition focus:border-blue-500 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
+                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-2xs transition focus:border-emerald-600 focus:outline-hidden focus:ring-1 focus:ring-emerald-600"
               >
                 {tenantCompanies.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -332,12 +333,12 @@ export function CompanyLogoModal() {
             </div>
 
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-slate-400">Branding Status:</span>
+              <span className="text-slate-500 font-semibold">Branding Status:</span>
               <span
-                className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                className={`rounded-md px-2.5 py-1 text-[11px] font-bold ${
                   logoMode === 'DO_NOT_SHOW'
-                    ? 'bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/30'
-                    : 'bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/30'
+                    ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                    : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
                 }`}
               >
                 {logoMode === 'DO_NOT_SHOW' ? 'Text-Only Mode' : 'Custom Logo Active'}
@@ -347,20 +348,20 @@ export function CompanyLogoModal() {
         </div>
 
         {/* =========================================================================
-            3. Scrollable Main Content Area
+            3. Scrollable Main Content Area (Clean White & Slate Body)
         ========================================================================== */}
-        <div className="flex-1 overflow-y-auto bg-slate-950 p-4 space-y-4">
-          {/* Upper Format Notice Note (Matching user's screenshot note with our styling) */}
-          <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-3 text-xs text-amber-200 flex items-start gap-2.5">
-            <Info className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+        <div className="flex-1 overflow-y-auto bg-[#f8fafc] p-4 space-y-4">
+          {/* Upper Format Notice Note */}
+          <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-900 flex items-start gap-2.5 shadow-2xs">
+            <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
             <div>
-              <span className="font-bold text-amber-300">Format Notice: </span>
+              <span className="font-bold text-amber-950">Format Notice: </span>
               <span>
-                Only <code className="rounded bg-amber-950/80 px-1.5 py-0.5 text-amber-200">.png</code>,{' '}
-                <code className="rounded bg-amber-950/80 px-1.5 py-0.5 text-amber-200">.jpg</code>,{' '}
-                <code className="rounded bg-amber-950/80 px-1.5 py-0.5 text-amber-200">.jpeg</code>,{' '}
-                <code className="rounded bg-amber-950/80 px-1.5 py-0.5 text-amber-200">.webp</code>, or{' '}
-                <code className="rounded bg-amber-950/80 px-1.5 py-0.5 text-amber-200">.gif</code> files can be set as logo. Transparent PNG files are recommended for crisp thermal tickets.
+                Only <code className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900 font-bold">.png</code>,{' '}
+                <code className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900 font-bold">.jpg</code>,{' '}
+                <code className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900 font-bold">.jpeg</code>,{' '}
+                <code className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900 font-bold">.webp</code>, or{' '}
+                <code className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900 font-bold">.gif</code> files can be set as logo. Transparent PNG files are recommended for crisp thermal tickets.
               </span>
             </div>
           </div>
@@ -369,12 +370,12 @@ export function CompanyLogoModal() {
               Dual Interactive Preview Box (Brand HD vs 80mm Thermal Receipt Simulation)
           ========================================================================== */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-            {/* Left Column: Brand Preview Box & Display Switcher (7 Cols) */}
-            <div className="lg:col-span-7 flex flex-col justify-between rounded-xl border border-slate-800 bg-slate-900/90 p-4 shadow-sm space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+            {/* Left Column: Brand Preview Box (7 Cols) */}
+            <div className="lg:col-span-7 flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-2xs space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                 <div className="flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4 text-emerald-400" />
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+                  <ImageIcon className="h-4 w-4 text-emerald-600" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
                     Corporate Logo Visual Frame
                   </h3>
                 </div>
@@ -383,7 +384,7 @@ export function CompanyLogoModal() {
                   <button
                     type="button"
                     onClick={() => setShowCheckeredBg(!showCheckeredBg)}
-                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-300 hover:bg-slate-700 transition cursor-pointer"
+                    className="rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
                     title="Toggle Checkered Transparency Grid"
                   >
                     {showCheckeredBg ? 'Grid: ON' : 'Grid: OFF'}
@@ -391,30 +392,30 @@ export function CompanyLogoModal() {
                   <button
                     type="button"
                     onClick={handleApplyDefaultLogo}
-                    className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/20 px-2.5 py-1 text-[11px] font-bold text-emerald-300 ring-1 ring-emerald-500/30 hover:bg-emerald-500/30 transition cursor-pointer"
+                    className="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800 hover:bg-emerald-100 transition cursor-pointer"
                   >
-                    <Sparkles className="h-3 w-3" />
+                    <Sparkles className="h-3 w-3 text-emerald-600" />
                     Reset Official Logo
                   </button>
                 </div>
               </div>
 
-              {/* Central Logo Box (Matching the screenshot dashed frame with elevated beauty) */}
+              {/* Central Logo Box (Clean dashed container) */}
               <div
                 className={`relative flex h-52 w-full items-center justify-center rounded-xl border-2 border-dashed transition p-4 ${
                   logoMode === 'DO_NOT_SHOW'
-                    ? 'border-slate-800 bg-slate-950/40 text-slate-500'
-                    : 'border-emerald-500/50 bg-white/5'
+                    ? 'border-slate-300 bg-slate-100/70 text-slate-500'
+                    : 'border-emerald-400 bg-slate-50/50'
                 } ${
                   showCheckeredBg && logoMode !== 'DO_NOT_SHOW'
-                    ? 'bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:16px_16px]'
+                    ? 'bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]'
                     : ''
                 }`}
               >
                 {logoMode === 'DO_NOT_SHOW' ? (
                   <div className="text-center space-y-2">
-                    <EyeOff className="mx-auto h-8 w-8 text-slate-600" />
-                    <div className="text-xs font-bold text-slate-400">Logo Suppressed (Text-Only Mode)</div>
+                    <EyeOff className="mx-auto h-8 w-8 text-slate-400" />
+                    <div className="text-xs font-bold text-slate-700">Logo Suppressed (Text-Only Mode)</div>
                     <p className="text-[11px] text-slate-500 max-w-xs">
                       The document headers will print clean corporate typography without graphics.
                     </p>
@@ -424,13 +425,13 @@ export function CompanyLogoModal() {
                     <img
                       src={currentLogoUrl}
                       alt={activeCompanyRecord.business_name}
-                      className="max-h-36 max-w-full object-contain filter drop-shadow-md transition hover:scale-105"
+                      className="max-h-36 max-w-full object-contain filter drop-shadow-sm transition hover:scale-105"
                     />
                   </div>
                 ) : (
                   <div className="text-center space-y-2">
-                    <Upload className="mx-auto h-8 w-8 text-slate-600" />
-                    <div className="text-xs font-bold text-slate-400">No Logo Loaded</div>
+                    <Upload className="mx-auto h-8 w-8 text-slate-400" />
+                    <div className="text-xs font-bold text-slate-700">No Logo Loaded</div>
                     <p className="text-[11px] text-slate-500">
                       Choose an image below to set your company logo
                     </p>
@@ -439,29 +440,29 @@ export function CompanyLogoModal() {
               </div>
 
               {/* Metadata strip */}
-              <div className="flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-800 pt-2">
-                <span>Active File: <strong className="text-slate-200">{selectedFileName}</strong></span>
-                <span>Preview Scale: <strong className="text-emerald-400">100% Vector Crisp</strong></span>
+              <div className="flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-100 pt-2">
+                <span>Active File: <strong className="text-slate-800">{selectedFileName}</strong></span>
+                <span>Preview Scale: <strong className="text-emerald-700 font-bold">100% Vector Crisp</strong></span>
               </div>
             </div>
 
-            {/* Right Column: 80mm POS Thermal Receipt Simulator (5 Cols - Mazai ka feature!) */}
-            <div className="lg:col-span-5 rounded-xl border border-slate-800 bg-slate-900/90 p-4 shadow-sm flex flex-col justify-between">
+            {/* Right Column: 80mm POS Thermal Receipt Simulator (5 Cols) */}
+            <div className="lg:col-span-5 rounded-xl border border-slate-200 bg-white p-4 shadow-2xs flex flex-col justify-between">
               <div>
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-3">
                   <div className="flex items-center gap-2">
-                    <Receipt className="h-4 w-4 text-amber-400" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+                    <Receipt className="h-4 w-4 text-sky-600" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
                       80mm Thermal Receipt Simulation
                     </h3>
                   </div>
-                  <span className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                  <span className="rounded bg-sky-100 border border-sky-300 px-2 py-0.5 text-[10px] font-bold text-sky-900">
                     Live Ticket
                   </span>
                 </div>
 
                 {/* Simulated Thermal Paper Slip */}
-                <div className="rounded-lg bg-[#ffffff] p-4 text-slate-900 shadow-inner select-none font-sans text-xs">
+                <div className="rounded-lg bg-white p-4 text-slate-900 shadow-md border border-slate-200 select-none font-sans text-xs">
                   {/* Top Logo on Receipt */}
                   {logoMode !== 'DO_NOT_SHOW' && currentLogoUrl && (
                     <div className="mb-2 text-center">
@@ -518,17 +519,17 @@ export function CompanyLogoModal() {
                 </div>
               </div>
 
-              <p className="mt-2 text-[10px] text-slate-400 text-center">
+              <p className="mt-2 text-[10px] text-slate-500 text-center">
                 Visual demonstration of thermal receipt printer output.
               </p>
             </div>
           </div>
 
           {/* =========================================================================
-              4. Mode Selection Controls (Radio Buttons matching screenshot)
+              4. Mode Selection Controls (Clean Radio Cards)
           ========================================================================== */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-4 shadow-sm space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
               Logo Application Preference
             </h3>
 
@@ -538,29 +539,29 @@ export function CompanyLogoModal() {
                 onClick={() => setLogoMode('SET_NEW')}
                 className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border p-3.5 transition cursor-pointer ${
                   logoMode === 'SET_NEW'
-                    ? 'border-emerald-500/60 bg-emerald-950/20'
-                    : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'
+                    ? 'border-emerald-500 bg-emerald-50/50 shadow-2xs'
+                    : 'border-slate-200 bg-slate-50/60 hover:bg-slate-50'
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <div
                     className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${
                       logoMode === 'SET_NEW'
-                        ? 'border-emerald-500 bg-emerald-500 text-slate-950'
-                        : 'border-slate-600 bg-slate-800'
+                        ? 'border-emerald-600 bg-emerald-600 text-white'
+                        : 'border-slate-400 bg-white'
                     }`}
                   >
-                    {logoMode === 'SET_NEW' && <div className="h-2 w-2 rounded-full bg-slate-950" />}
+                    {logoMode === 'SET_NEW' && <div className="h-2 w-2 rounded-full bg-white" />}
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-white">Set New Logo</span>
-                    <p className="text-[11px] text-slate-400">
+                    <span className="text-xs font-bold text-slate-900">Set New Logo</span>
+                    <p className="text-[11px] text-slate-600">
                       Upload an official corporate graphic to print on thermal bills and invoices
                     </p>
                   </div>
                 </div>
 
-                {/* File Upload Button (Matching screenshot Choose File) */}
+                {/* File Upload Button */}
                 <div className="flex items-center gap-2 pl-8 sm:pl-0">
                   <input
                     type="file"
@@ -575,12 +576,12 @@ export function CompanyLogoModal() {
                       e.stopPropagation();
                       fileInputRef.current?.click();
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-1.5 text-xs font-bold text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 shadow-2xs transition cursor-pointer"
                   >
-                    <Upload className="h-3.5 w-3.5 text-blue-400" />
+                    <Upload className="h-3.5 w-3.5 text-sky-600" />
                     Choose File
                   </button>
-                  <span className="text-xs text-slate-400 truncate max-w-[140px]">
+                  <span className="text-xs text-slate-600 font-medium truncate max-w-[140px]">
                     {selectedFileName}
                   </span>
                 </div>
@@ -591,40 +592,40 @@ export function CompanyLogoModal() {
                 onClick={() => setLogoMode('DO_NOT_SHOW')}
                 className={`flex items-center justify-between gap-3 rounded-xl border p-3.5 transition cursor-pointer ${
                   logoMode === 'DO_NOT_SHOW'
-                    ? 'border-amber-500/60 bg-amber-950/20'
-                    : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'
+                    ? 'border-amber-500 bg-amber-50/50 shadow-2xs'
+                    : 'border-slate-200 bg-slate-50/60 hover:bg-slate-50'
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <div
                     className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${
                       logoMode === 'DO_NOT_SHOW'
-                        ? 'border-amber-500 bg-amber-500 text-slate-950'
-                        : 'border-slate-600 bg-slate-800'
+                        ? 'border-amber-600 bg-amber-600 text-white'
+                        : 'border-slate-400 bg-white'
                     }`}
                   >
-                    {logoMode === 'DO_NOT_SHOW' && <div className="h-2 w-2 rounded-full bg-slate-950" />}
+                    {logoMode === 'DO_NOT_SHOW' && <div className="h-2 w-2 rounded-full bg-white" />}
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-white">Do Not Show Logo</span>
-                    <p className="text-[11px] text-slate-400">
+                    <span className="text-xs font-bold text-slate-900">Do Not Show Logo</span>
+                    <p className="text-[11px] text-slate-600">
                       Prints text-only company title without graphic image (saves thermal paper space)
                     </p>
                   </div>
                 </div>
 
-                <span className="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-400">
+                <span className="rounded bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-700">
                   Text Mode
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Lower Document Sync Note (Matching screenshot info bar with our styling) */}
-          <div className="rounded-xl border border-blue-500/30 bg-blue-950/20 p-3 text-xs text-blue-200 flex items-start gap-2.5">
-            <Info className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+          {/* Lower Document Sync Note */}
+          <div className="rounded-xl border border-sky-200 bg-sky-50/80 p-3 text-xs text-sky-950 flex items-start gap-2.5 shadow-2xs">
+            <Info className="h-4 w-4 text-sky-600 shrink-0 mt-0.5" />
             <div>
-              <span className="font-bold text-blue-300">Document Sync: </span>
+              <span className="font-bold text-sky-950">Document Sync: </span>
               <span>
                 Your selected logo will be printed on your documents, customer cash receipts, delivery challans, and system day closings automatically across all physical branches.
               </span>
@@ -633,12 +634,12 @@ export function CompanyLogoModal() {
         </div>
 
         {/* =========================================================================
-            5. Bottom Action Bar (Executive Save & Cancel)
+            5. Bottom Action Bar (Clean White Footer with Emerald Save)
         ========================================================================== */}
-        <div className="shrink-0 flex items-center justify-between border-t border-slate-800 bg-[#0b172a] px-5 py-3">
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <ImagePlus className="h-3.5 w-3.5 text-emerald-400" />
-            <span>Target: <strong className="text-white font-bold">{activeCompanyRecord.business_name}</strong></span>
+        <div className="shrink-0 flex items-center justify-between border-t border-slate-200 bg-white px-5 py-3">
+          <div className="flex items-center gap-2 text-xs text-slate-600">
+            <ImagePlus className="h-3.5 w-3.5 text-emerald-600" />
+            <span>Target: <strong className="text-slate-900 font-bold">{activeCompanyRecord.business_name}</strong></span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -646,7 +647,7 @@ export function CompanyLogoModal() {
               type="button"
               onClick={handleSaveLogo}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-2.5 text-xs font-bold text-white shadow-md hover:from-emerald-500 hover:to-teal-500 transition cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 px-6 py-2.5 text-xs font-bold text-white shadow-2xs hover:from-emerald-700 hover:to-teal-800 transition cursor-pointer disabled:opacity-50"
             >
               {saving ? (
                 <>
@@ -664,7 +665,7 @@ export function CompanyLogoModal() {
             <button
               type="button"
               onClick={closeLogoModal}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-5 py-2.5 text-xs font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition cursor-pointer"
             >
               <X className="h-3.5 w-3.5 stroke-[2.5]" />
               Cancel

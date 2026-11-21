@@ -119,19 +119,14 @@ export function UserRightsModal() {
   const [isMinimized, setIsMinimized] = useState(false);
 
   // 1. Two Connected Top Filters
-  // Filter 1: Company Selection
   const [selectedCompanyId, setSelectedCompanyId] = useState<number>(tenantCompanies[0]?.id ?? 1);
 
   // Filter 2: Users of the Selected Company
   const companyUsers = useMemo(() => {
     if (!users || users.length === 0) return [];
 
-    // All active users mapped to this company / branch, plus platform admins
     const matched = users.filter((u) => {
-      // Super Admin is always available for rights management
       if (isSuperAdminUser(u)) return true;
-
-      // In multi-branch setup, match branch or general company
       if (u.branch_id) {
         const branch = branches.find((b) => b.id === u.branch_id);
         if (branch) return true;
@@ -139,7 +134,6 @@ export function UserRightsModal() {
       return true;
     });
 
-    // Sort so Administrator / Faisal is first, followed by cashiers and managers
     return [...matched].sort((a, b) => {
       const aIsSuper = isSuperAdminUser(a);
       const bIsSuper = isSuperAdminUser(b);
@@ -149,12 +143,10 @@ export function UserRightsModal() {
     });
   }, [users, branches]);
 
-  // Selected User ID (Filter 2 state)
   const [selectedUserId, setSelectedUserId] = useState<number>(() => {
     return companyUsers[0]?.id ?? 1;
   });
 
-  // When company changes, ensure selected user stays valid within that company
   useEffect(() => {
     if (companyUsers.length > 0) {
       const currentExists = companyUsers.some((u) => u.id === selectedUserId);
@@ -164,21 +156,17 @@ export function UserRightsModal() {
     }
   }, [selectedCompanyId, companyUsers, selectedUserId]);
 
-  // The active selected user object
   const activeSelectedUser = useMemo(() => {
     return companyUsers.find((u) => u.id === selectedUserId) || companyUsers[0] || null;
   }, [companyUsers, selectedUserId]);
 
-  // Check if selected user is Super Admin (Faisal / Administrator)
   const isSelectedSuperAdmin = useMemo(() => {
     return isSuperAdminUser(activeSelectedUser);
   }, [activeSelectedUser]);
 
-  // Permissions State for Selected User
   const [permissionsState, setPermissionsState] = useState<Record<string, RightSetting>>({});
   const [saving, setSaving] = useState(false);
 
-  // Toast Notification
   const [toastMessage, setToastMessage] = useState<{
     text: string;
     type: 'success' | 'error';
@@ -189,19 +177,16 @@ export function UserRightsModal() {
     setTimeout(() => setToastMessage(null), 4000);
   }, []);
 
-  // Initialize permissions when selected user changes
   useEffect(() => {
     if (!activeSelectedUser) return;
 
     const initial: Record<string, RightSetting> = {};
 
     if (isSuperAdminUser(activeSelectedUser)) {
-      // Super Admin: 100% full allowed, editor and viewer permanently on
       ERP_RIGHTS.forEach((r) => {
         initial[r.key] = { allowed: true, editor: true, viewer: true };
       });
     } else {
-      // Regular staff (Cashier / Manager)
       const existing = activeSelectedUser.permissions || {};
       const isCashier = activeSelectedUser.role === 'CASHIER';
 
@@ -218,7 +203,6 @@ export function UserRightsModal() {
             };
           }
         } else {
-          // Standard Role Default
           if (r.superAdminOnly) {
             initial[r.key] = { allowed: false, editor: false, viewer: false };
           } else if (isCashier) {
@@ -229,7 +213,6 @@ export function UserRightsModal() {
               viewer: cashierAllowed,
             };
           } else {
-            // Manager
             initial[r.key] = {
               allowed: !r.superAdminOnly,
               editor: !r.superAdminOnly,
@@ -243,7 +226,6 @@ export function UserRightsModal() {
     setPermissionsState(initial);
   }, [activeSelectedUser]);
 
-  // ESC to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -254,13 +236,8 @@ export function UserRightsModal() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [closeUserRightsModal]);
 
-  // =========================================================================
-  // Toggle Handlers
-  // =========================================================================
-
-  // 1. Toggle Right Allowed Status (Single-click or Double-click)
   const handleToggleAllowed = (rightKey: string) => {
-    if (isSelectedSuperAdmin) return; // Super admin cannot be turned off
+    if (isSelectedSuperAdmin) return;
 
     setPermissionsState((prev) => {
       const current = prev[rightKey] ?? { allowed: false, editor: false, viewer: false };
@@ -276,7 +253,6 @@ export function UserRightsModal() {
     });
   };
 
-  // 2. Toggle Editor Checkbox
   const handleToggleEditor = (rightKey: string) => {
     if (isSelectedSuperAdmin) return;
 
@@ -295,7 +271,6 @@ export function UserRightsModal() {
     });
   };
 
-  // 3. Toggle Viewer Checkbox
   const handleToggleViewer = (rightKey: string) => {
     if (isSelectedSuperAdmin) return;
 
@@ -314,7 +289,6 @@ export function UserRightsModal() {
     });
   };
 
-  // Presets for Quick Configuration
   const applyPreset = (preset: 'ALL' | 'BILLING' | 'RESET') => {
     if (isSelectedSuperAdmin) return;
 
@@ -329,7 +303,6 @@ export function UserRightsModal() {
         const isBilling = ['pos_billing', 'hold_recall', 'sales_return', 'customers', 'day_closing'].includes(r.key);
         nextState[r.key] = { allowed: isBilling, editor: isBilling, viewer: isBilling };
       } else {
-        // RESET
         if (r.superAdminOnly) {
           nextState[r.key] = { allowed: false, editor: false, viewer: false };
         } else if (isCashier) {
@@ -349,7 +322,6 @@ export function UserRightsModal() {
     showToast(`Applied preset: ${preset === 'ALL' ? 'Grant All Operational' : preset === 'BILLING' ? 'Billing Only' : 'Role Default'}`, 'success');
   };
 
-  // Save Changes Handler
   const handleSaveChanges = async () => {
     if (!activeSelectedUser) return;
 
@@ -397,59 +369,61 @@ export function UserRightsModal() {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 transition-all duration-200 ${
-        isMinimized ? 'pointer-events-none opacity-0' : 'bg-slate-950/75 backdrop-blur-sm'
+      className={`fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 transition-all duration-200 ${
+        isMinimized ? 'pointer-events-none opacity-0' : 'bg-slate-950/65 backdrop-blur-xs'
       }`}
     >
       <div
-        className={`relative flex flex-col overflow-hidden rounded-2xl border border-slate-700/80 bg-slate-900 shadow-2xl transition-all duration-200 ${
+        className={`flex flex-col rounded-2xl bg-white shadow-2xl transition-all duration-200 border border-slate-300 overflow-hidden ${
           isMaximized
-            ? 'h-[96vh] w-[98vw] max-w-none'
-            : 'h-[92vh] max-h-[850px] w-full max-w-5xl'
+            ? 'fixed inset-1.5 w-[calc(100%-12px)] h-[calc(100%-12px)] max-w-none'
+            : 'w-full max-w-5xl h-[88vh] max-h-[850px]'
         }`}
       >
         {/* =========================================================================
-            1. Title Bar (Executive Midnight Navy — Hamara Wala Color Combination)
+            1. Title Bar (Executive Midnight Navy — Image 2 Standard)
         ========================================================================== */}
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-800 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] px-4 py-2.5 text-white select-none">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30">
-              <ShieldCheck className="h-4.5 w-4.5" />
+        <div className="flex shrink-0 items-center justify-between border-b border-sky-500/25 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] px-4 py-2.5 text-white select-none">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/20 text-sky-400 border border-sky-400/30">
+              <ShieldCheck className="h-4 w-4 text-emerald-400" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold tracking-tight text-white">
-                  User Rights Settings & Security Matrix
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 ring-1 ring-emerald-500/30">
+                <h1 className="text-sm font-black tracking-wide uppercase text-white sm:text-base">
+                  User Rights Settings &amp; Security Matrix
+                </h1>
+                <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-400/30">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   Live RBAC Matrix
                 </span>
-                <span className="rounded-md bg-indigo-500/20 px-2 py-0.5 text-[10px] font-semibold text-indigo-300 ring-1 ring-indigo-500/30">
-                  Step 4 • Administration
-                </span>
               </div>
-              <p className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-slate-300">
                 Granular Module Access • Allowed Status • Editor / Viewer Permissions Control
-              </p>
+              </span>
             </div>
           </div>
 
           {/* Window Controls */}
           <div className="flex items-center gap-1.5">
+            <div className="hidden sm:flex items-center gap-1.5 rounded-lg bg-slate-900/60 px-2.5 py-1 text-xs border border-white/10 text-slate-300">
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+              <span className="font-semibold text-white">Administrator Mode</span>
+            </div>
+
             <button
               type="button"
               onClick={() => setIsMinimized(!isMinimized)}
               title="Minimize"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition cursor-pointer"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-slate-300 hover:bg-white/10 hover:text-white transition cursor-pointer"
             >
               <Minus className="h-3.5 w-3.5" />
             </button>
             <button
               type="button"
               onClick={() => setIsMaximized(!isMaximized)}
-              title={isMaximized ? 'Restore' : 'Maximize'}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition cursor-pointer"
+              title={isMaximized ? 'Restore Window' : 'Maximize Window'}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-slate-300 hover:bg-white/10 hover:text-white transition cursor-pointer"
             >
               {isMaximized ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
             </button>
@@ -457,9 +431,9 @@ export function UserRightsModal() {
               type="button"
               onClick={closeUserRightsModal}
               title="Close (Esc)"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-rose-600 hover:text-white transition cursor-pointer"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-slate-300 hover:bg-rose-600 hover:text-white transition cursor-pointer"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -469,49 +443,49 @@ export function UserRightsModal() {
           <div
             className={`flex shrink-0 items-center justify-between px-4 py-2 text-xs font-semibold ${
               toastMessage.type === 'success'
-                ? 'bg-emerald-950 text-emerald-200 border-b border-emerald-800'
-                : 'bg-rose-950 text-rose-200 border-b border-rose-800'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-rose-600 text-white'
             }`}
           >
             <div className="flex items-center gap-2">
               {toastMessage.type === 'success' ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                <CheckCircle2 className="h-4 w-4" />
               ) : (
-                <AlertCircle className="h-4 w-4 text-rose-400" />
+                <AlertCircle className="h-4 w-4" />
               )}
               <span>{toastMessage.text}</span>
             </div>
             <button
               type="button"
               onClick={() => setToastMessage(null)}
-              className="text-xs hover:underline cursor-pointer opacity-80 hover:opacity-100"
+              className="text-white hover:text-slate-200 cursor-pointer"
             >
-              Dismiss
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
         )}
 
         {/* =========================================================================
-            2. Two Connected Top Filters Box (Company & User)
+            2. Two Connected Top Filters Box (Clean White & Slate)
         ========================================================================== */}
-        <div className="shrink-0 border-b border-slate-800 bg-[#0b172a] p-3 sm:p-4">
-          <div className="rounded-xl border border-slate-700/80 bg-slate-900/90 p-3.5 shadow-xs">
+        <div className="shrink-0 border-b border-slate-200 bg-slate-50/80 p-3 sm:p-4">
+          <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               {/* Filter 1: Select Company */}
               <div>
-                <label className="mb-1.5 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-300">
+                <label className="mb-1 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-700">
                   <span className="flex items-center gap-1.5">
-                    <Building2 className="h-3.5 w-3.5 text-blue-400" />
+                    <Building2 className="h-3.5 w-3.5 text-sky-600" />
                     1. Select Target Company:
                   </span>
-                  <span className="rounded bg-blue-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-blue-300">
+                  <span className="rounded bg-sky-100 border border-sky-300 px-1.5 py-0.5 text-[10px] font-bold text-sky-900">
                     Filter 1 of 2
                   </span>
                 </label>
                 <select
                   value={selectedCompanyId}
                   onChange={(e) => setSelectedCompanyId(Number(e.target.value))}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-white shadow-xs transition focus:border-blue-500 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-800 shadow-2xs transition focus:border-sky-600 focus:outline-hidden focus:ring-1 focus:ring-sky-600"
                 >
                   {tenantCompanies.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -521,21 +495,21 @@ export function UserRightsModal() {
                 </select>
               </div>
 
-              {/* Filter 2: Select User (Directly linked to Filter 1) */}
+              {/* Filter 2: Select User */}
               <div>
-                <label className="mb-1.5 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-300">
+                <label className="mb-1 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-700">
                   <span className="flex items-center gap-1.5">
-                    <User className="h-3.5 w-3.5 text-emerald-400" />
+                    <User className="h-3.5 w-3.5 text-emerald-600" />
                     2. Select User / Employee:
                   </span>
-                  <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-300">
+                  <span className="rounded bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 text-[10px] font-bold text-emerald-900">
                     Filter 2 (Linked) • {companyUsers.length} Users
                   </span>
                 </label>
                 <select
                   value={selectedUserId}
                   onChange={(e) => setSelectedUserId(Number(e.target.value))}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-white shadow-xs transition focus:border-emerald-500 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-800 shadow-2xs transition focus:border-emerald-600 focus:outline-hidden focus:ring-1 focus:ring-emerald-600"
                 >
                   {companyUsers.map((u) => {
                     const isSuper = isSuperAdminUser(u);
@@ -551,21 +525,21 @@ export function UserRightsModal() {
 
             {/* Quick Helper Subtitle or Super Admin Banner */}
             {isSelectedSuperAdmin ? (
-              <div className="mt-3 flex items-center justify-between rounded-xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/60 via-slate-900 to-indigo-950/40 p-2.5 text-xs text-white">
+              <div className="mt-3 flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50/80 p-2.5 text-xs text-amber-950 shadow-2xs">
                 <div className="flex items-center gap-2 font-bold">
-                  <Crown className="h-4 w-4 text-amber-400" />
+                  <Crown className="h-4 w-4 text-amber-600" />
                   <span>👑 Super Admin: {activeSelectedUser?.full_name || 'Faisal'} — All Rights Permanently Active across All Modules</span>
                 </div>
-                <span className="rounded-md bg-indigo-500/30 px-2 py-0.5 text-[10px] font-bold text-indigo-200">
+                <span className="rounded bg-amber-200/80 px-2 py-0.5 text-[10px] font-bold text-amber-950">
                   Full Authority • Zero Restrictions
                 </span>
               </div>
             ) : (
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-2.5 text-xs">
-                <div className="flex items-center gap-1.5 text-slate-400 font-medium">
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2.5 text-xs">
+                <div className="flex items-center gap-1.5 text-slate-600 font-medium">
                   <span>Configuring Rights for:</span>
-                  <span className="font-bold text-white">{activeSelectedUser?.full_name}</span>
-                  <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-bold text-emerald-400 ring-1 ring-slate-700">
+                  <span className="font-bold text-slate-900">{activeSelectedUser?.full_name}</span>
+                  <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-700 border border-slate-200">
                     {activeSelectedUser?.role}
                   </span>
                 </div>
@@ -575,21 +549,21 @@ export function UserRightsModal() {
                   <button
                     type="button"
                     onClick={() => applyPreset('ALL')}
-                    className="rounded-lg bg-emerald-500/20 px-2.5 py-1 text-[11px] font-bold text-emerald-300 ring-1 ring-emerald-500/30 hover:bg-emerald-500/30 transition cursor-pointer"
+                    className="rounded-lg bg-emerald-50 border border-emerald-300 px-2.5 py-1 text-[11px] font-bold text-emerald-800 hover:bg-emerald-100 transition cursor-pointer"
                   >
                     Grant All
                   </button>
                   <button
                     type="button"
                     onClick={() => applyPreset('BILLING')}
-                    className="rounded-lg bg-blue-500/20 px-2.5 py-1 text-[11px] font-bold text-blue-300 ring-1 ring-blue-500/30 hover:bg-blue-500/30 transition cursor-pointer"
+                    className="rounded-lg bg-sky-50 border border-sky-300 px-2.5 py-1 text-[11px] font-bold text-sky-800 hover:bg-sky-100 transition cursor-pointer"
                   >
                     Billing Only
                   </button>
                   <button
                     type="button"
                     onClick={() => applyPreset('RESET')}
-                    className="rounded-lg bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-300 ring-1 ring-slate-700 hover:bg-slate-700 transition cursor-pointer"
+                    className="rounded-lg bg-slate-100 border border-slate-300 px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-200 transition cursor-pointer"
                   >
                     Reset
                   </button>
@@ -599,20 +573,20 @@ export function UserRightsModal() {
           </div>
 
           {/* Subtitle / Instruction Line */}
-          <div className="mt-2.5 flex items-center justify-end gap-1.5 text-[11px] text-slate-400 italic">
-            <Info className="h-3.5 w-3.5 text-slate-500" />
-            <span>Double-click or click on <strong className="font-bold text-slate-200 not-italic">Right Allowed Status</strong> to toggle access.</span>
+          <div className="mt-2.5 flex items-center justify-end gap-1.5 text-[11px] text-slate-500 italic">
+            <Info className="h-3.5 w-3.5 text-slate-400" />
+            <span>Double-click or click on <strong className="font-bold text-slate-700 not-italic">Right Allowed Status</strong> to toggle access.</span>
           </div>
         </div>
 
         {/* =========================================================================
-            3. Scrollable Table Grid (Executive Dark Midnight ERP Theme)
+            3. Scrollable Table Grid (Clean White & Slate Body)
         ========================================================================== */}
-        <div className="flex-1 overflow-y-auto p-4 bg-slate-950">
-          <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900 shadow-sm">
+        <div className="flex-1 overflow-y-auto p-4 bg-[#f8fafc]">
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xs">
             <table className="w-full text-left text-xs border-collapse">
-              {/* Table Header: Executive Midnight Navy */}
-              <thead className="bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#0b1830] border-b border-slate-800 text-slate-300">
+              {/* Table Header: Clean Slate/Sky Header */}
+              <thead className="bg-slate-100 border-b border-slate-200 text-slate-700">
                 <tr>
                   <th className="px-4 py-3 font-bold text-left uppercase tracking-wider text-xs">Right Type</th>
                   <th className="px-4 py-3 font-bold text-center uppercase tracking-wider text-xs">Right Allowed Status</th>
@@ -620,7 +594,7 @@ export function UserRightsModal() {
                   <th className="px-4 py-3 font-bold text-center uppercase tracking-wider text-xs">Viewer</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/80">
+              <tbody className="divide-y divide-slate-100 bg-white">
                 {ERP_RIGHTS.map((r) => {
                   const setting = permissionsState[r.key] ?? { allowed: false, editor: false, viewer: false };
                   const isAllowed = isSelectedSuperAdmin || setting.allowed;
@@ -630,21 +604,21 @@ export function UserRightsModal() {
                   return (
                     <tr
                       key={r.key}
-                      className="hover:bg-slate-800/60 transition select-none"
+                      className="hover:bg-slate-50 transition select-none"
                     >
                       {/* Column 1: Right Type */}
-                      <td className="px-4 py-2.5 font-semibold text-slate-200">
+                      <td className="px-4 py-2.5 font-bold text-slate-800">
                         <div className="flex items-center gap-2">
                           <span>{r.label}</span>
                           {r.superAdminOnly && (
-                            <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-bold text-amber-300 ring-1 ring-amber-500/30">
+                            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-900 border border-amber-300">
                               Admin
                             </span>
                           )}
                         </div>
                       </td>
 
-                      {/* Column 2: Right Allowed Status (Click or double-click to toggle) */}
+                      {/* Column 2: Right Allowed Status */}
                       <td
                         className={`px-4 py-2.5 text-center font-bold cursor-pointer transition select-none ${
                           isSelectedSuperAdmin ? 'cursor-default' : 'hover:opacity-80'
@@ -654,19 +628,19 @@ export function UserRightsModal() {
                         title={isSelectedSuperAdmin ? 'Permanently Allowed for Super Admin' : 'Click to toggle access'}
                       >
                         {isAllowed ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-3 py-0.5 text-xs font-bold text-emerald-400 ring-1 ring-emerald-500/30">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-0.5 text-xs font-bold text-emerald-900 border border-emerald-300">
                             <Check className="h-3 w-3 stroke-[3]" />
                             Allowed
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-800 px-3 py-0.5 text-xs font-semibold text-slate-500 ring-1 ring-slate-700">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-0.5 text-xs font-semibold text-slate-600 border border-slate-200">
                             <X className="h-3 w-3 stroke-[2.5]" />
                             Not Allowed
                           </span>
                         )}
                       </td>
 
-                      {/* Column 3: Editor Checkbox (Vibrant blue square with white check icon) */}
+                      {/* Column 3: Editor Checkbox */}
                       <td className="px-4 py-2.5 text-center">
                         <button
                           type="button"
@@ -677,16 +651,16 @@ export function UserRightsModal() {
                           }`}
                         >
                           {isEditor ? (
-                            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-blue-600 text-white shadow-xs ring-1 ring-blue-400/50">
+                            <div className="flex h-5 w-5 items-center justify-center rounded-sm bg-blue-600 text-white shadow-2xs">
                               <Check className="h-3.5 w-3.5 stroke-[3]" />
                             </div>
                           ) : (
-                            <div className="h-5 w-5 rounded-md border-2 border-slate-600 bg-slate-800 hover:border-slate-400 transition" />
+                            <div className="h-5 w-5 rounded-sm border-2 border-slate-300 bg-white hover:border-slate-400 transition" />
                           )}
                         </button>
                       </td>
 
-                      {/* Column 4: Viewer Checkbox (Vibrant blue square with white check icon) */}
+                      {/* Column 4: Viewer Checkbox */}
                       <td className="px-4 py-2.5 text-center">
                         <button
                           type="button"
@@ -697,11 +671,11 @@ export function UserRightsModal() {
                           }`}
                         >
                           {isViewer ? (
-                            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-blue-600 text-white shadow-xs ring-1 ring-blue-400/50">
+                            <div className="flex h-5 w-5 items-center justify-center rounded-sm bg-blue-600 text-white shadow-2xs">
                               <Check className="h-3.5 w-3.5 stroke-[3]" />
                             </div>
                           ) : (
-                            <div className="h-5 w-5 rounded-md border-2 border-slate-600 bg-slate-800 hover:border-slate-400 transition" />
+                            <div className="h-5 w-5 rounded-sm border-2 border-slate-300 bg-white hover:border-slate-400 transition" />
                           )}
                         </button>
                       </td>
@@ -714,12 +688,12 @@ export function UserRightsModal() {
         </div>
 
         {/* =========================================================================
-            4. Bottom Action Bar (Executive Midnight / Emerald Save Changes & Cancel)
+            4. Bottom Action Bar (Clean White Footer)
         ========================================================================== */}
-        <div className="shrink-0 flex items-center justify-between border-t border-slate-800 bg-[#0b172a] px-5 py-3">
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-            <span>Target User: <strong className="text-white font-bold">{activeSelectedUser?.full_name}</strong></span>
+        <div className="shrink-0 flex items-center justify-between border-t border-slate-200 bg-white px-5 py-3">
+          <div className="flex items-center gap-2 text-xs text-slate-600">
+            <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+            <span>Target User: <strong className="text-slate-900 font-bold">{activeSelectedUser?.full_name}</strong></span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -727,7 +701,7 @@ export function UserRightsModal() {
               type="button"
               onClick={handleSaveChanges}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-2.5 text-xs font-bold text-white shadow-md hover:from-emerald-500 hover:to-teal-500 transition cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 px-6 py-2.5 text-xs font-bold text-white shadow-2xs hover:from-emerald-700 hover:to-teal-800 transition cursor-pointer disabled:opacity-50"
             >
               {saving ? (
                 <>
@@ -745,7 +719,7 @@ export function UserRightsModal() {
             <button
               type="button"
               onClick={closeUserRightsModal}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-5 py-2.5 text-xs font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition cursor-pointer"
             >
               <X className="h-3.5 w-3.5 stroke-[2.5]" />
               Cancel
