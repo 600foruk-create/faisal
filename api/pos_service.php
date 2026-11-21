@@ -419,26 +419,28 @@ function mysql_system_factory_reset(PDO $pdo): array
             $pdo->exec("UPDATE companies SET company_code = 'SEASTONE', business_name = 'M/S SEASTONE PVC PIPE INDUSTRY', owner_name = 'Faisal (Owner)' WHERE id = 1");
         } catch (Throwable $e) {}
 
-        // 4. Reset to 1 primary branch (MAIN) & 1 primary terminal (POS-01) with fresh sequence 1
+        // 4. Update and clean users first (keep only Super Admin Faisal active)
+        ensure_user_rights_table($pdo);
+        try {
+            $pdo->exec("DELETE FROM user_rights WHERE user_id != 1");
+            $pdo->exec("DELETE FROM users WHERE username != 'faisal' AND id != 1");
+            $adminHash = password_hash('admin123', PASSWORD_BCRYPT);
+            $pdo->exec("UPDATE users SET username = 'faisal', full_name = 'Faisal (Super Admin)', role = 'SUPER_ADMIN', branch_id = 1, is_active = 1 WHERE id = 1");
+        } catch (Throwable $e) {}
+
+        // 5. Clean customers (keep only 1 default walk-in customer on branch 1)
+        try {
+            $pdo->exec('DELETE FROM customers WHERE id > 1');
+            $pdo->exec("UPDATE customers SET branch_id = 1, name = 'Walk-in (Cash) Customer', phone = '', is_walk_in = 1 WHERE id = 1");
+        } catch (Throwable $e) {}
+
+        // 6. Reset to 1 primary branch (MAIN) & 1 primary terminal (POS-01) with fresh sequence 1
         try {
             $pdo->exec('DELETE FROM pos_terminals WHERE id > 1');
             $pdo->exec("UPDATE pos_terminals SET branch_id = 1, terminal_code = 'POS-01', invoice_prefix = 'POS-01', next_sequence = 1 WHERE id = 1");
             $pdo->exec('DELETE FROM branches WHERE id > 1');
             $pdo->exec("UPDATE branches SET code = 'MAIN', name = 'Main Branch', display_name = 'SEASTONE MAIN OUTLET' WHERE id = 1");
         } catch (Throwable $e) {}
-
-        // 5. Keep 1 default walk-in customer
-        try {
-            $pdo->exec('DELETE FROM customers WHERE id > 1');
-            $pdo->exec("UPDATE customers SET branch_id = 1, name = 'Walk-in (Cash) Customer', phone = '', is_walk_in = 1 WHERE id = 1");
-        } catch (Throwable $e) {}
-
-        // 6. Delete other users (keep only Super Admin Faisal active)
-        ensure_user_rights_table($pdo);
-        $pdo->exec("DELETE FROM user_rights WHERE user_id != 1");
-        $pdo->exec("DELETE FROM users WHERE username != 'faisal' AND id != 1");
-        $adminHash = password_hash('admin123', PASSWORD_BCRYPT);
-        $pdo->exec("UPDATE users SET username = 'faisal', full_name = 'Faisal (Super Admin)', role = 'SUPER_ADMIN', branch_id = 1, is_active = 1 WHERE id = 1");
 
         // Ensure user 1 (Faisal) has permanent full rights
         $allRights = [

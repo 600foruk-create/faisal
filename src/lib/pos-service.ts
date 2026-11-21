@@ -881,7 +881,24 @@ export function systemFactoryReset(db: DatabaseSync): {
       ).run();
     } catch {}
 
-    // 4. Reset to 1 primary branch (MAIN) & 1 primary terminal (POS-01) with fresh sequence 1
+    // 4. Delete other users (keep only Super Admin Faisal active)
+    try {
+      db.prepare('DELETE FROM user_rights WHERE user_id != 1').run();
+    } catch {}
+    db.prepare("DELETE FROM users WHERE username != 'faisal' AND id != 1").run();
+    db.prepare(
+      "UPDATE users SET username = 'faisal', full_name = 'Faisal (Super Admin)', role = 'SUPER_ADMIN', branch_id = 1, is_active = 1 WHERE id = 1"
+    ).run();
+
+    // 5. Keep 1 default walk-in customer on branch 1
+    try {
+      db.prepare('DELETE FROM customers WHERE id > 1').run();
+      db.prepare(
+        "UPDATE customers SET branch_id = 1, name = 'Walk-in (Cash) Customer', phone = '', is_walk_in = 1 WHERE id = 1"
+      ).run();
+    } catch {}
+
+    // 6. Reset to 1 primary branch (MAIN) & 1 primary terminal (POS-01) with fresh sequence 1
     try {
       db.prepare('DELETE FROM pos_terminals WHERE id > 1').run();
       db.prepare(
@@ -892,23 +909,6 @@ export function systemFactoryReset(db: DatabaseSync): {
         "UPDATE branches SET code = 'MAIN', name = 'Main Branch', display_name = 'SEASTONE MAIN OUTLET' WHERE id = 1"
       ).run();
     } catch {}
-
-    // 5. Keep 1 default walk-in customer
-    try {
-      db.prepare('DELETE FROM customers WHERE id > 1').run();
-      db.prepare(
-        "UPDATE customers SET branch_id = 1, name = 'Walk-in (Cash) Customer', phone = '', is_walk_in = 1 WHERE id = 1"
-      ).run();
-    } catch {}
-
-    // 6. Delete other users (keep only Super Admin Faisal active)
-    try {
-      db.prepare('DELETE FROM user_rights WHERE user_id != 1').run();
-    } catch {}
-    db.prepare("DELETE FROM users WHERE username != 'faisal' AND id != 1").run();
-    db.prepare(
-      "UPDATE users SET username = 'faisal', full_name = 'Faisal (Super Admin)', role = 'SUPER_ADMIN', branch_id = 1, is_active = 1 WHERE id = 1"
-    ).run();
 
     return {
       success: true,
