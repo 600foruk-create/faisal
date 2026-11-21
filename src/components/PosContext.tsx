@@ -42,6 +42,10 @@ interface PosContextValue {
   setIsClearTransactionsModalOpen: (open: boolean) => void;
   openClearTransactionsModal: () => void;
   closeClearTransactionsModal: () => void;
+  isBackupUtilityModalOpen: boolean;
+  setIsBackupUtilityModalOpen: (open: boolean) => void;
+  openBackupUtilityModal: () => void;
+  closeBackupUtilityModal: () => void;
   isPosModalOpen: boolean;
   setIsPosModalOpen: (open: boolean) => void;
   openPosSale: () => void;
@@ -156,6 +160,7 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const [isPasswordsModalOpen, setIsPasswordsModalOpen] = useState(false);
   const [isSystemSettingsModalOpen, setIsSystemSettingsModalOpen] = useState(false);
   const [isClearTransactionsModalOpen, setIsClearTransactionsModalOpen] = useState(false);
+  const [isBackupUtilityModalOpen, setIsBackupUtilityModalOpen] = useState(false);
   const [isPosModalOpen, setIsPosModalOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
@@ -235,6 +240,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const closeSystemSettingsModal = useCallback(() => setIsSystemSettingsModalOpen(false), []);
   const openClearTransactionsModal = useCallback(() => setIsClearTransactionsModalOpen(true), []);
   const closeClearTransactionsModal = useCallback(() => setIsClearTransactionsModalOpen(false), []);
+  const openBackupUtilityModal = useCallback(() => setIsBackupUtilityModalOpen(true), []);
+  const closeBackupUtilityModal = useCallback(() => setIsBackupUtilityModalOpen(false), []);
 
   const refreshHeldCount = useCallback(async () => {
     try {
@@ -450,6 +457,10 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         setIsClearTransactionsModalOpen,
         openClearTransactionsModal,
         closeClearTransactionsModal,
+        isBackupUtilityModalOpen,
+        setIsBackupUtilityModalOpen,
+        openBackupUtilityModal,
+        closeBackupUtilityModal,
         selectedProductIdForPos,
         setSelectedProductIdForPos,
         setActiveBranchId,

@@ -109,7 +109,7 @@ function SettingsContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab') as SettingsTab | null;
 
-  const { branches, terminals, users, settings, activeUser, reloadContext, refreshNonce, openCompanyModal, openBranchesCountersModal, openUserLoginsModal, openUserRightsModal, openPasswordsModal, openSystemSettingsModal, openClearTransactionsModal } =
+  const { branches, terminals, users, settings, activeUser, reloadContext, refreshNonce, openCompanyModal, openBranchesCountersModal, openUserLoginsModal, openUserRightsModal, openPasswordsModal, openSystemSettingsModal, openClearTransactionsModal, openBackupUtilityModal } =
     usePosContext();
 
   const [tab, setTab] = useState<SettingsTab>('business');
@@ -1378,9 +1378,19 @@ function SettingsContent() {
       {tab === 'clear' && (
         <div className="grid max-w-4xl grid-cols-1 gap-4 md:grid-cols-2">
           <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="border-b border-slate-100 pb-2 text-sm font-bold text-slate-900">
-              BackUp Utility (JSON Snapshot)
-            </h2>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <h2 className="text-sm font-bold text-slate-900">
+                BackUp Utility (Data Vault & Snapshots)
+              </h2>
+              <button
+                type="button"
+                onClick={() => openBackupUtilityModal()}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:from-emerald-700 hover:to-teal-800 transition"
+              >
+                <DatabaseBackup className="h-3.5 w-3.5" />
+                Open Desktop ERP Backup Window
+              </button>
+            </div>
             <p className="text-xs text-slate-600">
               Always download a full JSON backup of your company settings, branches, products,
               customers, invoices, and day closings before clearing transactions.

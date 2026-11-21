@@ -124,6 +124,7 @@ export function PosHeader() {
     openPasswordsModal,
     openSystemSettingsModal,
     openClearTransactionsModal,
+    openBackupUtilityModal,
   } = usePosContext();
 
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -251,7 +252,10 @@ export function PosHeader() {
                           <button
                             key={item.label}
                             type="button"
-                            onClick={() => void handleDownloadBackup()}
+                            onClick={() => {
+                              setOpenMenu(null);
+                              openBackupUtilityModal();
+                            }}
                             className="flex w-full cursor-pointer items-center gap-2.5 border-t border-slate-100 px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700"
                           >
                             <Icon className="h-3.5 w-3.5 text-emerald-600" />
