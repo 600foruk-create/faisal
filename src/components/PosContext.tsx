@@ -46,6 +46,10 @@ interface PosContextValue {
   setIsBackupUtilityModalOpen: (open: boolean) => void;
   openBackupUtilityModal: () => void;
   closeBackupUtilityModal: () => void;
+  isLogoModalOpen: boolean;
+  setIsLogoModalOpen: (open: boolean) => void;
+  openLogoModal: () => void;
+  closeLogoModal: () => void;
   isPosModalOpen: boolean;
   setIsPosModalOpen: (open: boolean) => void;
   openPosSale: () => void;
@@ -161,6 +165,7 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const [isSystemSettingsModalOpen, setIsSystemSettingsModalOpen] = useState(false);
   const [isClearTransactionsModalOpen, setIsClearTransactionsModalOpen] = useState(false);
   const [isBackupUtilityModalOpen, setIsBackupUtilityModalOpen] = useState(false);
+  const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
   const [isPosModalOpen, setIsPosModalOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
@@ -242,6 +247,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const closeClearTransactionsModal = useCallback(() => setIsClearTransactionsModalOpen(false), []);
   const openBackupUtilityModal = useCallback(() => setIsBackupUtilityModalOpen(true), []);
   const closeBackupUtilityModal = useCallback(() => setIsBackupUtilityModalOpen(false), []);
+  const openLogoModal = useCallback(() => setIsLogoModalOpen(true), []);
+  const closeLogoModal = useCallback(() => setIsLogoModalOpen(false), []);
 
   const refreshHeldCount = useCallback(async () => {
     try {
@@ -461,6 +468,10 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         setIsBackupUtilityModalOpen,
         openBackupUtilityModal,
         closeBackupUtilityModal,
+        isLogoModalOpen,
+        setIsLogoModalOpen,
+        openLogoModal,
+        closeLogoModal,
         selectedProductIdForPos,
         setSelectedProductIdForPos,
         setActiveBranchId,

@@ -34,6 +34,7 @@ type MenuAction =
   | 'about_license'
   | 'about_contact'
   | 'open_company_modal'
+  | 'open_logo_modal'
   | 'open_branches_modal'
   | 'open_users_modal'
   | 'open_user_rights_modal'
@@ -69,7 +70,7 @@ const ADMIN_SUBHEADER_MENUS: DropdownGroup[] = [
     adminOnly: true,
     items: [
       { label: 'My Company', action: 'open_company_modal', icon: Building2 },
-      { label: 'My Logo', href: '/settings?tab=logo', icon: ImagePlus },
+      { label: 'My Logo', action: 'open_logo_modal', icon: ImagePlus },
       { label: 'Branches & Counters', action: 'open_branches_modal', icon: Store },
       { label: 'User Logins', action: 'open_users_modal', icon: UserCheck },
       { label: 'User Rights', action: 'open_user_rights_modal', icon: ShieldCheck },
@@ -118,6 +119,7 @@ export function PosHeader() {
     openPriceSettingsModal,
     openSalesTaxRatesModal,
     openCompanyModal,
+    openLogoModal,
     openBranchesCountersModal,
     openUserLoginsModal,
     openUserRightsModal,
@@ -275,6 +277,22 @@ export function PosHeader() {
                             className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700"
                           >
                             <Icon className="h-3.5 w-3.5 text-emerald-600" />
+                            <span>{item.label}</span>
+                          </button>
+                        );
+                      }
+                      if (item.action === 'open_logo_modal') {
+                        return (
+                          <button
+                            key={item.label}
+                            type="button"
+                            onClick={() => {
+                              setOpenMenu(null);
+                              openLogoModal();
+                            }}
+                            className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-700"
+                          >
+                            <Icon className="h-3.5 w-3.5 text-blue-600" />
                             <span>{item.label}</span>
                           </button>
                         );

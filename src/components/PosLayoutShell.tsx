@@ -28,6 +28,7 @@ import { PasswordsModal } from './PasswordsModal';
 import { SystemSettingsModal } from './SystemSettingsModal';
 import { ClearTransactionsModal } from './ClearTransactionsModal';
 import { BackupUtilityModal } from './BackupUtilityModal';
+import { CompanyLogoModal } from './CompanyLogoModal';
 
 export function PosLayoutShell({ children }: { children: React.ReactNode }) {
   const {
@@ -53,6 +54,7 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
     isSystemSettingsModalOpen,
     isClearTransactionsModalOpen,
     isBackupUtilityModalOpen,
+    isLogoModalOpen,
   } = usePosContext();
 
   return (
@@ -139,6 +141,9 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
 
       {/* FLOATING BACKUP UTILITY & DATA VAULT MODAL (STEP 8) */}
       {isBackupUtilityModalOpen && <BackupUtilityModal />}
+
+      {/* FLOATING LOGO SETTINGS & CORPORATE BRANDING MODAL */}
+      {isLogoModalOpen && <CompanyLogoModal />}
     </div>
   );
 }

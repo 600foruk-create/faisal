@@ -109,7 +109,7 @@ function SettingsContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab') as SettingsTab | null;
 
-  const { branches, terminals, users, settings, activeUser, reloadContext, refreshNonce, openCompanyModal, openBranchesCountersModal, openUserLoginsModal, openUserRightsModal, openPasswordsModal, openSystemSettingsModal, openClearTransactionsModal, openBackupUtilityModal } =
+  const { branches, terminals, users, settings, activeUser, reloadContext, refreshNonce, openCompanyModal, openLogoModal, openBranchesCountersModal, openUserLoginsModal, openUserRightsModal, openPasswordsModal, openSystemSettingsModal, openClearTransactionsModal, openBackupUtilityModal } =
     usePosContext();
 
   const [tab, setTab] = useState<SettingsTab>('business');
@@ -792,9 +792,19 @@ function SettingsContent() {
       {tab === 'logo' && (
         <div className="grid max-w-4xl grid-cols-1 gap-4 md:grid-cols-2">
           <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="border-b border-slate-100 pb-2 text-sm font-bold text-slate-900">
-              My Logo — Upload &amp; Manage
-            </h2>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <h2 className="text-sm font-bold text-slate-900">
+                My Logo — Upload &amp; Manage
+              </h2>
+              <button
+                type="button"
+                onClick={() => openLogoModal()}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:from-emerald-700 hover:to-teal-800 transition"
+              >
+                <ImagePlus className="h-3.5 w-3.5" />
+                Open Desktop ERP Logo Window
+              </button>
+            </div>
             <p className="text-xs text-slate-500">
               This logo appears in the Top Brand Bar and on all printed 80mm POS thermal receipts.
             </p>
