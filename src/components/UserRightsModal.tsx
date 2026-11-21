@@ -47,7 +47,7 @@ interface RightItem {
 }
 
 const ERP_RIGHTS: RightItem[] = [
-  // 1. Administration (Matching user's reference image top rows)
+  // 1. Administration (Top rows matching user's reference layout)
   { key: 'my_company', label: 'My Company', category: 'Administration', superAdminOnly: true },
   { key: 'my_logo', label: 'My Logo', category: 'Administration', superAdminOnly: true },
   { key: 'companies_list', label: 'List Of Companies', category: 'Administration', superAdminOnly: true },
@@ -206,7 +206,6 @@ export function UserRightsModal() {
       const isCashier = activeSelectedUser.role === 'CASHIER';
 
       ERP_RIGHTS.forEach((r) => {
-        // Check if existing saved permission exists
         if (existing[r.key] !== undefined) {
           const val = existing[r.key];
           if (typeof val === 'boolean') {
@@ -361,7 +360,6 @@ export function UserRightsModal() {
 
     setSaving(true);
     try {
-      // Build clean permissions map for API
       const cleanMap: Record<string, any> = {};
       Object.entries(permissionsState).forEach(([k, v]) => {
         cleanMap[k] = {
@@ -400,34 +398,50 @@ export function UserRightsModal() {
   return (
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 transition-all duration-200 ${
-        isMinimized ? 'pointer-events-none opacity-0' : 'bg-slate-950/70 backdrop-blur-xs'
+        isMinimized ? 'pointer-events-none opacity-0' : 'bg-slate-950/75 backdrop-blur-sm'
       }`}
     >
       <div
-        className={`relative flex flex-col overflow-hidden rounded-xl border border-[#5a2609] bg-white shadow-2xl transition-all duration-200 ${
+        className={`relative flex flex-col overflow-hidden rounded-2xl border border-slate-700/80 bg-slate-900 shadow-2xl transition-all duration-200 ${
           isMaximized
             ? 'h-[96vh] w-[98vw] max-w-none'
-            : 'h-[90vh] max-h-[820px] w-full max-w-4xl'
+            : 'h-[92vh] max-h-[850px] w-full max-w-5xl'
         }`}
       >
         {/* =========================================================================
-            1. Title Bar (Dark Chocolate Brown matching Reference Image)
+            1. Title Bar (Executive Midnight Navy — Hamara Wala Color Combination)
         ========================================================================== */}
-        <div className="flex shrink-0 items-center justify-between bg-[#421d0a] px-4 py-2.5 text-white select-none">
-          <div className="flex items-center gap-2.5">
-            <Shield className="h-5 w-5 text-white" />
-            <span className="text-sm font-bold tracking-tight text-white">
-              User Rights Settings
-            </span>
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-800 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] px-4 py-2.5 text-white select-none">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30">
+              <ShieldCheck className="h-4.5 w-4.5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold tracking-tight text-white">
+                  User Rights Settings & Security Matrix
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 ring-1 ring-emerald-500/30">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Live RBAC Matrix
+                </span>
+                <span className="rounded-md bg-indigo-500/20 px-2 py-0.5 text-[10px] font-semibold text-indigo-300 ring-1 ring-indigo-500/30">
+                  Step 4 • Administration
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Granular Module Access • Allowed Status • Editor / Viewer Permissions Control
+              </p>
+            </div>
           </div>
 
           {/* Window Controls */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={() => setIsMinimized(!isMinimized)}
               title="Minimize"
-              className="inline-flex h-6 w-6 items-center justify-center rounded text-white/80 hover:bg-black/20 hover:text-white transition cursor-pointer"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition cursor-pointer"
             >
               <Minus className="h-3.5 w-3.5" />
             </button>
@@ -435,15 +449,15 @@ export function UserRightsModal() {
               type="button"
               onClick={() => setIsMaximized(!isMaximized)}
               title={isMaximized ? 'Restore' : 'Maximize'}
-              className="inline-flex h-6 w-6 items-center justify-center rounded text-white/80 hover:bg-black/20 hover:text-white transition cursor-pointer"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition cursor-pointer"
             >
-              {isMaximized ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+              {isMaximized ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
             </button>
             <button
               type="button"
               onClick={closeUserRightsModal}
               title="Close (Esc)"
-              className="inline-flex h-6 w-6 items-center justify-center rounded text-white/80 hover:bg-rose-600 hover:text-white transition cursor-pointer"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-rose-600 hover:text-white transition cursor-pointer"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -455,15 +469,15 @@ export function UserRightsModal() {
           <div
             className={`flex shrink-0 items-center justify-between px-4 py-2 text-xs font-semibold ${
               toastMessage.type === 'success'
-                ? 'bg-emerald-50 text-emerald-800 border-b border-emerald-200'
-                : 'bg-rose-50 text-rose-800 border-b border-rose-200'
+                ? 'bg-emerald-950 text-emerald-200 border-b border-emerald-800'
+                : 'bg-rose-950 text-rose-200 border-b border-rose-800'
             }`}
           >
             <div className="flex items-center gap-2">
               {toastMessage.type === 'success' ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
               ) : (
-                <AlertCircle className="h-4 w-4 text-rose-600" />
+                <AlertCircle className="h-4 w-4 text-rose-400" />
               )}
               <span>{toastMessage.text}</span>
             </div>
@@ -480,24 +494,24 @@ export function UserRightsModal() {
         {/* =========================================================================
             2. Two Connected Top Filters Box (Company & User)
         ========================================================================== */}
-        <div className="shrink-0 bg-[#fdfdfd] p-4 border-b border-slate-200">
-          <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs">
+        <div className="shrink-0 border-b border-slate-800 bg-[#0b172a] p-3 sm:p-4">
+          <div className="rounded-xl border border-slate-700/80 bg-slate-900/90 p-3.5 shadow-xs">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               {/* Filter 1: Select Company */}
               <div>
-                <label className="mb-1 flex items-center justify-between text-xs font-bold text-slate-800">
+                <label className="mb-1.5 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-300">
                   <span className="flex items-center gap-1.5">
-                    <Building2 className="h-3.5 w-3.5 text-[#421d0a]" />
-                    Select Company:
+                    <Building2 className="h-3.5 w-3.5 text-blue-400" />
+                    1. Select Target Company:
                   </span>
-                  <span className="text-[10px] font-semibold text-slate-500">
+                  <span className="rounded bg-blue-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-blue-300">
                     Filter 1 of 2
                   </span>
                 </label>
                 <select
                   value={selectedCompanyId}
                   onChange={(e) => setSelectedCompanyId(Number(e.target.value))}
-                  className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 shadow-xs transition focus:border-[#421d0a] focus:outline-hidden focus:ring-1 focus:ring-[#421d0a]"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-white shadow-xs transition focus:border-blue-500 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
                 >
                   {tenantCompanies.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -509,19 +523,19 @@ export function UserRightsModal() {
 
               {/* Filter 2: Select User (Directly linked to Filter 1) */}
               <div>
-                <label className="mb-1 flex items-center justify-between text-xs font-bold text-slate-800">
+                <label className="mb-1.5 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-300">
                   <span className="flex items-center gap-1.5">
-                    <User className="h-3.5 w-3.5 text-[#421d0a]" />
-                    Select User:
+                    <User className="h-3.5 w-3.5 text-emerald-400" />
+                    2. Select User / Employee:
                   </span>
-                  <span className="text-[10px] font-semibold text-slate-500">
+                  <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-300">
                     Filter 2 (Linked) • {companyUsers.length} Users
                   </span>
                 </label>
                 <select
                   value={selectedUserId}
                   onChange={(e) => setSelectedUserId(Number(e.target.value))}
-                  className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 shadow-xs transition focus:border-[#421d0a] focus:outline-hidden focus:ring-1 focus:ring-[#421d0a]"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-white shadow-xs transition focus:border-emerald-500 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
                 >
                   {companyUsers.map((u) => {
                     const isSuper = isSuperAdminUser(u);
@@ -537,21 +551,21 @@ export function UserRightsModal() {
 
             {/* Quick Helper Subtitle or Super Admin Banner */}
             {isSelectedSuperAdmin ? (
-              <div className="mt-2.5 flex items-center justify-between rounded-lg bg-amber-50/80 px-3 py-1.5 border border-amber-200/80 text-amber-900 text-xs">
+              <div className="mt-3 flex items-center justify-between rounded-xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/60 via-slate-900 to-indigo-950/40 p-2.5 text-xs text-white">
                 <div className="flex items-center gap-2 font-bold">
-                  <Crown className="h-4 w-4 text-amber-600" />
-                  <span>👑 Super Admin: {activeSelectedUser?.full_name || 'Faisal'} — All Rights Permanently Active</span>
+                  <Crown className="h-4 w-4 text-amber-400" />
+                  <span>👑 Super Admin: {activeSelectedUser?.full_name || 'Faisal'} — All Rights Permanently Active across All Modules</span>
                 </div>
-                <span className="rounded bg-amber-200/70 px-2 py-0.5 text-[10px] font-bold text-amber-950">
-                  Full Authority • No Restrictions
+                <span className="rounded-md bg-indigo-500/30 px-2 py-0.5 text-[10px] font-bold text-indigo-200">
+                  Full Authority • Zero Restrictions
                 </span>
               </div>
             ) : (
-              <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2 text-xs">
-                <div className="flex items-center gap-1.5 text-slate-600 font-medium">
-                  <span>Target:</span>
-                  <span className="font-bold text-slate-900">{activeSelectedUser?.full_name}</span>
-                  <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-700">
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-2.5 text-xs">
+                <div className="flex items-center gap-1.5 text-slate-400 font-medium">
+                  <span>Configuring Rights for:</span>
+                  <span className="font-bold text-white">{activeSelectedUser?.full_name}</span>
+                  <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-bold text-emerald-400 ring-1 ring-slate-700">
                     {activeSelectedUser?.role}
                   </span>
                 </div>
@@ -561,21 +575,21 @@ export function UserRightsModal() {
                   <button
                     type="button"
                     onClick={() => applyPreset('ALL')}
-                    className="rounded bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700 hover:bg-emerald-100 transition cursor-pointer"
+                    className="rounded-lg bg-emerald-500/20 px-2.5 py-1 text-[11px] font-bold text-emerald-300 ring-1 ring-emerald-500/30 hover:bg-emerald-500/30 transition cursor-pointer"
                   >
                     Grant All
                   </button>
                   <button
                     type="button"
                     onClick={() => applyPreset('BILLING')}
-                    className="rounded bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-100 transition cursor-pointer"
+                    className="rounded-lg bg-blue-500/20 px-2.5 py-1 text-[11px] font-bold text-blue-300 ring-1 ring-blue-500/30 hover:bg-blue-500/30 transition cursor-pointer"
                   >
                     Billing Only
                   </button>
                   <button
                     type="button"
                     onClick={() => applyPreset('RESET')}
-                    className="rounded bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-200 transition cursor-pointer"
+                    className="rounded-lg bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-300 ring-1 ring-slate-700 hover:bg-slate-700 transition cursor-pointer"
                   >
                     Reset
                   </button>
@@ -584,29 +598,29 @@ export function UserRightsModal() {
             )}
           </div>
 
-          {/* Subtitle / Instruction Line (Matching screenshot italic text) */}
-          <div className="mt-2 flex items-center justify-end gap-1.5 text-[11px] text-slate-500 italic">
-            <Info className="h-3.5 w-3.5 text-slate-400" />
-            <span>Double-click or click on <strong className="font-bold text-slate-700 not-italic">Right Allowed Status</strong> to toggle access.</span>
+          {/* Subtitle / Instruction Line */}
+          <div className="mt-2.5 flex items-center justify-end gap-1.5 text-[11px] text-slate-400 italic">
+            <Info className="h-3.5 w-3.5 text-slate-500" />
+            <span>Double-click or click on <strong className="font-bold text-slate-200 not-italic">Right Allowed Status</strong> to toggle access.</span>
           </div>
         </div>
 
         {/* =========================================================================
-            3. Scrollable Table Grid (Matching Screenshot)
+            3. Scrollable Table Grid (Executive Dark Midnight ERP Theme)
         ========================================================================== */}
-        <div className="flex-1 overflow-y-auto p-4 bg-slate-50">
-          <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xs">
+        <div className="flex-1 overflow-y-auto p-4 bg-slate-950">
+          <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900 shadow-sm">
             <table className="w-full text-left text-xs border-collapse">
-              {/* Table Header: Dark Chocolate Brown */}
-              <thead className="bg-[#421d0a] text-white">
+              {/* Table Header: Executive Midnight Navy */}
+              <thead className="bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#0b1830] border-b border-slate-800 text-slate-300">
                 <tr>
-                  <th className="px-4 py-2.5 font-bold text-left">Right Type</th>
-                  <th className="px-4 py-2.5 font-bold text-center">Right Allowed Status</th>
-                  <th className="px-4 py-2.5 font-bold text-center">Editor</th>
-                  <th className="px-4 py-2.5 font-bold text-center">Viewer</th>
+                  <th className="px-4 py-3 font-bold text-left uppercase tracking-wider text-xs">Right Type</th>
+                  <th className="px-4 py-3 font-bold text-center uppercase tracking-wider text-xs">Right Allowed Status</th>
+                  <th className="px-4 py-3 font-bold text-center uppercase tracking-wider text-xs">Editor</th>
+                  <th className="px-4 py-3 font-bold text-center uppercase tracking-wider text-xs">Viewer</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-800/80">
                 {ERP_RIGHTS.map((r) => {
                   const setting = permissionsState[r.key] ?? { allowed: false, editor: false, viewer: false };
                   const isAllowed = isSelectedSuperAdmin || setting.allowed;
@@ -616,14 +630,14 @@ export function UserRightsModal() {
                   return (
                     <tr
                       key={r.key}
-                      className="hover:bg-amber-50/30 transition select-none"
+                      className="hover:bg-slate-800/60 transition select-none"
                     >
                       {/* Column 1: Right Type */}
-                      <td className="px-4 py-2.5 font-semibold text-slate-800">
+                      <td className="px-4 py-2.5 font-semibold text-slate-200">
                         <div className="flex items-center gap-2">
                           <span>{r.label}</span>
                           {r.superAdminOnly && (
-                            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-800">
+                            <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-bold text-amber-300 ring-1 ring-amber-500/30">
                               Admin
                             </span>
                           )}
@@ -640,13 +654,19 @@ export function UserRightsModal() {
                         title={isSelectedSuperAdmin ? 'Permanently Allowed for Super Admin' : 'Click to toggle access'}
                       >
                         {isAllowed ? (
-                          <span className="text-[#16a34a] font-bold">Allowed</span>
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-3 py-0.5 text-xs font-bold text-emerald-400 ring-1 ring-emerald-500/30">
+                            <Check className="h-3 w-3 stroke-[3]" />
+                            Allowed
+                          </span>
                         ) : (
-                          <span className="text-slate-400 font-semibold">Not Allowed</span>
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-800 px-3 py-0.5 text-xs font-semibold text-slate-500 ring-1 ring-slate-700">
+                            <X className="h-3 w-3 stroke-[2.5]" />
+                            Not Allowed
+                          </span>
                         )}
                       </td>
 
-                      {/* Column 3: Editor Checkbox (Blue square with white check icon) */}
+                      {/* Column 3: Editor Checkbox (Vibrant blue square with white check icon) */}
                       <td className="px-4 py-2.5 text-center">
                         <button
                           type="button"
@@ -657,16 +677,16 @@ export function UserRightsModal() {
                           }`}
                         >
                           {isEditor ? (
-                            <div className="flex h-5 w-5 items-center justify-center rounded-sm bg-blue-600 text-white shadow-xs">
+                            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-blue-600 text-white shadow-xs ring-1 ring-blue-400/50">
                               <Check className="h-3.5 w-3.5 stroke-[3]" />
                             </div>
                           ) : (
-                            <div className="h-5 w-5 rounded-sm border-2 border-slate-300 bg-white hover:border-blue-400 transition" />
+                            <div className="h-5 w-5 rounded-md border-2 border-slate-600 bg-slate-800 hover:border-slate-400 transition" />
                           )}
                         </button>
                       </td>
 
-                      {/* Column 4: Viewer Checkbox (Blue square with white check icon) */}
+                      {/* Column 4: Viewer Checkbox (Vibrant blue square with white check icon) */}
                       <td className="px-4 py-2.5 text-center">
                         <button
                           type="button"
@@ -677,11 +697,11 @@ export function UserRightsModal() {
                           }`}
                         >
                           {isViewer ? (
-                            <div className="flex h-5 w-5 items-center justify-center rounded-sm bg-blue-600 text-white shadow-xs">
+                            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-blue-600 text-white shadow-xs ring-1 ring-blue-400/50">
                               <Check className="h-3.5 w-3.5 stroke-[3]" />
                             </div>
                           ) : (
-                            <div className="h-5 w-5 rounded-sm border-2 border-slate-300 bg-white hover:border-blue-400 transition" />
+                            <div className="h-5 w-5 rounded-md border-2 border-slate-600 bg-slate-800 hover:border-slate-400 transition" />
                           )}
                         </button>
                       </td>
@@ -694,36 +714,43 @@ export function UserRightsModal() {
         </div>
 
         {/* =========================================================================
-            4. Bottom Action Bar (Save Changes & Cancel)
+            4. Bottom Action Bar (Executive Midnight / Emerald Save Changes & Cancel)
         ========================================================================== */}
-        <div className="shrink-0 flex items-center justify-end gap-3 border-t border-slate-200 bg-white px-5 py-3">
-          <button
-            type="button"
-            onClick={handleSaveChanges}
-            disabled={saving}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#421d0a] px-6 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#321506] transition cursor-pointer disabled:opacity-50"
-          >
-            {saving ? (
-              <>
-                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Check className="h-3.5 w-3.5 stroke-[2.5]" />
-                {isSelectedSuperAdmin ? 'Save Changes' : 'Save Changes'}
-              </>
-            )}
-          </button>
+        <div className="shrink-0 flex items-center justify-between border-t border-slate-800 bg-[#0b172a] px-5 py-3">
+          <div className="flex items-center gap-2 text-xs text-slate-400">
+            <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+            <span>Target User: <strong className="text-white font-bold">{activeSelectedUser?.full_name}</strong></span>
+          </div>
 
-          <button
-            type="button"
-            onClick={closeUserRightsModal}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-slate-600 px-6 py-2 text-xs font-bold text-white shadow-sm hover:bg-slate-700 transition cursor-pointer"
-          >
-            <X className="h-3.5 w-3.5 stroke-[2.5]" />
-            Cancel
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSaveChanges}
+              disabled={saving}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-2.5 text-xs font-bold text-white shadow-md hover:from-emerald-500 hover:to-teal-500 transition cursor-pointer disabled:opacity-50"
+            >
+              {saving ? (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Check className="h-3.5 w-3.5 stroke-[2.5]" />
+                  Save Changes
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={closeUserRightsModal}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-5 py-2.5 text-xs font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+            >
+              <X className="h-3.5 w-3.5 stroke-[2.5]" />
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
     </div>
