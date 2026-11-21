@@ -120,6 +120,20 @@ function get_pdo(): PDO
     if (!$check) {
         ensure_database_schema($pdo);
     }
+
+    // Ensure user_rights table exists for both SQLite and MySQL
+    if (is_sqlite_pdo($pdo)) {
+        $hasRights = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='user_rights'")->fetchColumn();
+        if (!$hasRights) {
+            $pdo->exec('CREATE TABLE IF NOT EXISTS user_rights (user_id INTEGER PRIMARY KEY, rights_json TEXT NOT NULL, updated_at TEXT NOT NULL)');
+        }
+    } else {
+        $hasRights = $pdo->query("SHOW TABLES LIKE 'user_rights'")->fetchColumn();
+        if (!$hasRights) {
+            $pdo->exec('CREATE TABLE IF NOT EXISTS user_rights (user_id INT PRIMARY KEY, rights_json LONGTEXT NOT NULL, updated_at DATETIME NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+        }
+    }
+
     seed_initial_mysql_data($pdo);
     return $pdo;
 }

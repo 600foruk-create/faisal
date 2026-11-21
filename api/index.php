@@ -40,6 +40,10 @@ $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
 try {
     $pdo = get_pdo();
 
+    if ($route === 'reset') {
+        json_out(mysql_system_factory_reset($pdo));
+    }
+
     if ($route === 'setup') {
         json_out([
             'configured' => true,
@@ -385,11 +389,8 @@ try {
                 $perms = is_array($data['permissions'] ?? null) ? $data['permissions'] : [];
                 json_out(mysql_save_user_rights($pdo, $userId, $perms));
             }
-            if ($action === 'clear_transactions') {
-                if ((string)($data['confirm'] ?? '') !== 'CLEAR') {
-                    json_out(['error' => 'Type CLEAR to confirm clearing transactions'], 400);
-                }
-                json_out(mysql_clear_all_transactions($pdo));
+            if ($action === 'clear_transactions' || $action === 'factory_reset') {
+                json_out(mysql_system_factory_reset($pdo));
             }
             json_out(['error' => 'Unknown settings action'], 400);
         }

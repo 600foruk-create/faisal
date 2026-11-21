@@ -34,6 +34,13 @@ CREATE TABLE IF NOT EXISTS users (
   CONSTRAINT fk_users_branch FOREIGN KEY (branch_id) REFERENCES branches(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS user_rights (
+  user_id INT PRIMARY KEY,
+  rights_json LONGTEXT NOT NULL,
+  updated_at DATETIME NOT NULL,
+  CONSTRAINT fk_user_rights_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS products (
   id INT AUTO_INCREMENT PRIMARY KEY,
   sku VARCHAR(64) NOT NULL UNIQUE,

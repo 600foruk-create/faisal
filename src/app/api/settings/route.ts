@@ -12,6 +12,7 @@ import {
   saveBranchAndTerminal,
   saveCompanyTenant,
   saveUserRights,
+  systemFactoryReset,
   updateBusinessSettings,
   updateUser,
 } from '../../../lib/pos-service.ts';
@@ -103,11 +104,8 @@ export async function POST(req: NextRequest) {
       const res = saveUserRights(db, Number(body.data?.user_id), body.data?.permissions ?? {});
       return jsonOk(res);
     }
-    if (body.action === 'clear_transactions') {
-      if (body.data?.confirm !== 'CLEAR') {
-        return jsonError(new Error('Type CLEAR to confirm clearing transactions'), 400);
-      }
-      return jsonOk(clearAllTransactions(db));
+    if (body.action === 'clear_transactions' || (body as { action: string }).action === 'factory_reset') {
+      return jsonOk(systemFactoryReset(db));
     }
     return jsonError(new Error('Unknown settings action'), 400);
   } catch (err) {

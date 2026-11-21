@@ -321,17 +321,29 @@ function mysql_save_company(PDO $pdo, array $input): array
     return $all[0];
 }
 
-function mysql_get_users(PDO $pdo): array
+function ensure_user_rights_table(PDO $pdo): void
 {
+    $isSqlite = is_sqlite_pdo($pdo);
     try {
         $pdo->exec(
-            'CREATE TABLE IF NOT EXISTS user_rights (
-                user_id INT PRIMARY KEY,
-                rights_json LONGTEXT NOT NULL,
-                updated_at DATETIME NOT NULL
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+            $isSqlite
+                ? 'CREATE TABLE IF NOT EXISTS user_rights (
+                    user_id INTEGER PRIMARY KEY,
+                    rights_json TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )'
+                : 'CREATE TABLE IF NOT EXISTS user_rights (
+                    user_id INT PRIMARY KEY,
+                    rights_json LONGTEXT NOT NULL,
+                    updated_at DATETIME NOT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
         );
     } catch (Throwable $e) {}
+}
+
+function mysql_get_users(PDO $pdo): array
+{
+    ensure_user_rights_table($pdo);
 
     try {
         $pdo->exec(
@@ -357,27 +369,127 @@ function mysql_save_user_rights(PDO $pdo, int $userId, array $permissions): arra
         throw new RuntimeException('Invalid user ID for rights assignment');
     }
 
-    try {
-        $pdo->exec(
-            'CREATE TABLE IF NOT EXISTS user_rights (
-                user_id INT PRIMARY KEY,
-                rights_json LONGTEXT NOT NULL,
-                updated_at DATETIME NOT NULL
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
-        );
-    } catch (Throwable $e) {}
+    ensure_user_rights_table($pdo);
 
     $now = date('Y-m-d H:i:s');
-    $json = json_encode($permissions);
+    $json = json_encode($permissions, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    $isSqlite = is_sqlite_pdo($pdo);
 
     $stmt = $pdo->prepare(
-        'INSERT INTO user_rights (user_id, rights_json, updated_at)
-         VALUES (?, ?, ?)
-         ON DUPLICATE KEY UPDATE rights_json = VALUES(rights_json), updated_at = VALUES(updated_at)'
+        $isSqlite
+            ? 'INSERT INTO user_rights (user_id, rights_json, updated_at)
+               VALUES (?, ?, ?)
+               ON CONFLICT(user_id) DO UPDATE SET rights_json = excluded.rights_json, updated_at = excluded.updated_at'
+            : 'INSERT INTO user_rights (user_id, rights_json, updated_at)
+               VALUES (?, ?, ?)
+               ON DUPLICATE KEY UPDATE rights_json = VALUES(rights_json), updated_at = VALUES(updated_at)'
     );
     $stmt->execute([$userId, $json, $now]);
 
     return ['success' => true, 'user_id' => $userId, 'permissions' => $permissions];
+}
+
+function mysql_system_factory_reset(PDO $pdo): array
+{
+    $isSqlite = is_sqlite_pdo($pdo);
+    $pdo->beginTransaction();
+    try {
+        // 1. Clear all transactions, invoices, items, logs, held carts, closings
+        $pdo->exec('DELETE FROM fbr_sync_logs');
+        $pdo->exec('DELETE FROM invoice_items');
+        if ($isSqlite) {
+            $pdo->exec('DELETE FROM invoices');
+        } else {
+            $pdo->exec('DELETE FROM invoices WHERE original_invoice_id IS NOT NULL');
+            $pdo->exec('DELETE FROM invoices');
+        }
+        $pdo->exec('DELETE FROM held_carts');
+        $pdo->exec('DELETE FROM day_closings');
+
+        // 2. Clear all inventory catalog (0 items)
+        $pdo->exec('DELETE FROM branch_inventory');
+        $pdo->exec('DELETE FROM products');
+        try {
+            $pdo->exec('DELETE FROM inventory_categories');
+        } catch (Throwable $e) {}
+
+        // 3. Keep 1 primary company for Faisal, clean extra companies
+        try {
+            $pdo->exec('DELETE FROM companies WHERE id > 1');
+            $pdo->exec("UPDATE companies SET company_code = 'SEASTONE', business_name = 'M/S SEASTONE PVC PIPE INDUSTRY', owner_name = 'Faisal (Owner)' WHERE id = 1");
+        } catch (Throwable $e) {}
+
+        // 4. Reset to 1 primary branch (MAIN) & 1 primary terminal (POS-01) with fresh sequence 1
+        try {
+            $pdo->exec('DELETE FROM pos_terminals WHERE id > 1');
+            $pdo->exec("UPDATE pos_terminals SET branch_id = 1, terminal_code = 'POS-01', invoice_prefix = 'POS-01', next_sequence = 1 WHERE id = 1");
+            $pdo->exec('DELETE FROM branches WHERE id > 1');
+            $pdo->exec("UPDATE branches SET code = 'MAIN', name = 'Main Branch', display_name = 'SEASTONE MAIN OUTLET' WHERE id = 1");
+        } catch (Throwable $e) {}
+
+        // 5. Keep 1 default walk-in customer
+        try {
+            $pdo->exec('DELETE FROM customers WHERE id > 1');
+            $pdo->exec("UPDATE customers SET branch_id = 1, name = 'Walk-in (Cash) Customer', phone = '', is_walk_in = 1 WHERE id = 1");
+        } catch (Throwable $e) {}
+
+        // 6. Delete other users (keep only Super Admin Faisal active)
+        ensure_user_rights_table($pdo);
+        $pdo->exec("DELETE FROM user_rights WHERE user_id != 1");
+        $pdo->exec("DELETE FROM users WHERE username != 'faisal' AND id != 1");
+        $adminHash = password_hash('admin123', PASSWORD_BCRYPT);
+        $pdo->exec("UPDATE users SET username = 'faisal', full_name = 'Faisal (Super Admin)', role = 'SUPER_ADMIN', branch_id = 1, is_active = 1 WHERE id = 1");
+
+        // Ensure user 1 (Faisal) has permanent full rights
+        $allRights = [
+            'my_company' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'my_logo' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'companies_list' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'user_logins' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'user_rights' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'passwords' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'financial_year' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'clear_transactions' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'branches_counters' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'system_settings' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'backup_utility' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'customers' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'chart_of_inventory' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'opening_balances' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'price_settings' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'tax_rates' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'pos_billing' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'hold_recall' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'sales_return' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'day_closing' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'sales_register' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'sale_summary' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'top_products' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'gst_tax_summary' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+            'stock_valuation' => ['allowed' => true, 'editor' => true, 'viewer' => true],
+        ];
+        $json = json_encode($allRights, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $now = date('Y-m-d H:i:s');
+        $stmt = $pdo->prepare(
+            $isSqlite
+                ? 'INSERT INTO user_rights (user_id, rights_json, updated_at) VALUES (1, ?, ?) ON CONFLICT(user_id) DO UPDATE SET rights_json = excluded.rights_json, updated_at = excluded.updated_at'
+                : 'INSERT INTO user_rights (user_id, rights_json, updated_at) VALUES (1, ?, ?) ON DUPLICATE KEY UPDATE rights_json = VALUES(rights_json), updated_at = VALUES(updated_at)'
+        );
+        $stmt->execute([$json, $now]);
+
+        $pdo->commit();
+        return [
+            'success' => true,
+            'message' => 'System successfully reset to clean slate. 0 inventory items, single clean company & counter, Super Admin Faisal active.',
+            'product_count' => 0,
+            'user_count' => 1,
+            'branch_count' => 1,
+            'company_count' => 1,
+        ];
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        throw $e;
+    }
 }
 
 function mysql_create_user(PDO $pdo, array $input): array
