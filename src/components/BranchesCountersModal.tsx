@@ -58,13 +58,12 @@ export function BranchesCountersModal() {
     type: 'success' | 'error';
   } | null>(null);
 
-  // Check if current user is Platform Super Admin
+  // Check if current user is Platform Super Admin (strictly Faisal / SUPER_ADMIN)
   const isSuperAdmin = useMemo(() => {
-    if (!activeUser) return true; // Default admin
+    if (!activeUser) return false;
     return (
       activeUser.role === 'SUPER_ADMIN' ||
-      activeUser.username.toLowerCase() === 'faisal' ||
-      activeUser.username.toLowerCase() === 'admin'
+      activeUser.username.toLowerCase() === 'faisal'
     );
   }, [activeUser]);
 
@@ -192,6 +191,8 @@ export function BranchesCountersModal() {
         fbrPosId: tPosId.trim() || '104521',
         fbrToken: tToken.trim(),
         fbrMode: tMode,
+        requestingRole: activeUser?.role,
+        requestingUser: activeUser?.username,
       };
 
       const res = await fetch('/api/settings', {

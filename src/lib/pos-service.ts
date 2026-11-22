@@ -2225,8 +2225,15 @@ export function saveBranchAndTerminal(
     fbrPosId: string;
     fbrToken: string;
     fbrMode: FbrMode;
+    requestingRole?: string;
+    requestingUser?: string;
   }
 ) {
+  const reqRole = (input.requestingRole || '').toUpperCase();
+  const reqUser = (input.requestingUser || '').toLowerCase();
+  if (!input.branchId && reqRole && reqRole !== 'SUPER_ADMIN' && reqUser !== 'faisal') {
+    throw new Error('Unauthorized: Only Platform Super Admin (Faisal) is authorized to provision new branches.');
+  }
   const now = getLocalIsoDateTime();
   const displayName = `SEASTONE RETAIL OUTLET ( ${input.name.trim().toUpperCase()} )`;
 

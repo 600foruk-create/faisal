@@ -53,6 +53,8 @@ export async function POST(req: NextRequest) {
             fbrPosId: string;
             fbrToken: string;
             fbrMode: FbrMode;
+            requestingRole?: string;
+            requestingUser?: string;
           };
         }
       | {
@@ -89,6 +91,13 @@ export async function POST(req: NextRequest) {
       return jsonOk({ company, companies: getCompanies(db) });
     }
     if (body.action === 'branch_terminal') {
+      if (!body.data.branchId) {
+        const reqRole = (body.data.requestingRole || '').toUpperCase();
+        const reqUser = (body.data.requestingUser || '').toLowerCase();
+        if (reqRole && reqRole !== 'SUPER_ADMIN' && reqUser !== 'faisal') {
+          return jsonError(new Error('Unauthorized: Only Platform Super Admin (Faisal) is authorized to provision new branches'), 403);
+        }
+      }
       const res = saveBranchAndTerminal(db, body.data);
       return jsonOk(res);
     }

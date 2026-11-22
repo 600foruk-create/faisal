@@ -2230,6 +2230,12 @@ function mysql_save_branch_and_terminal(PDO $pdo, array $input): array
                 $branchId,
             ]);
         } else {
+            $reqRole = strtoupper(trim((string)($input['requestingRole'] ?? '')));
+            $reqUser = strtolower(trim((string)($input['requestingUser'] ?? '')));
+            if ($reqRole !== '' && $reqRole !== 'SUPER_ADMIN' && $reqUser !== 'faisal') {
+                throw new RuntimeException('Unauthorized: Only Platform Super Admin (Faisal) is authorized to provision new branches.');
+            }
+
             $pdo->prepare(
                 'INSERT INTO branches (code, name, display_name, address, phone, is_active, created_at)
                  VALUES (?, ?, ?, ?, ?, 1, ?)'
@@ -2272,6 +2278,12 @@ function mysql_save_branch_and_terminal(PDO $pdo, array $input): array
                 (int)$input['terminalId'],
             ]);
         } else {
+            $reqRole = strtoupper(trim((string)($input['requestingRole'] ?? '')));
+            $reqUser = strtolower(trim((string)($input['requestingUser'] ?? '')));
+            if ($reqRole !== '' && $reqRole !== 'SUPER_ADMIN' && $reqUser !== 'faisal') {
+                throw new RuntimeException('Unauthorized: Only Platform Super Admin (Faisal) is authorized to provision new branches.');
+            }
+
             $pdo->prepare(
                 'INSERT INTO pos_terminals (branch_id, terminal_code, invoice_prefix, next_sequence, fbr_pos_id, fbr_token, fbr_mode, is_active)
                  VALUES (?, ?, ?, 1, ?, ?, ?, 1)'
