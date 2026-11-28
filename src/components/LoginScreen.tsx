@@ -139,20 +139,16 @@ export function LoginScreen() {
         setPassword('admin123');
         if (cashierUser.branch_id) setSelectedBranchId(cashierUser.branch_id);
       } else {
-        setUsername('cashier1');
-        setPassword('admin123');
-        if (branches.length > 0) setSelectedBranchId(branches[0].id);
+        setErrorMessage('No cashier account created yet. Log in as Super Admin (Faisal) to create cashier users in User Logins directory.');
       }
     } else if (roleType === 'MANAGER') {
-      const managerUser = users.find((u) => u.role === 'MANAGER' && u.is_active === 1);
+      const managerUser = users.find((u) => (u.role === 'MANAGER' || u.role === 'ADMIN') && u.username !== 'faisal' && u.is_active === 1);
       if (managerUser) {
         setUsername(managerUser.username);
         setPassword('admin123');
         if (managerUser.branch_id) setSelectedBranchId(managerUser.branch_id);
       } else {
-        setUsername('manager1');
-        setPassword('admin123');
-        if (branches.length > 0) setSelectedBranchId(branches[0].id);
+        setErrorMessage('No branch manager account created yet. Log in as Super Admin (Faisal) to create manager users in User Logins directory.');
       }
     }
   };
