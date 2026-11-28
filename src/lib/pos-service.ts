@@ -192,6 +192,35 @@ export function saveCompanyTenant(
   return getCompanies(db).find((c) => c.company_code === input.company_code.trim()) || getCompanies(db)[0];
 }
 
+export function deleteCompanyTenant(
+  db: DatabaseSync,
+  id: number,
+  requestingRole?: string,
+  requestingUser?: string
+): { success: boolean; deleted_id: number; companies: CompanyTenant[] } {
+  const reqRole = (requestingRole || '').toUpperCase();
+  const reqUser = (requestingUser || '').toLowerCase();
+  if (reqRole !== 'SUPER_ADMIN' && reqUser !== 'faisal') {
+    throw new Error('Unauthorized: Only Platform Super Admin (Faisal) is authorized to delete companies.');
+  }
+
+  const companies = getCompanies(db);
+  if (companies.length <= 1) {
+    throw new Error('Cannot delete the only registered company.');
+  }
+  if (id === 1) {
+    throw new Error('Cannot delete the primary master company.');
+  }
+
+  db.prepare('DELETE FROM companies WHERE id = ?').run(id);
+
+  return {
+    success: true,
+    deleted_id: id,
+    companies: getCompanies(db),
+  };
+}
+
 export function updateBusinessSettings(
   db: DatabaseSync,
   updates: Partial<BusinessSettings>

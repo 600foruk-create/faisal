@@ -375,6 +375,15 @@ try {
                     'companies' => mysql_get_companies($pdo),
                 ]);
             }
+            if ($action === 'delete_company') {
+                $id = (int)($data['id'] ?? 0);
+                if ($id <= 0) {
+                    json_out(['error' => 'Valid company ID is required'], 400);
+                }
+                $reqRole = (string)($data['requestingRole'] ?? '');
+                $reqUser = (string)($data['requestingUser'] ?? '');
+                json_out(mysql_delete_company($pdo, $id, $reqRole, $reqUser));
+            }
             if ($action === 'branch_terminal') {
                 json_out(mysql_save_branch_and_terminal($pdo, $data));
             }

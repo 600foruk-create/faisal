@@ -321,6 +321,44 @@ function mysql_save_company(PDO $pdo, array $input): array
     return $all[0];
 }
 
+function mysql_delete_company(PDO $pdo, int $id, ?string $reqRole = null, ?string $reqUser = null): array
+{
+    $reqRole = strtoupper(trim((string)($reqRole ?? '')));
+    $reqUser = strtolower(trim((string)($reqUser ?? '')));
+    if ($reqRole !== 'SUPER_ADMIN' && $reqUser !== 'faisal') {
+        throw new RuntimeException('Unauthorized: Only Platform Super Admin (Faisal) is authorized to delete companies.');
+    }
+
+    $companies = mysql_get_companies($pdo);
+    if (count($companies) <= 1) {
+        throw new RuntimeException('Cannot delete the only registered company.');
+    }
+
+    $target = null;
+    foreach ($companies as $c) {
+        if ($c['id'] === $id) {
+            $target = $c;
+            break;
+        }
+    }
+    if (!$target) {
+        throw new RuntimeException('Company not found.');
+    }
+
+    if ($id === 1) {
+        throw new RuntimeException('Cannot delete the primary master company.');
+    }
+
+    $stmt = $pdo->prepare('DELETE FROM companies WHERE id = ?');
+    $stmt->execute([$id]);
+
+    return [
+        'success' => true,
+        'deleted_id' => $id,
+        'companies' => mysql_get_companies($pdo),
+    ];
+}
+
 function ensure_user_rights_table(PDO $pdo): void
 {
     $isSqlite = is_sqlite_pdo($pdo);

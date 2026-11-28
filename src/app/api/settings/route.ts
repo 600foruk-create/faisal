@@ -4,6 +4,7 @@ import { getDb } from '../../../lib/db.ts';
 import {
   clearAllTransactions,
   createUser,
+  deleteCompanyTenant,
   exportSystemBackup,
   getBranchesWithTerminals,
   getBusinessSettings,
@@ -79,6 +80,7 @@ export async function POST(req: NextRequest) {
           };
         }
       | { action: 'save_user_rights'; data: { user_id: number; permissions: Record<string, boolean> } }
+      | { action: 'delete_company'; data: { id: number; requestingRole?: string; requestingUser?: string } }
       | { action: 'clear_transactions'; data?: { confirm?: string } };
 
     const db = getDb();
@@ -89,6 +91,15 @@ export async function POST(req: NextRequest) {
     if (body.action === 'company') {
       const company = saveCompanyTenant(db, body.data);
       return jsonOk({ company, companies: getCompanies(db) });
+    }
+    if (body.action === 'delete_company') {
+      const res = deleteCompanyTenant(
+        db,
+        Number(body.data?.id),
+        body.data?.requestingRole,
+        body.data?.requestingUser
+      );
+      return jsonOk(res);
     }
     if (body.action === 'branch_terminal') {
       if (!body.data.branchId) {
