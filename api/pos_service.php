@@ -5,6 +5,9 @@ function cast_branch(array $r): array
 {
     $r['id'] = (int)$r['id'];
     $r['is_active'] = (int)$r['is_active'];
+    if (!isset($r['company_code']) || empty($r['company_code'])) {
+        $r['company_code'] = 'SEASTONE';
+    }
     return $r;
 }
 
@@ -133,8 +136,84 @@ function cast_day_closing(array $r): array
     return $r;
 }
 
+function ensure_branches_company_column(PDO $pdo): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    try {
+        if (is_sqlite_pdo($pdo)) {
+            $cols = $pdo->query("PRAGMA table_info(branches)")->fetchAll(PDO::FETCH_ASSOC);
+            $has = false;
+            foreach ($cols as $col) {
+                if (($col['name'] ?? '') === 'company_code') { $has = true; break; }
+            }
+            if (!$has) {
+                $pdo->exec("ALTER TABLE branches ADD COLUMN company_code TEXT NOT NULL DEFAULT 'SEASTONE'");
+            }
+        } else {
+            $cols = $pdo->query("SHOW COLUMNS FROM branches LIKE 'company_code'")->fetchAll();
+            if (empty($cols)) {
+                $pdo->exec("ALTER TABLE branches ADD COLUMN company_code VARCHAR(32) NOT NULL DEFAULT 'SEASTONE'");
+            }
+        }
+
+        // Auto-provision default branch & terminal for any company that doesn't have one
+        $companies = $pdo->query("SELECT * FROM companies WHERE is_active = 1")->fetchAll();
+        foreach ($companies as $comp) {
+            $cCode = trim((string)$comp['company_code']);
+            if ($cCode === '') continue;
+            $bCountStmt = $pdo->prepare("SELECT COUNT(*) FROM branches WHERE company_code = ?");
+            $bCountStmt->execute([$cCode]);
+            $bCount = (int)$bCountStmt->fetchColumn();
+            if ($bCount === 0) {
+                $now = date('Y-m-d H:i:s');
+                $bCode = strtoupper($cCode) . '-MAIN';
+                $bName = 'Main Outlet';
+                $bDisplay = trim((string)$comp['business_name']) . ' (Main Outlet)';
+                $bAddr = trim((string)($comp['address'] ?: 'Commercial Area'));
+                $bPhone = trim((string)($comp['phone'] ?: ''));
+
+                $insB = $pdo->prepare(
+                    "INSERT INTO branches (code, name, display_name, address, phone, company_code, is_active, created_at)
+                     VALUES (?, ?, ?, ?, ?, ?, 1, ?)"
+                );
+                $insB->execute([$bCode, $bName, $bDisplay, $bAddr, $bPhone, $cCode, $now]);
+                $newBranchId = (int)$pdo->lastInsertId();
+
+                // POS Terminal
+                $termCode = 'POS-' . strtoupper($cCode) . '-01';
+                $prefix = strtoupper($cCode) . '-POS';
+                $insT = $pdo->prepare(
+                    "INSERT INTO pos_terminals (branch_id, terminal_code, invoice_prefix, next_sequence, fbr_pos_id, fbr_token, fbr_mode, is_active)
+                     VALUES (?, ?, ?, 1, '104523', 'MOCK-TOKEN-AUTO', 'MOCK', 1)"
+                );
+                $insT->execute([$newBranchId, $termCode, $prefix]);
+
+                // Walk-in Customer
+                $insC = $pdo->prepare(
+                    "INSERT INTO customers (branch_id, name, phone, cnic, ntn, is_walk_in, created_at)
+                     VALUES (?, ?, '', '', '', 1, ?)"
+                );
+                $insC->execute([$newBranchId, 'Walk-in Customer (' . $cCode . ')', $now]);
+
+                // Branch Inventory seeding
+                $prodIds = $pdo->query('SELECT id FROM products')->fetchAll(PDO::FETCH_COLUMN);
+                $invIgnoreSql = is_sqlite_pdo($pdo)
+                    ? 'INSERT OR IGNORE INTO branch_inventory (branch_id, product_id, stock_qty) VALUES (?, ?, 0)'
+                    : 'INSERT IGNORE INTO branch_inventory (branch_id, product_id, stock_qty) VALUES (?, ?, 0)';
+                $invStmt = $pdo->prepare($invIgnoreSql);
+                foreach ($prodIds as $pid) {
+                    $invStmt->execute([$newBranchId, $pid]);
+                }
+            }
+        }
+    } catch (Throwable $e) {}
+}
+
 function mysql_get_branches_with_terminals(PDO $pdo): array
 {
+    ensure_branches_company_column($pdo);
     $branches = array_map(
         'cast_branch',
         $pdo->query('SELECT * FROM branches WHERE is_active = 1 ORDER BY id ASC')->fetchAll()
@@ -2297,22 +2376,37 @@ function mysql_get_reports_data(PDO $pdo, ?int $branchId, string $fromDate, stri
 
 function mysql_save_branch_and_terminal(PDO $pdo, array $input): array
 {
+    ensure_branches_company_column($pdo);
     $now = date('Y-m-d H:i:s');
     $name = trim((string)$input['name']);
-    $displayName = 'SEASTONE RETAIL OUTLET ( ' . strtoupper($name) . ' )';
+    $companyCode = !empty($input['company_code']) ? trim((string)$input['company_code']) : 'SEASTONE';
+    
+    // Lookup company name for display_name
+    $compName = 'SEASTONE RETAIL OUTLET';
+    try {
+        $cStmt = $pdo->prepare('SELECT business_name FROM companies WHERE company_code = ?');
+        $cStmt->execute([$companyCode]);
+        $fetched = $cStmt->fetchColumn();
+        if ($fetched) {
+            $compName = strtoupper(trim((string)$fetched));
+        }
+    } catch (Throwable $e) {}
+
+    $displayName = $compName . ' ( ' . strtoupper($name) . ' )';
 
     $pdo->beginTransaction();
     try {
         $branchId = !empty($input['branchId']) ? (int)$input['branchId'] : null;
         if ($branchId) {
             $pdo->prepare(
-                'UPDATE branches SET code = ?, name = ?, display_name = ?, address = ?, phone = ? WHERE id = ?'
+                'UPDATE branches SET code = ?, name = ?, display_name = ?, address = ?, phone = ?, company_code = ? WHERE id = ?'
             )->execute([
                 trim((string)$input['code']),
                 $name,
                 $displayName,
                 trim((string)($input['address'] ?? '')),
                 trim((string)($input['phone'] ?? '')),
+                $companyCode,
                 $branchId,
             ]);
         } else {
@@ -2323,14 +2417,15 @@ function mysql_save_branch_and_terminal(PDO $pdo, array $input): array
             }
 
             $pdo->prepare(
-                'INSERT INTO branches (code, name, display_name, address, phone, is_active, created_at)
-                 VALUES (?, ?, ?, ?, ?, 1, ?)'
+                'INSERT INTO branches (code, name, display_name, address, phone, company_code, is_active, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, 1, ?)'
             )->execute([
                 trim((string)$input['code']),
                 $name,
                 $displayName,
                 trim((string)($input['address'] ?? '')),
                 trim((string)($input['phone'] ?? '')),
+                $companyCode,
                 $now,
             ]);
             $branchId = (int)$pdo->lastInsertId();

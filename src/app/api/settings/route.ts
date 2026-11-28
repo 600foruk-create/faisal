@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
             name: string;
             address: string;
             phone: string;
+            company_code?: string;
             terminalId?: number;
             terminalCode: string;
             invoicePrefix: string;

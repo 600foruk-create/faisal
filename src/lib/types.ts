@@ -17,6 +17,7 @@ export interface Branch {
   display_name: string;
   address: string;
   phone: string;
+  company_code?: string;
   is_active: number;
   created_at: string;
 }

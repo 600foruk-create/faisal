@@ -39,6 +39,7 @@ export function BranchesCountersModal() {
   const {
     branches,
     terminals,
+    companies,
     settings,
     activeUser,
     closeBranchesCountersModal,
@@ -75,6 +76,7 @@ export function BranchesCountersModal() {
   const [bName, setBName] = useState('');
   const [bAddress, setBAddress] = useState('');
   const [bPhone, setBPhone] = useState('');
+  const [bCompanyCode, setBCompanyCode] = useState('SEASTONE');
   const [tCode, setTCode] = useState('');
   const [tPrefix, setTPrefix] = useState('');
   const [tPosId, setTPosId] = useState('');
@@ -126,6 +128,7 @@ export function BranchesCountersModal() {
     const nextLetter = String.fromCharCode(65 + branches.length); // C, D, E...
     setEditingBranchId(undefined);
     setEditingTerminalId(undefined);
+    setBCompanyCode(companies.length > 0 ? companies[0].company_code : 'SEASTONE');
     setBCode(`SWT-${nextLetter}`);
     setBName(`Branch ${nextIdx}`);
     setBAddress('');
@@ -143,6 +146,7 @@ export function BranchesCountersModal() {
     const t = terminals.find((term) => term.branch_id === b.id);
     setEditingBranchId(b.id);
     setEditingTerminalId(t?.id);
+    setBCompanyCode(b.company_code || 'SEASTONE');
     setBCode(b.code);
     setBName(b.name);
     setBAddress(b.address);
@@ -181,6 +185,7 @@ export function BranchesCountersModal() {
     try {
       const payload = {
         branchId: editingBranchId,
+        company_code: bCompanyCode,
         code: bCode.trim().toUpperCase(),
         name: bName.trim(),
         address: bAddress.trim(),
@@ -542,7 +547,10 @@ export function BranchesCountersModal() {
                                 {b.name}
                               </td>
                               <td className="px-3 py-2.5 text-center text-slate-800">
-                                {b.display_name}
+                                <div className="font-semibold">{b.display_name}</div>
+                                <div className="text-[10px] text-slate-500 font-bold">
+                                  {companies.find((c) => c.company_code === b.company_code)?.business_name || b.company_code || 'SEASTONE'}
+                                </div>
                               </td>
                               <td className="px-3 py-2.5 text-center text-slate-600">
                                 {b.address || 'Standard Location'}
@@ -769,6 +777,24 @@ export function BranchesCountersModal() {
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
                   1. Outlet Details
                 </h4>
+
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-700">
+                    Business / Organization Entity
+                  </label>
+                  <select
+                    value={bCompanyCode}
+                    onChange={(e) => setBCompanyCode(e.target.value)}
+                    disabled={Boolean(editingBranchId && !isSuperAdmin)}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:border-sky-500 focus:outline-hidden disabled:bg-slate-100"
+                  >
+                    {companies.map((c) => (
+                      <option key={c.company_code} value={c.company_code}>
+                        {c.business_name} ({c.company_code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>

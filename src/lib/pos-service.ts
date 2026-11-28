@@ -34,6 +34,42 @@ export function getBranchesWithTerminals(db: DatabaseSync): {
   branches: Branch[];
   terminals: PosTerminal[];
 } {
+  try {
+    const cols = db.prepare("PRAGMA table_info(branches)").all() as Array<{ name: string }>;
+    if (!cols.some((c) => c.name === 'company_code')) {
+      db.exec("ALTER TABLE branches ADD COLUMN company_code TEXT NOT NULL DEFAULT 'SEASTONE'");
+    }
+    // Auto-provision default branch & terminal for any company that doesn't have one
+    const companies = db.prepare("SELECT * FROM companies WHERE is_active = 1").all() as any[];
+    for (const comp of companies) {
+      const cCode = String(comp.company_code || '').trim();
+      if (!cCode) continue;
+      const count = (db.prepare("SELECT COUNT(*) as c FROM branches WHERE company_code = ?").get(cCode) as any)?.c || 0;
+      if (count === 0) {
+        const now = getLocalIsoDateTime();
+        const bCode = `${cCode.toUpperCase()}-MAIN`;
+        const bName = 'Main Outlet';
+        const bDisplay = `${comp.business_name} (Main Outlet)`;
+        const bAddr = comp.address || 'Commercial Area';
+        const bPhone = comp.phone || '';
+        const bRes = db.prepare(`
+          INSERT INTO branches (code, name, display_name, address, phone, company_code, is_active, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, 1, ?)
+        `).run(bCode, bName, bDisplay, bAddr, bPhone, cCode, now);
+        const bId = Number(bRes.lastInsertRowid);
+        const tCode = `POS-${cCode.toUpperCase()}-01`;
+        const prefix = `${cCode.toUpperCase()}-POS`;
+        db.prepare(`
+          INSERT INTO pos_terminals (branch_id, terminal_code, invoice_prefix, next_sequence, fbr_pos_id, fbr_token, fbr_mode, is_active)
+          VALUES (?, ?, ?, 1, '104523', 'MOCK-TOKEN-AUTO', 'MOCK', 1)
+        `).run(bId, tCode, prefix);
+        db.prepare(`
+          INSERT INTO customers (branch_id, name, phone, cnic, ntn, is_walk_in, created_at)
+          VALUES (?, ?, '', '', '', 1, ?)
+        `).run(bId, `Walk-in Customer (${cCode})`, now);
+      }
+    }
+  } catch {}
   const branches = db
     .prepare('SELECT * FROM branches WHERE is_active = 1 ORDER BY id ASC')
     .all() as unknown as Branch[];
@@ -2276,6 +2312,7 @@ export function saveBranchAndTerminal(
     name: string;
     address: string;
     phone: string;
+    company_code?: string;
     terminalId?: number;
     terminalCode: string;
     invoicePrefix: string;
@@ -2292,21 +2329,29 @@ export function saveBranchAndTerminal(
     throw new Error('Unauthorized: Only Platform Super Admin (Faisal) is authorized to provision new branches.');
   }
   const now = getLocalIsoDateTime();
-  const displayName = `SEASTONE RETAIL OUTLET ( ${input.name.trim().toUpperCase()} )`;
+  const companyCode = input.company_code ? input.company_code.trim() : 'SEASTONE';
+  let compName = 'SEASTONE RETAIL OUTLET';
+  try {
+    const fetched = db.prepare('SELECT business_name FROM companies WHERE company_code = ?').get(companyCode) as any;
+    if (fetched?.business_name) {
+      compName = String(fetched.business_name).toUpperCase();
+    }
+  } catch {}
+  const displayName = `${compName} ( ${input.name.trim().toUpperCase()} )`;
 
   return withTransaction(db, () => {
     let branchId = input.branchId;
     if (branchId) {
       db.prepare(
-        `UPDATE branches SET code = ?, name = ?, display_name = ?, address = ?, phone = ? WHERE id = ?`
-      ).run(input.code.trim(), input.name.trim(), displayName, input.address.trim(), input.phone.trim(), branchId);
+        `UPDATE branches SET code = ?, name = ?, display_name = ?, address = ?, phone = ?, company_code = ? WHERE id = ?`
+      ).run(input.code.trim(), input.name.trim(), displayName, input.address.trim(), input.phone.trim(), companyCode, branchId);
     } else {
       const bRes = db
         .prepare(
-          `INSERT INTO branches (code, name, display_name, address, phone, is_active, created_at)
-           VALUES (?, ?, ?, ?, ?, 1, ?)`
+          `INSERT INTO branches (code, name, display_name, address, phone, company_code, is_active, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, 1, ?)`
         )
-        .run(input.code.trim(), input.name.trim(), displayName, input.address.trim(), input.phone.trim(), now);
+        .run(input.code.trim(), input.name.trim(), displayName, input.address.trim(), input.phone.trim(), companyCode, now);
       branchId = Number(bRes.lastInsertRowid);
 
       db.prepare(

@@ -138,15 +138,45 @@ export function UserLoginsModal() {
   const activeCount = users.filter((u) => u.is_active === 1).length;
   const activePercentage = totalUsers > 0 ? Math.round((activeCount / totalUsers) * 100) : 100;
 
-  // Open Drawer to Add New User
+  // Scoped branches for the selected company
+  const companyBranches = useMemo(() => {
+    return branches.filter((b) => (b.company_code || 'SEASTONE') === uCompanyCode);
+  }, [branches, uCompanyCode]);
+
+  const handleCompanyChange = (newCompanyCode: string) => {
+    setUCompanyCode(newCompanyCode);
+    const targetBranches = branches.filter((b) => (b.company_code || 'SEASTONE') === newCompanyCode);
+    if (uRole === 'ADMIN' || uRole === 'SUPER_ADMIN') {
+      setUBranchId('');
+    } else {
+      setUBranchId(targetBranches.length > 0 ? String(targetBranches[0].id) : '');
+    }
+    if (newCompanyCode !== 'SEASTONE' && uRole === 'SUPER_ADMIN') {
+      setURole('ADMIN');
+    }
+  };
+
+  const handleRoleChange = (newRole: UserRole) => {
+    setURole(newRole);
+    if (newRole === 'ADMIN' || newRole === 'SUPER_ADMIN') {
+      setUBranchId('');
+    } else {
+      const targetBranches = branches.filter((b) => (b.company_code || 'SEASTONE') === uCompanyCode);
+      setUBranchId(targetBranches.length > 0 ? String(targetBranches[0].id) : '');
+    }
+  };
+
+  // Open Modal to Add New User
   const handleOpenAddUser = () => {
     setEditingUserId(undefined);
     setUUsername('');
     setUFullName('');
     setUPassword('');
     setURole('CASHIER');
-    setUBranchId(branches.length > 0 ? String(branches[0].id) : '');
-    setUCompanyCode(companies.length > 0 ? companies[0].company_code : 'SEASTONE');
+    const defaultCompany = companies.length > 0 ? companies[0].company_code : 'SEASTONE';
+    setUCompanyCode(defaultCompany);
+    const initialBranches = branches.filter((b) => (b.company_code || 'SEASTONE') === defaultCompany);
+    setUBranchId(initialBranches.length > 0 ? String(initialBranches[0].id) : '');
     setUActive(1);
     setShowPassword(false);
     setShowDrawer(true);
@@ -447,8 +477,8 @@ export function UserLoginsModal() {
               </div>
             </div>
 
-            {/* 5 Executive KPI Metric Cards */}
-            <div className="grid grid-cols-2 gap-3 border-b border-slate-200 bg-slate-100/70 p-4 sm:grid-cols-5">
+            {/* 4 Executive KPI Metric Cards */}
+            <div className="grid grid-cols-2 gap-3 border-b border-slate-200 bg-slate-100/70 p-4 sm:grid-cols-4">
               <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs">
                 <div className="flex items-center justify-between text-slate-500">
                   <span className="text-[11px] font-bold uppercase tracking-wider">Total Accounts</span>
@@ -479,17 +509,6 @@ export function UserLoginsModal() {
                 <div className="mt-1 flex items-baseline gap-1.5">
                   <span className="text-xl font-extrabold tabular-nums text-emerald-700">{cashierCount}</span>
                   <span className="text-[11px] font-semibold text-emerald-600">Cashiers</span>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-amber-200/80 bg-white p-3 shadow-xs">
-                <div className="flex items-center justify-between text-amber-600">
-                  <span className="text-[11px] font-bold uppercase tracking-wider">Store Managers</span>
-                  <SlidersHorizontal className="h-4 w-4 text-amber-600" />
-                </div>
-                <div className="mt-1 flex items-baseline gap-1.5">
-                  <span className="text-xl font-extrabold tabular-nums text-amber-700">{managerCount}</span>
-                  <span className="text-[11px] font-semibold text-amber-600">Managers</span>
                 </div>
               </div>
 
@@ -609,7 +628,6 @@ export function UserLoginsModal() {
                       <option value="ALL">All Security Roles</option>
                       <option value="SUPER_ADMIN">Super Admin (Platform Owner)</option>
                       <option value="ADMIN">Company Admin (Tenant Admin)</option>
-                      <option value="MANAGER">Store Manager</option>
                       <option value="CASHIER">POS Cashier (Counter)</option>
                     </select>
                   </div>
@@ -841,8 +859,8 @@ export function UserLoginsModal() {
                     </div>
                   </div>
 
-                  {/* 4 Role Cards */}
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {/* 3 Role Cards */}
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     {/* Super Admin */}
                     <div className="rounded-2xl border border-purple-200 bg-white p-5 shadow-xs">
                       <div className="flex items-center justify-between border-b border-purple-100 pb-3">
@@ -911,40 +929,6 @@ export function UserLoginsModal() {
                       </ul>
                     </div>
 
-                    {/* Store Manager */}
-                    <div className="rounded-2xl border border-amber-200 bg-white p-5 shadow-xs">
-                      <div className="flex items-center justify-between border-b border-amber-100 pb-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="rounded-xl bg-amber-100 p-2 text-amber-700">
-                            <SlidersHorizontal className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-extrabold text-amber-900">Store Manager</h4>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600">
-                              Outlet Supervisor
-                            </span>
-                          </div>
-                        </div>
-                        <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-800">
-                          Branch In-charge
-                        </span>
-                      </div>
-                      <ul className="mt-3 space-y-2 text-xs text-slate-600">
-                        <li className="flex items-center gap-2">
-                          <Check className="h-3.5 w-3.5 text-amber-600" />
-                          <span>Records and audits inventory opening balances and batch stock adjustments</span>
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Check className="h-3.5 w-3.5 text-amber-600" />
-                          <span>Supervises daily cash drawer closing and verifies counted currency variance</span>
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Check className="h-3.5 w-3.5 text-amber-600" />
-                          <span>Authorizes sales returns, discounts, and held cart recall operations</span>
-                        </li>
-                      </ul>
-                    </div>
-
                     {/* POS Cashier */}
                     <div className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-xs">
                       <div className="flex items-center justify-between border-b border-emerald-100 pb-3">
@@ -993,7 +977,6 @@ export function UserLoginsModal() {
                           <th className="px-4 py-2.5">System Capability / Operational Action</th>
                           <th className="px-3 py-2.5 text-center">Super Admin</th>
                           <th className="px-3 py-2.5 text-center">Company Admin</th>
-                          <th className="px-3 py-2.5 text-center">Store Manager</th>
                           <th className="px-3 py-2.5 text-center">POS Cashier</th>
                         </tr>
                       </thead>
@@ -1005,7 +988,6 @@ export function UserLoginsModal() {
                           <td className="px-3 py-2.5 text-center font-bold text-purple-700">Yes (Exclusive)</td>
                           <td className="px-3 py-2.5 text-center font-semibold text-rose-500">Restricted</td>
                           <td className="px-3 py-2.5 text-center font-semibold text-rose-500">Restricted</td>
-                          <td className="px-3 py-2.5 text-center font-semibold text-rose-500">Restricted</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-2.5 font-semibold text-slate-900">
@@ -1013,7 +995,6 @@ export function UserLoginsModal() {
                           </td>
                           <td className="px-3 py-2.5 text-center font-bold text-emerald-600">Yes</td>
                           <td className="px-3 py-2.5 text-center font-bold text-emerald-600">Yes</td>
-                          <td className="px-3 py-2.5 text-center font-semibold text-rose-500">View Only</td>
                           <td className="px-3 py-2.5 text-center font-semibold text-rose-500">Restricted</td>
                         </tr>
                         <tr>
@@ -1022,14 +1003,12 @@ export function UserLoginsModal() {
                           </td>
                           <td className="px-3 py-2.5 text-center font-bold text-emerald-600">Yes</td>
                           <td className="px-3 py-2.5 text-center font-bold text-emerald-600">Yes</td>
-                          <td className="px-3 py-2.5 text-center font-semibold text-amber-600">View Only</td>
                           <td className="px-3 py-2.5 text-center font-semibold text-slate-400">Read in POS</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-2.5 font-semibold text-slate-900">
                             Perform Live POS Checkout &amp; Print Invoices
                           </td>
-                          <td className="px-3 py-2.5 text-center font-bold text-emerald-600">Yes</td>
                           <td className="px-3 py-2.5 text-center font-bold text-emerald-600">Yes</td>
                           <td className="px-3 py-2.5 text-center font-bold text-emerald-600">Yes</td>
                           <td className="px-3 py-2.5 text-center font-bold text-emerald-600">Yes</td>
@@ -1040,7 +1019,6 @@ export function UserLoginsModal() {
                           </td>
                           <td className="px-3 py-2.5 text-center font-bold text-emerald-600">Audit All</td>
                           <td className="px-3 py-2.5 text-center font-bold text-emerald-600">Audit All</td>
-                          <td className="px-3 py-2.5 text-center font-bold text-emerald-600">Branch Supervise</td>
                           <td className="px-3 py-2.5 text-center font-bold text-emerald-600">Shift Count</td>
                         </tr>
                         <tr>
@@ -1049,7 +1027,6 @@ export function UserLoginsModal() {
                           </td>
                           <td className="px-3 py-2.5 text-center font-bold text-emerald-600">Full Audit</td>
                           <td className="px-3 py-2.5 text-center font-bold text-emerald-600">Full Audit</td>
-                          <td className="px-3 py-2.5 text-center font-semibold text-rose-500">Restricted</td>
                           <td className="px-3 py-2.5 text-center font-semibold text-rose-500">Restricted</td>
                         </tr>
                       </tbody>
@@ -1247,34 +1224,16 @@ export function UserLoginsModal() {
                 </div>
               </div>
 
+              {/* Row 2: 1. Business Entity -> 2. Branch Outlet */}
               <div className="grid grid-cols-2 gap-3">
-                {/* Security Access Role */}
+                {/* 1. Assigned Business Entity */}
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-slate-700">
-                    Security Access Role
-                  </label>
-                  <select
-                    value={uRole}
-                    onChange={(e) => setURole(e.target.value as UserRole)}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
-                  >
-                    <option value="CASHIER">POS Cashier (Counter Sales &amp; Returns)</option>
-                    <option value="MANAGER">Store Manager (Supervises Stock &amp; Closing)</option>
-                    <option value="ADMIN">Company Admin (Tenant Full Access)</option>
-                    {isSuperAdmin && (
-                      <option value="SUPER_ADMIN">Super Admin (Platform Root Owner)</option>
-                    )}
-                  </select>
-                </div>
-
-                {/* Assigned Business / Organization Entity */}
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700">
-                    Assigned Business Entity
+                    1. Assigned Business Entity
                   </label>
                   <select
                     value={uCompanyCode}
-                    onChange={(e) => setUCompanyCode(e.target.value)}
+                    onChange={(e) => handleCompanyChange(e.target.value)}
                     className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
                   >
                     {companies.map((c) => (
@@ -1284,25 +1243,48 @@ export function UserLoginsModal() {
                     ))}
                   </select>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                {/* Assigned Branch Outlet */}
+                {/* 2. Assigned Branch Outlet */}
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-slate-700">
-                    Assigned Branch Outlet
+                    2. Assigned Branch Outlet
                   </label>
                   <select
                     value={uBranchId}
                     onChange={(e) => setUBranchId(e.target.value)}
                     className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
                   >
-                    <option value="">All Outlets (Headquarters / Admin)</option>
-                    {branches.map((b) => (
+                    <option value="">
+                      {uRole === 'ADMIN' || uRole === 'SUPER_ADMIN'
+                        ? 'All Outlets (Company Headquarters / Admin)'
+                        : 'Company Main Counter (Default)'}
+                    </option>
+                    {companyBranches.map((b) => (
                       <option key={b.id} value={String(b.id)}>
-                        {b.name} ({b.code})
+                        {b.name} ({b.code}) - {b.display_name}
                       </option>
                     ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 3: 3. Security Role -> Password */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* 3. Security Access Role */}
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-700">
+                    3. Security Access Role
+                  </label>
+                  <select
+                    value={uRole}
+                    onChange={(e) => handleRoleChange(e.target.value as UserRole)}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
+                  >
+                    <option value="CASHIER">POS Cashier (Counter Sales &amp; Returns)</option>
+                    <option value="ADMIN">Company Admin (Tenant Full Access)</option>
+                    {isSuperAdmin && uCompanyCode === 'SEASTONE' && (
+                      <option value="SUPER_ADMIN">Super Admin (Platform Root Owner)</option>
+                    )}
                   </select>
                 </div>
 
