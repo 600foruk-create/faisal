@@ -213,22 +213,39 @@ function mysql_update_business_settings(PDO $pdo, array $updates): array
 function mysql_get_companies(PDO $pdo): array
 {
     try {
+        $isSqlite = is_sqlite_pdo($pdo);
         $pdo->exec(
-            'CREATE TABLE IF NOT EXISTS companies (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                company_code VARCHAR(50) NOT NULL UNIQUE,
-                business_name VARCHAR(150) NOT NULL,
-                owner_name VARCHAR(100) NOT NULL DEFAULT "",
-                ntn VARCHAR(50) NOT NULL DEFAULT "",
-                strn VARCHAR(50) NOT NULL DEFAULT "",
-                phone VARCHAR(50) NOT NULL DEFAULT "",
-                email VARCHAR(100) NOT NULL DEFAULT "",
-                address VARCHAR(255) NOT NULL DEFAULT "",
-                currency_symbol VARCHAR(20) NOT NULL DEFAULT "Rs.",
-                default_tax_rate DECIMAL(5,2) NOT NULL DEFAULT 18.00,
-                is_active TINYINT(1) NOT NULL DEFAULT 1,
-                created_at DATETIME NOT NULL
-            )'
+            $isSqlite
+                ? 'CREATE TABLE IF NOT EXISTS companies (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    company_code VARCHAR(50) NOT NULL UNIQUE,
+                    business_name VARCHAR(150) NOT NULL,
+                    owner_name VARCHAR(100) NOT NULL DEFAULT "",
+                    ntn VARCHAR(50) NOT NULL DEFAULT "",
+                    strn VARCHAR(50) NOT NULL DEFAULT "",
+                    phone VARCHAR(50) NOT NULL DEFAULT "",
+                    email VARCHAR(100) NOT NULL DEFAULT "",
+                    address VARCHAR(255) NOT NULL DEFAULT "",
+                    currency_symbol VARCHAR(20) NOT NULL DEFAULT "Rs.",
+                    default_tax_rate DECIMAL(5,2) NOT NULL DEFAULT 18.00,
+                    is_active TINYINT(1) NOT NULL DEFAULT 1,
+                    created_at DATETIME NOT NULL
+                )'
+                : 'CREATE TABLE IF NOT EXISTS companies (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    company_code VARCHAR(50) NOT NULL UNIQUE,
+                    business_name VARCHAR(150) NOT NULL,
+                    owner_name VARCHAR(100) NOT NULL DEFAULT "",
+                    ntn VARCHAR(50) NOT NULL DEFAULT "",
+                    strn VARCHAR(50) NOT NULL DEFAULT "",
+                    phone VARCHAR(50) NOT NULL DEFAULT "",
+                    email VARCHAR(100) NOT NULL DEFAULT "",
+                    address VARCHAR(255) NOT NULL DEFAULT "",
+                    currency_symbol VARCHAR(20) NOT NULL DEFAULT "Rs.",
+                    default_tax_rate DECIMAL(5,2) NOT NULL DEFAULT 18.00,
+                    is_active TINYINT(1) NOT NULL DEFAULT 1,
+                    created_at DATETIME NOT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
         );
         $count = (int)$pdo->query('SELECT COUNT(*) FROM companies')->fetchColumn();
         if ($count === 0) {
@@ -321,7 +338,7 @@ function mysql_save_company(PDO $pdo, array $input): array
     return $all[0];
 }
 
-function mysql_delete_company(PDO $pdo, int $id, ?string $reqRole = null, ?string $reqUser = null): array
+function mysql_delete_company(PDO $pdo, ?int $id = null, string $code = '', ?string $reqRole = null, ?string $reqUser = null): array
 {
     $reqRole = strtoupper(trim((string)($reqRole ?? '')));
     $reqUser = strtolower(trim((string)($reqUser ?? '')));
@@ -336,7 +353,7 @@ function mysql_delete_company(PDO $pdo, int $id, ?string $reqRole = null, ?strin
 
     $target = null;
     foreach ($companies as $c) {
-        if ($c['id'] === $id) {
+        if (($id !== null && $c['id'] === $id) || ($code !== '' && strcasecmp((string)$c['company_code'], $code) === 0)) {
             $target = $c;
             break;
         }
@@ -345,16 +362,17 @@ function mysql_delete_company(PDO $pdo, int $id, ?string $reqRole = null, ?strin
         throw new RuntimeException('Company not found.');
     }
 
-    if ($id === 1) {
-        throw new RuntimeException('Cannot delete the primary master company.');
+    if (strtoupper((string)$target['company_code']) === 'SEASTONE') {
+        throw new RuntimeException('Cannot delete the primary master company (SEASTONE).');
     }
 
-    $stmt = $pdo->prepare('DELETE FROM companies WHERE id = ?');
-    $stmt->execute([$id]);
+    $stmt = $pdo->prepare('DELETE FROM companies WHERE id = ? OR company_code = ?');
+    $stmt->execute([$target['id'], $target['company_code']]);
 
     return [
         'success' => true,
-        'deleted_id' => $id,
+        'deleted_id' => $target['id'],
+        'deleted_code' => $target['company_code'],
         'companies' => mysql_get_companies($pdo),
     ];
 }

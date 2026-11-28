@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
           };
         }
       | { action: 'save_user_rights'; data: { user_id: number; permissions: Record<string, boolean> } }
-      | { action: 'delete_company'; data: { id: number; requestingRole?: string; requestingUser?: string } }
+      | { action: 'delete_company'; data: { id?: number; code?: string; company_code?: string; requestingRole?: string; requestingUser?: string } }
       | { action: 'clear_transactions'; data?: { confirm?: string } };
 
     const db = getDb();
@@ -93,9 +93,12 @@ export async function POST(req: NextRequest) {
       return jsonOk({ company, companies: getCompanies(db) });
     }
     if (body.action === 'delete_company') {
+      const id = body.data?.id !== undefined && body.data?.id !== null ? Number(body.data.id) : null;
+      const code = body.data?.code || body.data?.company_code;
       const res = deleteCompanyTenant(
         db,
-        Number(body.data?.id),
+        id,
+        code,
         body.data?.requestingRole,
         body.data?.requestingUser
       );

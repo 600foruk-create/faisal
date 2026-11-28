@@ -337,8 +337,8 @@ export function CompanyProfileModal() {
       return;
     }
 
-    if (companyToDelete.id === 1) {
-      showToast('The primary master company cannot be deleted', 'error');
+    if (companyToDelete.company_code.toUpperCase() === 'SEASTONE') {
+      showToast('The primary master company (SEASTONE) cannot be deleted', 'error');
       setCompanyToDelete(null);
       return;
     }
@@ -352,6 +352,8 @@ export function CompanyProfileModal() {
           action: 'delete_company',
           data: {
             id: companyToDelete.id,
+            code: companyToDelete.company_code,
+            company_code: companyToDelete.company_code,
             requestingRole: activeUser?.role,
             requestingUser: activeUser?.username,
           },
@@ -985,7 +987,7 @@ export function CompanyProfileModal() {
                       ) : (
                         companies.map((c, idx) => {
                           const isCurrentActive = c.business_name === businessName;
-                          const isMasterCompany = c.id === 1;
+                          const isMasterCompany = c.company_code.toUpperCase() === 'SEASTONE';
 
                           return (
                             <tr key={c.id} className="hover:bg-slate-50/80 transition">

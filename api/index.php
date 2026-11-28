@@ -376,13 +376,14 @@ try {
                 ]);
             }
             if ($action === 'delete_company') {
-                $id = (int)($data['id'] ?? 0);
-                if ($id <= 0) {
-                    json_out(['error' => 'Valid company ID is required'], 400);
+                $id = isset($data['id']) ? (int)$data['id'] : null;
+                $code = trim((string)($data['code'] ?? $data['company_code'] ?? ''));
+                if (($id === null || $id < 0) && $code === '') {
+                    json_out(['error' => 'Valid company ID or code is required'], 400);
                 }
                 $reqRole = (string)($data['requestingRole'] ?? '');
                 $reqUser = (string)($data['requestingUser'] ?? '');
-                json_out(mysql_delete_company($pdo, $id, $reqRole, $reqUser));
+                json_out(mysql_delete_company($pdo, $id, $code, $reqRole, $reqUser));
             }
             if ($action === 'branch_terminal') {
                 json_out(mysql_save_branch_and_terminal($pdo, $data));

@@ -194,10 +194,11 @@ export function saveCompanyTenant(
 
 export function deleteCompanyTenant(
   db: DatabaseSync,
-  id: number,
+  id?: number | null,
+  code?: string,
   requestingRole?: string,
   requestingUser?: string
-): { success: boolean; deleted_id: number; companies: CompanyTenant[] } {
+): { success: boolean; deleted_id?: number; deleted_code?: string; companies: CompanyTenant[] } {
   const reqRole = (requestingRole || '').toUpperCase();
   const reqUser = (requestingUser || '').toLowerCase();
   if (reqRole !== 'SUPER_ADMIN' && reqUser !== 'faisal') {
@@ -208,15 +209,26 @@ export function deleteCompanyTenant(
   if (companies.length <= 1) {
     throw new Error('Cannot delete the only registered company.');
   }
-  if (id === 1) {
-    throw new Error('Cannot delete the primary master company.');
+
+  const target = companies.find(
+    (c) =>
+      (id !== undefined && id !== null && c.id === id) ||
+      (code && c.company_code.toLowerCase() === code.toLowerCase())
+  );
+  if (!target) {
+    throw new Error('Company not found.');
   }
 
-  db.prepare('DELETE FROM companies WHERE id = ?').run(id);
+  if (target.company_code.toUpperCase() === 'SEASTONE') {
+    throw new Error('Cannot delete the primary master company (SEASTONE).');
+  }
+
+  db.prepare('DELETE FROM companies WHERE id = ? OR company_code = ?').run(target.id, target.company_code);
 
   return {
     success: true,
-    deleted_id: id,
+    deleted_id: target.id,
+    deleted_code: target.company_code,
     companies: getCompanies(db),
   };
 }
