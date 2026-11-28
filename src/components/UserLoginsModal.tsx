@@ -1165,7 +1165,7 @@ export function UserLoginsModal() {
             <kbd className="rounded-md border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-700">
               ESC
             </kbd>
-            <span>Closes drawer or window</span>
+            <span>Closes modal or active popup</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -1180,82 +1180,83 @@ export function UserLoginsModal() {
         </div>
       </div>
 
-      {/* Slide-over Drawer for Add / Edit User */}
+      {/* ========================================================================= */}
+      {/* REGISTER / EDIT STAFF ACCOUNT MODAL (CENTERED POPUP DIALOG)               */}
+      {/* ========================================================================= */}
       {showDrawer && (
-        <div className="fixed inset-0 z-60 flex items-center justify-end bg-slate-950/40 backdrop-blur-2xs">
-          <div className="flex h-full w-full max-w-md flex-col bg-white shadow-2xl animate-in slide-in-from-right duration-200">
-            {/* Drawer Header */}
-            <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-[#0a1829] to-[#0f243e] px-5 py-4 text-white">
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4">
+          <div className="w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 ring-1 ring-emerald-400/30">
-                  <UserPlus className="h-4 w-4 text-emerald-400" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+                  <UserPlus className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold">
-                    {editingUserId ? `Update Staff Account: ${uUsername}` : 'Register New Staff Account'}
+                  <h3 className="text-base font-bold text-slate-900">
+                    {editingUserId ? `Edit Staff Account Details (${uUsername})` : 'Register New Staff Account'}
                   </h3>
-                  <p className="text-[11px] text-slate-300">
+                  <p className="text-xs text-slate-500">
                     {editingUserId
-                      ? 'Edit staff profile details or reset security PIN'
-                      : 'Create a new cashier or manager login for this company'}
+                      ? 'Edit staff profile details or reset security credentials'
+                      : 'Create a new staff login, assign security role and company entity'}
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowDrawer(false)}
-                className="cursor-pointer text-slate-400 hover:text-white"
+                className="text-slate-400 hover:text-slate-600"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* Drawer Form */}
-            <form onSubmit={handleSaveUser} className="flex flex-1 flex-col justify-between overflow-y-auto p-5">
-              <div className="space-y-4">
+            {/* Modal Form */}
+            <form onSubmit={handleSaveUser} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
                 {/* Username */}
                 <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700">
+                  <label className="mb-1 block text-xs font-semibold text-slate-700">
                     Login Username / ID
                   </label>
                   <input
                     type="text"
                     required
                     disabled={Boolean(editingUserId)}
-                    placeholder="e.g. cashier.timergara"
+                    placeholder="e.g. cashier1"
                     value={uUsername}
                     onChange={(e) => setUUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ''))}
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs shadow-2xs focus:border-emerald-500 focus:outline-hidden disabled:bg-slate-100 disabled:text-slate-500"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden disabled:bg-slate-100 disabled:text-slate-500"
                   />
-                  <p className="mt-1 text-[10px] text-slate-400">
-                    Unique alphanumeric login identifier (lowercase, dots and dashes allowed)
-                  </p>
                 </div>
 
                 {/* Full Name */}
                 <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700">
+                  <label className="mb-1 block text-xs font-semibold text-slate-700">
                     Full Name &amp; Staff Title
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Bilal Khan (Senior Cashier)"
+                    placeholder="e.g. Bilal Khan"
                     value={uFullName}
                     onChange={(e) => setUFullName(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs shadow-2xs focus:border-emerald-500 focus:outline-hidden"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
                   />
                 </div>
+              </div>
 
-                {/* Role */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* Security Access Role */}
                 <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700">
+                  <label className="mb-1 block text-xs font-semibold text-slate-700">
                     Security Access Role
                   </label>
                   <select
                     value={uRole}
                     onChange={(e) => setURole(e.target.value as UserRole)}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs shadow-2xs focus:border-emerald-500 focus:outline-hidden"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
                   >
                     <option value="CASHIER">POS Cashier (Counter Sales &amp; Returns)</option>
                     <option value="MANAGER">Store Manager (Supervises Stock &amp; Closing)</option>
@@ -1266,15 +1267,15 @@ export function UserLoginsModal() {
                   </select>
                 </div>
 
-                {/* Assigned Company / Organization */}
+                {/* Assigned Business / Organization Entity */}
                 <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700">
-                    Assigned Business / Organization Entity
+                  <label className="mb-1 block text-xs font-semibold text-slate-700">
+                    Assigned Business Entity
                   </label>
                   <select
                     value={uCompanyCode}
                     onChange={(e) => setUCompanyCode(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs shadow-2xs focus:border-emerald-500 focus:outline-hidden"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
                   >
                     {companies.map((c) => (
                       <option key={c.company_code} value={c.company_code}>
@@ -1282,38 +1283,34 @@ export function UserLoginsModal() {
                       </option>
                     ))}
                   </select>
-                  <p className="mt-1 text-[10px] text-slate-400">
-                    User will be scoped to this company catalog, tax registration, and invoices
-                  </p>
                 </div>
+              </div>
 
+              <div className="grid grid-cols-2 gap-3">
                 {/* Assigned Branch Outlet */}
                 <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700">
+                  <label className="mb-1 block text-xs font-semibold text-slate-700">
                     Assigned Branch Outlet
                   </label>
                   <select
                     value={uBranchId}
                     onChange={(e) => setUBranchId(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs shadow-2xs focus:border-emerald-500 focus:outline-hidden"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
                   >
-                    <option value="">All Company Outlets (Headquarters / Admin)</option>
+                    <option value="">All Outlets (Headquarters / Admin)</option>
                     {branches.map((b) => (
                       <option key={b.id} value={String(b.id)}>
-                        {b.name} ({b.code}) - {b.address || 'Retail Counter'}
+                        {b.name} ({b.code})
                       </option>
                     ))}
                   </select>
-                  <p className="mt-1 text-[10px] text-slate-400">
-                    POS Cashiers should be locked to their specific physical branch counter
-                  </p>
                 </div>
 
                 {/* Password / Security PIN */}
                 <div>
-                  <div className="flex items-center justify-between">
-                    <label className="mb-1 block text-xs font-bold text-slate-700">
-                      {editingUserId ? 'Reset Password / Security PIN' : 'Password / Security PIN'}
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-700">
+                      {editingUserId ? 'Reset Password / PIN' : 'Password / Security PIN'}
                     </label>
                     <button
                       type="button"
@@ -1324,55 +1321,45 @@ export function UserLoginsModal() {
                       <span>{showPassword ? 'Hide' : 'Show'}</span>
                     </button>
                   </div>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      required={!editingUserId}
-                      placeholder={editingUserId ? 'Leave blank to keep existing password' : 'Min 4 characters (e.g. 1234)'}
-                      value={uPassword}
-                      onChange={(e) => setUPassword(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs shadow-2xs focus:border-emerald-500 focus:outline-hidden"
-                    />
-                  </div>
-                  {editingUserId && (
-                    <p className="mt-1 text-[10px] text-amber-600">
-                      Only enter a value if you wish to reset the password or counter PIN for this staff member
-                    </p>
-                  )}
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required={!editingUserId}
+                    placeholder={editingUserId ? 'Leave blank to keep existing' : 'Min 4 characters (e.g. 1234)'}
+                    value={uPassword}
+                    onChange={(e) => setUPassword(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
+                  />
                 </div>
-
-                {/* Account Active Status */}
-                {editingUserId && (
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                    <label className="flex items-center gap-2.5 text-xs font-bold text-slate-800 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={uActive === 1}
-                        onChange={(e) => setUActive(e.target.checked ? 1 : 0)}
-                        className="h-4 w-4 rounded-sm border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                      />
-                      <span>Account is Active and Authorized to Login</span>
-                    </label>
-                    <p className="mt-1 text-[10px] text-slate-500">
-                      Uncheck to temporarily suspend login access for this staff member
-                    </p>
-                  </div>
-                )}
               </div>
 
+              {/* Account Active Status */}
+              {editingUserId && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <label className="flex items-center gap-2.5 text-xs font-bold text-slate-800 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={uActive === 1}
+                      onChange={(e) => setUActive(e.target.checked ? 1 : 0)}
+                      className="h-4 w-4 rounded-sm border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span>Account is Active and Authorized to Login</span>
+                  </label>
+                </div>
+              )}
+
               {/* Form Action Buttons */}
-              <div className="mt-6 flex items-center gap-3 border-t border-slate-200 pt-4">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowDrawer(false)}
-                  className="flex-1 cursor-pointer rounded-xl border border-slate-200 bg-white py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 cursor-pointer rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 py-2 text-xs font-bold text-white shadow-xs hover:from-emerald-700 hover:to-teal-800 disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1.5"
                 >
                   {saving ? (
                     <>
@@ -1382,7 +1369,7 @@ export function UserLoginsModal() {
                   ) : (
                     <>
                       <Save className="h-3.5 w-3.5" />
-                      <span>{editingUserId ? 'Save Changes' : 'Create Account'}</span>
+                      <span>{editingUserId ? 'Save Changes' : 'Complete Registration'}</span>
                     </>
                   )}
                 </button>
