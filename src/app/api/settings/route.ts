@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
             password: string;
             role: UserRole;
             branch_id: number | null;
+            company_code?: string;
           };
         }
       | {
@@ -75,6 +76,7 @@ export async function POST(req: NextRequest) {
             full_name: string;
             role: UserRole;
             branch_id: number | null;
+            company_code?: string;
             is_active: number;
             password?: string;
           };

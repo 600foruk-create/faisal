@@ -39,6 +39,7 @@ export function UserLoginsModal() {
   const {
     users,
     branches,
+    companies,
     settings,
     activeUser,
     setActiveUser,
@@ -71,6 +72,7 @@ export function UserLoginsModal() {
   const [uPassword, setUPassword] = useState('');
   const [uRole, setURole] = useState<UserRole>('CASHIER');
   const [uBranchId, setUBranchId] = useState<string>('');
+  const [uCompanyCode, setUCompanyCode] = useState<string>('SEASTONE');
   const [uActive, setUActive] = useState<number>(1);
   const [showPassword, setShowPassword] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -144,6 +146,7 @@ export function UserLoginsModal() {
     setUPassword('');
     setURole('CASHIER');
     setUBranchId(branches.length > 0 ? String(branches[0].id) : '');
+    setUCompanyCode(companies.length > 0 ? companies[0].company_code : 'SEASTONE');
     setUActive(1);
     setShowPassword(false);
     setShowDrawer(true);
@@ -157,6 +160,7 @@ export function UserLoginsModal() {
     setUPassword('');
     setURole(u.role);
     setUBranchId(u.branch_id ? String(u.branch_id) : '');
+    setUCompanyCode(u.company_code || 'SEASTONE');
     setUActive(u.is_active);
     setShowPassword(focusPassword);
     setShowDrawer(true);
@@ -243,6 +247,7 @@ export function UserLoginsModal() {
               full_name: uFullName.trim(),
               role: uRole,
               branch_id: branchIdNum,
+              company_code: uCompanyCode,
               is_active: uActive,
               ...(uPassword.trim() ? { password: uPassword.trim() } : {}),
             },
@@ -266,6 +271,7 @@ export function UserLoginsModal() {
               password: uPassword.trim(),
               role: uRole,
               branch_id: branchIdNum,
+              company_code: uCompanyCode,
             },
           }),
         });
@@ -646,6 +652,7 @@ export function UserLoginsModal() {
                         <th className="px-3 py-2.5 text-center">Login Username</th>
                         <th className="px-3 py-2.5 text-center">Full Name &amp; Staff Title</th>
                         <th className="px-3 py-2.5 text-center">Security Role</th>
+                        <th className="px-3 py-2.5 text-center">Company Entity</th>
                         <th className="px-3 py-2.5 text-center">Assigned Branch Outlet</th>
                         <th className="px-3 py-2.5 text-center">Account Status</th>
                         <th className="px-3 py-2.5 text-center">Active Session</th>
@@ -655,7 +662,7 @@ export function UserLoginsModal() {
                     <tbody className="divide-y divide-slate-100">
                       {filteredUsers.length === 0 ? (
                         <tr>
-                          <td colSpan={8} className="py-12 text-center text-slate-400">
+                          <td colSpan={9} className="py-12 text-center text-slate-400">
                             <Users className="mx-auto mb-2 h-8 w-8 opacity-40" />
                             <p className="font-semibold">No staff accounts match your filters</p>
                             <p className="mt-1 text-[11px] text-slate-500">
@@ -693,6 +700,14 @@ export function UserLoginsModal() {
                               {/* Role */}
                               <td className="px-3 py-2.5 text-center">
                                 {renderRoleBadge(u.role)}
+                              </td>
+
+                              {/* Company Entity */}
+                              <td className="px-3 py-2.5 text-center">
+                                <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-slate-700">
+                                  <Building2 className="h-3 w-3 text-sky-600" />
+                                  {companies.find((c) => c.company_code === u.company_code)?.business_name || u.company_code || 'SEASTONE'}
+                                </span>
                               </td>
 
                               {/* Assigned Branch Outlet */}
@@ -1249,6 +1264,27 @@ export function UserLoginsModal() {
                       <option value="SUPER_ADMIN">Super Admin (Platform Root Owner)</option>
                     )}
                   </select>
+                </div>
+
+                {/* Assigned Company / Organization */}
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-slate-700">
+                    Assigned Business / Organization Entity
+                  </label>
+                  <select
+                    value={uCompanyCode}
+                    onChange={(e) => setUCompanyCode(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs shadow-2xs focus:border-emerald-500 focus:outline-hidden"
+                  >
+                    {companies.map((c) => (
+                      <option key={c.company_code} value={c.company_code}>
+                        {c.business_name} ({c.company_code})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-[10px] text-slate-400">
+                    User will be scoped to this company catalog, tax registration, and invoices
+                  </p>
                 </div>
 
                 {/* Assigned Branch Outlet */}

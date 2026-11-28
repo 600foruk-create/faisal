@@ -40,6 +40,7 @@ export interface UserSummary {
   role: UserRole;
   branch_id: number | null;
   branch_name?: string | null;
+  company_code?: string;
   is_active: number;
   permissions?: Record<string, boolean>;
 }

@@ -397,9 +397,34 @@ function ensure_user_rights_table(PDO $pdo): void
     } catch (Throwable $e) {}
 }
 
+function ensure_users_company_column(PDO $pdo): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    try {
+        if (is_sqlite_pdo($pdo)) {
+            $cols = $pdo->query("PRAGMA table_info(users)")->fetchAll(PDO::FETCH_ASSOC);
+            $has = false;
+            foreach ($cols as $col) {
+                if (($col['name'] ?? '') === 'company_code') { $has = true; break; }
+            }
+            if (!$has) {
+                $pdo->exec("ALTER TABLE users ADD COLUMN company_code TEXT NOT NULL DEFAULT 'SEASTONE'");
+            }
+        } else {
+            $cols = $pdo->query("SHOW COLUMNS FROM users LIKE 'company_code'")->fetchAll();
+            if (empty($cols)) {
+                $pdo->exec("ALTER TABLE users ADD COLUMN company_code VARCHAR(32) NOT NULL DEFAULT 'SEASTONE'");
+            }
+        }
+    } catch (Throwable $e) {}
+}
+
 function mysql_get_users(PDO $pdo): array
 {
     ensure_user_rights_table($pdo);
+    ensure_users_company_column($pdo);
 
     try {
         $pdo->exec(
@@ -410,7 +435,7 @@ function mysql_get_users(PDO $pdo): array
     } catch (Throwable $e) {}
 
     $rows = $pdo->query(
-        'SELECT u.id, u.username, u.full_name, u.role, u.branch_id, b.display_name AS branch_name, u.is_active, r.rights_json
+        'SELECT u.id, u.username, u.full_name, u.role, u.branch_id, u.company_code, b.display_name AS branch_name, u.is_active, r.rights_json
          FROM users u
          LEFT JOIN branches b ON b.id = u.branch_id
          LEFT JOIN user_rights r ON r.user_id = u.id
@@ -552,13 +577,15 @@ function mysql_system_factory_reset(PDO $pdo): array
 
 function mysql_create_user(PDO $pdo, array $input): array
 {
+    ensure_users_company_column($pdo);
     $now = date('Y-m-d H:i:s');
     $hash = password_hash((string)$input['password'], PASSWORD_BCRYPT);
     $branchId = !empty($input['branch_id']) ? (int)$input['branch_id'] : null;
+    $companyCode = !empty($input['company_code']) ? trim((string)$input['company_code']) : 'SEASTONE';
 
     $stmt = $pdo->prepare(
-        'INSERT INTO users (username, full_name, password_hash, role, branch_id, is_active, created_at)
-         VALUES (?, ?, ?, ?, ?, 1, ?)'
+        'INSERT INTO users (username, full_name, password_hash, role, branch_id, company_code, is_active, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, 1, ?)'
     );
     $stmt->execute([
         trim((string)$input['username']),
@@ -566,6 +593,7 @@ function mysql_create_user(PDO $pdo, array $input): array
         $hash,
         (string)($input['role'] ?? 'CASHIER'),
         $branchId,
+        $companyCode,
         $now,
     ]);
     $newId = (int)$pdo->lastInsertId();
@@ -577,6 +605,7 @@ function mysql_create_user(PDO $pdo, array $input): array
 
 function mysql_update_user(PDO $pdo, array $input): array
 {
+    ensure_users_company_column($pdo);
     $id = (int)($input['id'] ?? 0);
     if ($id <= 0) {
         throw new RuntimeException('Valid user ID is required');
@@ -584,18 +613,19 @@ function mysql_update_user(PDO $pdo, array $input): array
     $fullName = trim((string)($input['full_name'] ?? ''));
     $role = (string)($input['role'] ?? 'CASHIER');
     $branchId = !empty($input['branch_id']) ? (int)$input['branch_id'] : null;
+    $companyCode = !empty($input['company_code']) ? trim((string)$input['company_code']) : 'SEASTONE';
     $isActive = !empty($input['is_active']) ? 1 : 0;
     $password = trim((string)($input['password'] ?? ''));
 
     if ($password !== '') {
         $hash = password_hash($password, PASSWORD_BCRYPT);
         $pdo->prepare(
-            'UPDATE users SET full_name = ?, role = ?, branch_id = ?, is_active = ?, password_hash = ? WHERE id = ?'
-        )->execute([$fullName, $role, $branchId, $isActive, $hash, $id]);
+            'UPDATE users SET full_name = ?, role = ?, branch_id = ?, company_code = ?, is_active = ?, password_hash = ? WHERE id = ?'
+        )->execute([$fullName, $role, $branchId, $companyCode, $isActive, $hash, $id]);
     } else {
         $pdo->prepare(
-            'UPDATE users SET full_name = ?, role = ?, branch_id = ?, is_active = ? WHERE id = ?'
-        )->execute([$fullName, $role, $branchId, $isActive, $id]);
+            'UPDATE users SET full_name = ?, role = ?, branch_id = ?, company_code = ?, is_active = ? WHERE id = ?'
+        )->execute([$fullName, $role, $branchId, $companyCode, $isActive, $id]);
     }
 
     foreach (mysql_get_users($pdo) as $u) {

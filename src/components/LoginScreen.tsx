@@ -18,6 +18,7 @@ export function LoginScreen() {
     settings,
     branches,
     terminals,
+    companies,
     loginUser,
     openPosSale,
   } = usePosContext();
@@ -67,6 +68,33 @@ export function LoginScreen() {
       // =========================================================================
       // SMART BACKGROUND LOGIC (AUTOMATICALLY ROUTED BEHIND THE SCENES)
       // =========================================================================
+      // 0. Smart Company Scoping: If user belongs to a specific company (e.g. Imperial Plast), sync business settings
+      if (loggedUser.company_code && loggedUser.role !== 'SUPER_ADMIN') {
+        const targetCompany = companies.find((c) => c.company_code === loggedUser.company_code);
+        if (targetCompany) {
+          try {
+            await fetch('/api/settings', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'business',
+                data: {
+                  business_name: targetCompany.business_name,
+                  owner_name: targetCompany.owner_name || '',
+                  ntn: targetCompany.ntn || '',
+                  strn: targetCompany.strn || '',
+                  phone: targetCompany.phone || '',
+                  email: targetCompany.email || '',
+                  address: targetCompany.address || '',
+                  currency_symbol: targetCompany.currency_symbol || 'Rs.',
+                  default_tax_rate: targetCompany.default_tax_rate || 18,
+                },
+              }),
+            });
+          } catch {}
+        }
+      }
+
       // 1. Smart Branch Scoping
       let assignedBranchId = loggedUser.branch_id;
       if (!assignedBranchId || !branches.some((b) => b.id === assignedBranchId)) {

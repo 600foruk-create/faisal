@@ -773,9 +773,16 @@ export function getUsers(db: DatabaseSync): UserSummary[] {
     `).run();
   } catch {}
 
+  try {
+    const cols = db.prepare("PRAGMA table_info(users)").all() as Array<{ name: string }>;
+    if (!cols.some((c) => c.name === 'company_code')) {
+      db.exec("ALTER TABLE users ADD COLUMN company_code TEXT NOT NULL DEFAULT 'SEASTONE'");
+    }
+  } catch {}
+
   const rows = db
     .prepare(
-      `SELECT u.id, u.username, u.full_name, u.role, u.branch_id, b.display_name AS branch_name, u.is_active, r.rights_json
+      `SELECT u.id, u.username, u.full_name, u.role, u.branch_id, u.company_code, b.display_name AS branch_name, u.is_active, r.rights_json
        FROM users u
        LEFT JOIN branches b ON b.id = u.branch_id
        LEFT JOIN user_rights r ON r.user_id = u.id
@@ -825,16 +832,23 @@ export function saveUserRights(
 
 export function createUser(
   db: DatabaseSync,
-  input: { username: string; full_name: string; password: string; role: UserRole; branch_id: number | null }
+  input: { username: string; full_name: string; password: string; role: UserRole; branch_id: number | null; company_code?: string }
 ): UserSummary {
   const now = getLocalIsoDateTime();
   const hash = hashPassword(input.password);
+  const companyCode = input.company_code?.trim() || 'SEASTONE';
+  try {
+    const cols = db.prepare("PRAGMA table_info(users)").all() as Array<{ name: string }>;
+    if (!cols.some((c) => c.name === 'company_code')) {
+      db.exec("ALTER TABLE users ADD COLUMN company_code TEXT NOT NULL DEFAULT 'SEASTONE'");
+    }
+  } catch {}
   const res = db
     .prepare(
-      `INSERT INTO users (username, full_name, password_hash, role, branch_id, is_active, created_at)
-       VALUES (?, ?, ?, ?, ?, 1, ?)`
+      `INSERT INTO users (username, full_name, password_hash, role, branch_id, company_code, is_active, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, 1, ?)`
     )
-    .run(input.username.trim(), input.full_name.trim(), hash, input.role, input.branch_id, now);
+    .run(input.username.trim(), input.full_name.trim(), hash, input.role, input.branch_id, companyCode, now);
   return getUsers(db).find((u) => u.id === Number(res.lastInsertRowid))!;
 }
 
@@ -845,19 +859,21 @@ export function updateUser(
     full_name: string;
     role: UserRole;
     branch_id: number | null;
+    company_code?: string;
     is_active: number;
     password?: string;
   }
 ): UserSummary {
+  const companyCode = input.company_code?.trim() || 'SEASTONE';
   if (input.password && input.password.trim()) {
     const hash = hashPassword(input.password.trim());
     db.prepare(
-      `UPDATE users SET full_name = ?, role = ?, branch_id = ?, is_active = ?, password_hash = ? WHERE id = ?`
-    ).run(input.full_name.trim(), input.role, input.branch_id, input.is_active ? 1 : 0, hash, input.id);
+      `UPDATE users SET full_name = ?, role = ?, branch_id = ?, company_code = ?, is_active = ?, password_hash = ? WHERE id = ?`
+    ).run(input.full_name.trim(), input.role, input.branch_id, companyCode, input.is_active ? 1 : 0, hash, input.id);
   } else {
     db.prepare(
-      `UPDATE users SET full_name = ?, role = ?, branch_id = ?, is_active = ? WHERE id = ?`
-    ).run(input.full_name.trim(), input.role, input.branch_id, input.is_active ? 1 : 0, input.id);
+      `UPDATE users SET full_name = ?, role = ?, branch_id = ?, company_code = ?, is_active = ? WHERE id = ?`
+    ).run(input.full_name.trim(), input.role, input.branch_id, companyCode, input.is_active ? 1 : 0, input.id);
   }
   const updated = getUsers(db).find((u) => u.id === input.id);
   if (!updated) throw new Error('User not found');
