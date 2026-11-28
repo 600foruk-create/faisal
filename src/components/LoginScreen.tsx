@@ -3,20 +3,12 @@
 import React, { useState } from 'react';
 import {
   AlertCircle,
-  Building2,
-  CheckCircle2,
-  Clock,
   Eye,
   EyeOff,
-  KeyRound,
   Lock,
   RefreshCw,
   ShieldCheck,
-  Sparkles,
-  Store,
-  Terminal,
   User,
-  UserCheck,
 } from 'lucide-react';
 import { usePosContext } from './PosContext';
 import type { UserSummary } from '@/lib/types';
@@ -26,7 +18,6 @@ export function LoginScreen() {
     settings,
     branches,
     terminals,
-    users,
     loginUser,
     openPosSale,
   } = usePosContext();
@@ -74,7 +65,7 @@ export function LoginScreen() {
       }
 
       // =========================================================================
-      // SMART BACKGROUND LOGIC (NO VISUAL CLUTTER ON SCREEN)
+      // SMART BACKGROUND LOGIC (AUTOMATICALLY ROUTED BEHIND THE SCENES)
       // =========================================================================
       // 1. Smart Branch Scoping
       let assignedBranchId = loggedUser.branch_id;
@@ -93,7 +84,7 @@ export function LoginScreen() {
       // 4. Complete login into context
       loginUser(loggedUser, assignedBranchId, assignedTerminalId, autoShift);
 
-      // 5. Direct Role Routing: If Cashier, launch POS Sale Billing Window directly!
+      // 5. Direct Account Role Routing: If Cashier, launch POS Sale Billing Window directly!
       if (loggedUser.role === 'CASHIER') {
         openPosSale();
       }
@@ -105,54 +96,27 @@ export function LoginScreen() {
     }
   };
 
-  // Quick Test Profile Filler (For Fast Testing)
-  const handleQuickFillProfile = (roleType: 'SUPER_ADMIN' | 'CASHIER' | 'MANAGER') => {
-    setErrorMessage('');
-    if (roleType === 'SUPER_ADMIN') {
-      setUsername('faisal');
-      setPassword('admin123');
-    } else if (roleType === 'CASHIER') {
-      const cashierUser = users.find((u) => u.role === 'CASHIER' && u.is_active === 1);
-      if (cashierUser) {
-        setUsername(cashierUser.username);
-        setPassword('admin123');
-      } else {
-        setErrorMessage('No cashier account created yet. Log in as Super Admin (Faisal) and create a cashier in User Logins.');
-      }
-    } else if (roleType === 'MANAGER') {
-      const managerUser = users.find(
-        (u) => (u.role === 'MANAGER' || u.role === 'ADMIN') && u.username !== 'faisal' && u.is_active === 1
-      );
-      if (managerUser) {
-        setUsername(managerUser.username);
-        setPassword('admin123');
-      } else {
-        setErrorMessage('No branch manager account created yet. Log in as Super Admin (Faisal) and create a manager in User Logins.');
-      }
-    }
-  };
-
   return (
-    <div className="relative flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-[#06101e] via-[#091529] to-[#0c1f3d] p-3 sm:p-6 text-slate-100 overflow-hidden">
-      {/* Background Ambient Glows in Our Brand Colors (Emerald & Amber) */}
+    <div className="relative flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-[#050c18] via-[#091529] to-[#0d1e3d] p-3 sm:p-6 text-slate-100 overflow-hidden">
+      {/* Background Ambient Glows in Our Brand Colors */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-emerald-600/15 blur-[130px]" />
-        <div className="absolute -bottom-40 -right-40 h-[500px] w-[500px] rounded-full bg-amber-500/10 blur-[130px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[#0a1b38]/40 blur-[160px]" />
+        <div className="absolute -top-40 -left-40 h-[520px] w-[520px] rounded-full bg-emerald-600/15 blur-[140px]" />
+        <div className="absolute -bottom-40 -right-40 h-[520px] w-[520px] rounded-full bg-amber-500/10 blur-[140px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[#091529]/60 blur-[160px]" />
       </div>
 
       {/* Main Floating Glass Portal Card */}
-      <div className="relative z-10 flex w-full max-w-[1040px] flex-col overflow-hidden rounded-[28px] border-2 border-emerald-500/40 bg-[#091529]/95 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85)] backdrop-blur-2xl">
+      <div className="relative z-10 flex w-full max-w-[980px] flex-col overflow-hidden rounded-[30px] border border-emerald-500/40 bg-[#091529]/95 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
         {/* ========================================================================= */}
-        {/* TOP BRAND BAR (EXACT ERP BRANDING & COLORS)                              */}
+        {/* TOP BRAND BAR (CLEAN & SEAMLESS)                                         */}
         {/* ========================================================================= */}
         <div className="flex items-center justify-between border-b-2 border-emerald-500/80 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#0b1830] px-6 py-3.5 sm:px-8">
           {/* Left: Software Brand (White) - Company Name (Amber-400 Gold) */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <span className="text-base sm:text-xl font-extrabold tracking-tight text-white whitespace-nowrap">
+            <span className="text-base sm:text-lg font-black tracking-tight text-white whitespace-nowrap">
               {settings.software_brand || 'Softifyx'}
             </span>
-            <span className="truncate text-sm sm:text-lg font-bold tracking-wide text-amber-400">
+            <span className="truncate text-xs sm:text-base font-bold tracking-wide text-amber-400">
               - {settings.business_name || 'M/S SEASTONE PVC PIPE INDUSTRY'}
             </span>
           </div>
@@ -211,16 +175,16 @@ export function LoginScreen() {
         </div>
 
         {/* ========================================================================= */}
-        {/* SPLIT BODY: LEFT LOGIN FORM (44%) & RIGHT BRAND WAVE ART (56%)            */}
+        {/* SPLIT BODY: LEFT LOGIN FORM (45%) & RIGHT BRAND WAVE ART (55%)            */}
         {/* ========================================================================= */}
-        <div className="flex flex-col lg:flex-row">
+        <div className="flex flex-col lg:flex-row min-h-[420px]">
           {/* ----------------------------------------------------------------------- */}
-          {/* LEFT: SLEEK AUTHENTIC LOGIN PANEL (DARK NAVY #091529 & EMERALD)         */}
+          {/* LEFT: MINIMAL SLEEK & BALANCED LOGIN FORM                                */}
           {/* ----------------------------------------------------------------------- */}
-          <div className="flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-slate-800 bg-[#091529] p-6 sm:p-10 lg:w-[44%]">
+          <div className="flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-slate-800/90 bg-[#091529] p-6 sm:p-10 lg:w-[45%]">
             {/* Center Profile Avatar Circle in Emerald Green Glow */}
             <div className="mb-6 flex flex-col items-center justify-center">
-              <div className="relative flex h-20 w-20 items-center justify-center rounded-full border-2 border-emerald-500 bg-emerald-500/10 shadow-[0_0_24px_rgba(16,185,129,0.3)]">
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-full border-2 border-emerald-400 bg-emerald-500/10 shadow-[0_0_24px_rgba(16,185,129,0.3)]">
                 <User className="h-9 w-9 text-emerald-400" />
               </div>
             </div>
@@ -233,46 +197,46 @@ export function LoginScreen() {
               </div>
             )}
 
-            {/* Login Form with Pill Inputs in Our Dark Navy #102242 & Emerald Border */}
-            <form onSubmit={handleLoginSubmit} className="space-y-3.5">
+            {/* Login Form with Pill Inputs in Dark Navy & Emerald Border */}
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
               {/* Input 1: Username Pill */}
               <div className="relative">
-                <User className="pointer-events-none absolute left-4 top-3 h-4 w-4 text-emerald-400" />
+                <User className="pointer-events-none absolute left-4 top-3.5 h-4 w-4 text-emerald-400" />
                 <input
                   type="text"
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="USERNAME"
-                  className="w-full rounded-full border border-slate-700/80 bg-[#102242] py-2.5 pl-11 pr-4 text-xs font-semibold text-white placeholder-slate-400 shadow-inner focus:border-emerald-500 focus:bg-[#0c1a33] focus:outline-hidden transition"
+                  className="w-full rounded-full border border-slate-700/80 bg-[#0e1d38] py-3 pl-11 pr-4 text-xs font-semibold text-white placeholder-slate-400 shadow-inner focus:border-emerald-500 focus:bg-[#0b172e] focus:outline-hidden transition"
                 />
               </div>
 
               {/* Input 2: Password Pill with Eye Toggle */}
               <div className="relative">
-                <Lock className="pointer-events-none absolute left-4 top-3 h-4 w-4 text-emerald-400" />
+                <Lock className="pointer-events-none absolute left-4 top-3.5 h-4 w-4 text-emerald-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="PASSWORD"
-                  className="w-full rounded-full border border-slate-700/80 bg-[#102242] py-2.5 pl-11 pr-11 text-xs font-semibold text-white placeholder-slate-400 shadow-inner focus:border-emerald-500 focus:bg-[#0c1a33] focus:outline-hidden transition"
+                  className="w-full rounded-full border border-slate-700/80 bg-[#0e1d38] py-3 pl-11 pr-11 text-xs font-semibold text-white placeholder-slate-400 shadow-inner focus:border-emerald-500 focus:bg-[#0b172e] focus:outline-hidden transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-4 top-2.5 text-slate-400 hover:text-emerald-300 transition cursor-pointer"
+                  className="absolute right-4 top-3 text-slate-400 hover:text-emerald-300 transition cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
 
-              {/* Solid Emerald Green Button (Exact Same Green As Save Button in Modals) */}
+              {/* Solid Emerald Green Button */}
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 py-2.5 text-xs font-extrabold uppercase tracking-wider text-white shadow-lg shadow-emerald-950/60 transition"
+                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.99] py-3 text-xs font-extrabold uppercase tracking-wider text-white shadow-lg shadow-emerald-950/60 transition"
               >
                 {submitting ? (
                   <>
@@ -284,7 +248,7 @@ export function LoginScreen() {
                 )}
               </button>
 
-              {/* Remember Me & Help Text */}
+              {/* Remember Me Row */}
               <div className="flex items-center justify-between pt-1 px-1 text-[11px] text-slate-400">
                 <label className="flex items-center gap-2 cursor-pointer hover:text-slate-200">
                   <input
@@ -298,43 +262,13 @@ export function LoginScreen() {
                 <span className="text-slate-400">Authorized Personnel</span>
               </div>
             </form>
-
-            {/* Quick Testing Profile Pills */}
-            <div className="mt-6 pt-4 border-t border-slate-800">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-2 text-center">
-                Quick Profile Fill (For Testing)
-              </span>
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleQuickFillProfile('SUPER_ADMIN')}
-                  className="rounded-full bg-amber-400 text-slate-950 border border-amber-300 px-3 py-1 text-[10px] font-extrabold hover:bg-amber-300 transition cursor-pointer shadow-xs"
-                >
-                  Faisal (Super Admin)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickFillProfile('CASHIER')}
-                  className="rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-3 py-1 text-[10px] font-bold hover:bg-emerald-500/25 transition cursor-pointer"
-                >
-                  Cashier
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickFillProfile('MANAGER')}
-                  className="rounded-full bg-white/10 text-white border border-white/20 px-3 py-1 text-[10px] font-bold hover:bg-white/15 transition cursor-pointer"
-                >
-                  Manager
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* ----------------------------------------------------------------------- */}
-          {/* RIGHT: BRAND WAVE ART IN EMERALD GREEN & AMBER GOLD                     */}
+          {/* RIGHT: ELEGANT FLUID WAVE ARTWORK & MAJESTIC WELCOME                      */}
           {/* ----------------------------------------------------------------------- */}
-          <div className="relative flex flex-col justify-between overflow-hidden p-6 sm:p-10 lg:w-[56%] bg-gradient-to-br from-[#0a172c] via-[#0e2142] to-[#122850]">
-            {/* Organic Fluid Wave Artwork SVG in Emerald Green & Amber Gold */}
+          <div className="relative flex flex-col justify-between overflow-hidden p-6 sm:p-12 lg:w-[55%] bg-gradient-to-br from-[#0a172c] via-[#0e2142] to-[#122850]">
+            {/* Organic Fluid Wave Artwork SVG in Emerald Green & Warm Amber */}
             <div className="absolute inset-0 pointer-events-none opacity-85">
               <svg
                 viewBox="0 0 600 450"
@@ -366,47 +300,26 @@ export function LoginScreen() {
               </svg>
             </div>
 
-            {/* Glowing Accent Aura */}
+            {/* Glowing Ambient Aura */}
             <div className="absolute -top-16 -right-16 h-64 w-64 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none" />
 
             {/* Content Container */}
-            <div className="relative z-10 my-auto py-6">
+            <div className="relative z-10 my-auto py-8">
               {/* Bold "Welcome." */}
-              <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight mb-2 drop-shadow-sm">
+              <h1 className="text-5xl sm:text-6xl font-black text-white tracking-tight mb-3 drop-shadow-sm">
                 Welcome.
               </h1>
 
               {/* Subheading in Amber Gold & White */}
-              <div className="flex flex-wrap items-baseline gap-1.5 mb-3 text-sm sm:text-base font-bold">
+              <div className="flex flex-wrap items-baseline gap-1.5 mb-4 text-sm sm:text-base font-bold">
                 <span className="text-white">Softifyx POS</span>
                 <span className="text-amber-400">• M/S SEASTONE PVC PIPE INDUSTRY</span>
               </div>
 
               {/* Description */}
-              <p className="text-xs text-slate-300 max-w-[430px] leading-relaxed mb-6">
-                Direct single sign-on access to your authorized company ledger, branch inventory catalog, and FBR fiscal billing terminal.
+              <p className="text-xs sm:text-sm text-slate-300 max-w-[420px] leading-relaxed">
+                Direct single sign-on access to your point of sale terminal, centralized retail ledger, and FBR fiscal certified billing portal.
               </p>
-
-              {/* 3 Pillars of Automated Background Intelligence in Our Theme */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 max-w-[460px]">
-                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-2.5 backdrop-blur-xs">
-                  <Store className="h-4 w-4 text-emerald-400 mb-1" />
-                  <span className="text-[11px] font-bold text-white block">Auto Branch</span>
-                  <span className="text-[9px] text-emerald-200">Outlet Scoped</span>
-                </div>
-
-                <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-2.5 backdrop-blur-xs">
-                  <Terminal className="h-4 w-4 text-amber-400 mb-1" />
-                  <span className="text-[11px] font-bold text-white block">Auto Counter</span>
-                  <span className="text-[9px] text-amber-200">POS-01 Linked</span>
-                </div>
-
-                <div className="rounded-2xl border border-sky-500/30 bg-sky-500/10 p-2.5 backdrop-blur-xs">
-                  <Clock className="h-4 w-4 text-sky-400 mb-1" />
-                  <span className="text-[11px] font-bold text-white block">Auto Shift</span>
-                  <span className="text-[9px] text-sky-200">Time-Detected</span>
-                </div>
-              </div>
             </div>
 
             {/* Bottom Footer Note inside Card */}
