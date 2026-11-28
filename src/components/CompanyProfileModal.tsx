@@ -3,52 +3,40 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
-  Award,
   Building2,
   Check,
   CheckCircle2,
-  DollarSign,
   FileText,
-  Globe,
-  Info,
   Lock,
   Mail,
   MapPin,
   Maximize2,
   Minimize2,
   Minus,
-  Percent,
   Phone,
   Plus,
   Receipt,
-  RefreshCw,
   Save,
   Search,
-  Shield,
-  ShieldAlert,
   ShieldCheck,
   Store,
   User,
   Users,
-  Wallet,
   X,
 } from 'lucide-react';
 import { usePosContext } from './PosContext';
-import { formatCurrency } from '@/lib/format';
 import type { CompanyTenant } from '@/lib/types';
 
-type CompanyTab = 'profile' | 'tenants' | 'licensing';
+type CompanyTab = 'profile' | 'companies';
 
 export function CompanyProfileModal() {
   const {
     settings,
     branches,
-    users,
     companies,
     activeUser,
     closeCompanyModal,
     reloadContext,
-    refreshNonce,
   } = usePosContext();
 
   // Window Controls
@@ -95,12 +83,12 @@ export function CompanyProfileModal() {
   const [newCompanyAddress, setNewCompanyAddress] = useState('');
   const [addingCompany, setAddingCompany] = useState(false);
 
-  // Check if current user is Super Admin
+  // Check if current user is Platform Super Admin (strictly Faisal or SUPER_ADMIN)
   const isSuperAdmin = useMemo(() => {
-    if (!activeUser) return true; // Default admin
+    if (!activeUser) return false;
     return (
       activeUser.role === 'SUPER_ADMIN' ||
-      activeUser.username.toLowerCase() === 'admin'
+      activeUser.username.toLowerCase() === 'faisal'
     );
   }, [activeUser]);
 
@@ -128,12 +116,16 @@ export function CompanyProfileModal() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        closeCompanyModal();
+        if (showAddCompanyModal) {
+          setShowAddCompanyModal(false);
+        } else {
+          closeCompanyModal();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [closeCompanyModal]);
+  }, [closeCompanyModal, showAddCompanyModal]);
 
   const showToast = useCallback((text: string, type: 'success' | 'error' = 'success') => {
     setToastMessage({ text, type });
@@ -144,7 +136,7 @@ export function CompanyProfileModal() {
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!businessName.trim()) {
-      showToast('Legal company name is required', 'error');
+      showToast('Business / Company name is required', 'error');
       return;
     }
 
@@ -179,7 +171,7 @@ export function CompanyProfileModal() {
       }
 
       await reloadContext();
-      showToast('Company profile & defaults updated successfully', 'success');
+      showToast('Company profile updated successfully!', 'success');
     } catch (err) {
       console.error(err);
       showToast('Error saving company profile', 'error');
@@ -188,7 +180,7 @@ export function CompanyProfileModal() {
     }
   };
 
-  // Register New Tenant / Company (Super Admin Only)
+  // Register New Company (Super Admin Only)
   const handleRegisterNewCompany = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCompanyCode.trim() || !newCompanyName.trim()) {
@@ -225,9 +217,8 @@ export function CompanyProfileModal() {
       }
 
       await reloadContext();
-      showToast(`Company "${payload.business_name}" registered successfully!`, 'success');
+      showToast(`Company "${payload.business_name}" added successfully!`, 'success');
       setShowAddCompanyModal(false);
-      // Reset form
       setNewCompanyCode('');
       setNewCompanyName('');
       setNewCompanyOwner('');
@@ -238,7 +229,7 @@ export function CompanyProfileModal() {
       setNewCompanyAddress('');
     } catch (err) {
       console.error(err);
-      showToast('Error registering new company tenant', 'error');
+      showToast('Error registering new company', 'error');
     } finally {
       setAddingCompany(false);
     }
@@ -253,11 +244,11 @@ export function CompanyProfileModal() {
           className={`flex flex-col rounded-2xl bg-white shadow-2xl transition-all duration-200 border border-slate-300 overflow-hidden ${
             isMaximized
               ? 'fixed inset-1.5 w-[calc(100%-12px)] h-[calc(100%-12px)] max-w-none'
-              : 'w-full max-w-[1240px] h-[88vh]'
+              : 'w-full max-w-[1100px] h-[88vh]'
           }`}
         >
           {/* ========================================================================= */}
-          {/* EXECUTIVE MIDNIGHT NAVY HEADER                                            */}
+          {/* EXECUTIVE MIDNIGHT NAVY HEADER (STYLE 2)                                  */}
           {/* ========================================================================= */}
           <div className="flex shrink-0 items-center justify-between border-b border-sky-500/25 bg-gradient-to-r from-[#091529] via-[#0e1f3d] to-[#132952] px-4 py-2.5 text-white">
             <div className="flex items-center gap-2.5">
@@ -267,25 +258,25 @@ export function CompanyProfileModal() {
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-sm font-black tracking-wide uppercase text-white sm:text-base">
-                    My Company &amp; Multi-Tenant Organization Manager
+                    Company Profile Settings
                   </h1>
                   <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-400/30">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Multi-Tenant Active
+                    Active Profile
                   </span>
                 </div>
                 <span className="text-[11px] text-slate-300">
-                  Legal Business Identity, Tax Registration, Multi-Company Management &amp; Defaults
+                  Business Name, FBR Tax Registration, Contact &amp; Receipt Details
                 </span>
               </div>
             </div>
 
-            {/* Window Controls & Active Tenant Badge */}
+            {/* Window Controls & User Badge */}
             <div className="flex items-center gap-2">
               <div className="hidden sm:flex items-center gap-1.5 rounded-lg bg-slate-900/60 px-2.5 py-1 text-xs border border-white/10 text-slate-300">
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-                <span className="font-semibold text-white truncate max-w-[240px]">
-                  {isSuperAdmin ? 'Platform Super Admin' : 'Company Admin'}
+                <span className="font-semibold text-white truncate max-w-[200px]">
+                  {isSuperAdmin ? 'Super Admin' : 'Company Admin'}
                 </span>
               </div>
 
@@ -351,235 +342,200 @@ export function CompanyProfileModal() {
           )}
 
           {/* ========================================================================= */}
-          {/* TOP EXECUTIVE TENANT KPI CARDS                                            */}
+          {/* CLEAN & SIMPLE SUMMARY RIBBON (3 PRACTICAL CARDS)                         */}
           {/* ========================================================================= */}
-          <div className="grid grid-cols-2 gap-2.5 border-b border-slate-200 bg-white p-3 sm:grid-cols-3 lg:grid-cols-5">
-            {/* Active Company Name */}
-            <div className="flex flex-col rounded-xl border border-slate-200 bg-slate-50/70 p-2.5 shadow-2xs">
-              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
-                Active Tenant / Company
-              </span>
-              <div className="mt-1 text-sm font-black text-slate-900 truncate">
-                {businessName || 'Seastone POS'}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-b border-slate-200 bg-white p-3">
+            {/* 1. Active Company */}
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-2.5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                <Store className="h-5 w-5" />
               </div>
-              <span className="text-[9.5px] text-slate-500">SEASTONE PVC PIPE</span>
-            </div>
-
-            {/* Tax IDs */}
-            <div className="flex flex-col rounded-xl border border-sky-200 bg-sky-50/50 p-2.5 shadow-2xs">
-              <span className="text-[10px] font-bold text-sky-800 uppercase tracking-wider">
-                NTN / STRN Tax Reg
-              </span>
-              <div className="mt-1 text-xs font-black text-sky-950 tabular-nums">
-                NTN: {ntn || 'Not Set'}
-              </div>
-              <span className="text-[9.5px] text-sky-700 tabular-nums">
-                STRN: {strn || 'Not Set'}
-              </span>
-            </div>
-
-            {/* Currency & Tax Rate */}
-            <div className="flex flex-col rounded-xl border border-emerald-200 bg-emerald-50/50 p-2.5 shadow-2xs">
-              <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">
-                Operating Currency &amp; GST
-              </span>
-              <div className="mt-1 text-sm font-black text-emerald-950 tabular-nums">
-                {currencySymbol} | {defaultTaxRate}% Standard
-              </div>
-              <span className="text-[9.5px] text-emerald-700">FBR Fiscal Rate</span>
-            </div>
-
-            {/* Operating Branches */}
-            <div className="flex flex-col rounded-xl border border-indigo-200 bg-indigo-50/50 p-2.5 shadow-2xs">
-              <span className="text-[10px] font-bold text-indigo-800 uppercase tracking-wider">
-                Authorized Outlets
-              </span>
-              <div className="mt-1 text-sm font-black text-indigo-950 tabular-nums">
-                {branches.length} Branches Active
-              </div>
-              <span className="text-[9.5px] text-indigo-700">Super Admin Provisioned</span>
-            </div>
-
-            {/* Multi-Tenant Scope */}
-            <div className="flex flex-col rounded-xl border border-teal-200 bg-teal-50/50 p-2.5 shadow-2xs">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-teal-800 uppercase tracking-wider">
-                  Tenant Scope
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                  Active Business
                 </span>
-                <ShieldCheck className="h-3.5 w-3.5 text-teal-600" />
+                <div className="text-xs font-black text-slate-900 truncate" title={businessName}>
+                  {businessName || 'M/S SEASTONE PVC PIPE INDUSTRY'}
+                </div>
+                <span className="text-[10px] text-slate-500 truncate block">
+                  Owner: {ownerName || 'Faisal'}
+                </span>
               </div>
-              <div className="mt-1 text-sm font-black text-teal-950">
-                {companies.length || 1} Companies Registered
+            </div>
+
+            {/* 2. Tax Registration */}
+            <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/50 p-2.5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+                <ShieldCheck className="h-5 w-5" />
               </div>
-              <span className="text-[9.5px] text-teal-700">SaaS Multi-Tenant</span>
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
+                  FBR Tax Status
+                </span>
+                <div className="text-xs font-black text-emerald-950 tabular-nums">
+                  NTN: {ntn || '4125890-7'}
+                </div>
+                <span className="text-[10px] text-emerald-700 tabular-nums truncate block">
+                  STRN: {strn || '3277876124891'}
+                </span>
+              </div>
+            </div>
+
+            {/* 3. Contact & Location */}
+            <div className="flex items-center gap-3 rounded-xl border border-indigo-200 bg-indigo-50/50 p-2.5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700">
+                <MapPin className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] font-bold text-indigo-800 uppercase tracking-wider block">
+                  Contact &amp; Location
+                </span>
+                <div className="text-xs font-bold text-indigo-950 tabular-nums truncate">
+                  Phone: {phone || '0945-822140'}
+                </div>
+                <span className="text-[10px] text-indigo-700 truncate block" title={address}>
+                  {address || 'Timergara, Lower Dir'}
+                </span>
+              </div>
             </div>
           </div>
 
           {/* ========================================================================= */}
-          {/* TAB NAVIGATION STRIP                                                      */}
+          {/* TAB STRIP: 2 CRYSTAL CLEAR TABS                                          */}
           {/* ========================================================================= */}
-          <div className="flex items-center gap-1.5 border-b border-slate-200 bg-slate-100/70 px-4 py-2 text-xs font-bold text-slate-600">
-            <button
-              type="button"
-              onClick={() => setActiveTab('profile')}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition ${
-                activeTab === 'profile'
-                  ? 'bg-white text-slate-900 shadow-2xs ring-1 border border-slate-200'
-                  : 'hover:bg-white/60 hover:text-slate-800'
-              }`}
-            >
-              <Building2 className="h-3.5 w-3.5 text-sky-600" />
-              <span>Company Profile &amp; Tax Identity</span>
-            </button>
+          <div className="flex items-center justify-between border-b border-slate-200 bg-slate-100/80 px-4 py-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab('profile')}
+                className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  activeTab === 'profile'
+                    ? 'bg-white text-slate-900 shadow-2xs border border-slate-200'
+                    : 'text-slate-600 hover:bg-white/60 hover:text-slate-800'
+                }`}
+              >
+                <Building2 className="h-4 w-4 text-emerald-600" />
+                <span>Company Profile Details</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('tenants')}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition ${
-                activeTab === 'tenants'
-                  ? 'bg-white text-slate-900 shadow-2xs ring-1 border border-slate-200'
-                  : 'hover:bg-white/60 hover:text-slate-800'
-              }`}
-            >
-              <Users className="h-3.5 w-3.5 text-indigo-600" />
-              <span>Multi-Tenant Companies Directory</span>
-              <span className="rounded-full bg-indigo-100 px-1.5 py-0.2 text-[10px] text-indigo-800 tabular-nums font-extrabold">
-                {companies.length || 1}
-              </span>
-            </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('companies')}
+                className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  activeTab === 'companies'
+                    ? 'bg-white text-slate-900 shadow-2xs border border-slate-200'
+                    : 'text-slate-600 hover:bg-white/60 hover:text-slate-800'
+                }`}
+              >
+                <Users className="h-4 w-4 text-sky-600" />
+                <span>All Companies List</span>
+                <span className="rounded-full bg-sky-100 px-1.5 py-0.2 text-[10px] text-sky-800 font-extrabold tabular-nums">
+                  {companies.length || 1}
+                </span>
+              </button>
+            </div>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('licensing')}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition ${
-                activeTab === 'licensing'
-                  ? 'bg-white text-slate-900 shadow-2xs ring-1 border border-slate-200'
-                  : 'hover:bg-white/60 hover:text-slate-800'
-              }`}
-            >
-              <Award className="h-3.5 w-3.5 text-emerald-600" />
-              <span>Enterprise Licensing &amp; Quota</span>
-            </button>
+            {/* Quick Save button in tab bar for fast accessibility */}
+            {activeTab === 'profile' && (
+              <button
+                type="button"
+                onClick={handleSaveProfile}
+                disabled={saving}
+                className="hidden sm:inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-emerald-700 disabled:opacity-50 transition"
+              >
+                <Save className="h-3.5 w-3.5" />
+                <span>{saving ? 'Saving...' : 'Save Profile'}</span>
+              </button>
+            )}
           </div>
 
           {/* ========================================================================= */}
           {/* TAB CONTENTS                                                              */}
           {/* ========================================================================= */}
-          <div className="flex-1 overflow-auto bg-slate-50/40 p-4">
+          <div className="flex-1 overflow-auto bg-slate-50/60 p-4">
             {/* ----------------------------------------------------------------------- */}
-            {/* TAB 1: COMPANY PROFILE FORM                                             */}
+            {/* TAB 1: SIMPLE & PROFESSIONAL COMPANY PROFILE FORM                       */}
             {/* ----------------------------------------------------------------------- */}
             {activeTab === 'profile' && (
               <form onSubmit={handleSaveProfile} className="space-y-4 max-w-4xl mx-auto">
+                {/* CARD 1: BUSINESS & CONTACT INFORMATION */}
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                  <div className="flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-50 text-sky-700">
+                      <Building2 className="h-4 w-4" />
+                    </div>
                     <div>
                       <h2 className="text-sm font-bold text-slate-900">
-                        Primary Business Identity &amp; FBR Tax Details
+                        1. Business &amp; Contact Information
                       </h2>
-                      <p className="text-xs text-slate-500">
-                        These legal details appear on all invoices, fiscal receipts, and official tax filings.
+                      <p className="text-[11px] text-slate-500">
+                        Official business name and contact information displayed on bill headers and reports
                       </p>
                     </div>
-                    <button
-                      type="submit"
-                      disabled={saving}
-                      className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 px-4 py-2 text-xs font-bold text-white shadow-xs hover:from-emerald-700 hover:to-teal-800 disabled:opacity-50 transition"
-                    >
-                      <Save className="h-3.5 w-3.5" />
-                      <span>{saving ? 'Saving Changes...' : 'Save Company Profile'}</span>
-                    </button>
                   </div>
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {/* Legal Company Name */}
-                    <div>
+                    <div className="sm:col-span-2">
                       <label className="mb-1 block text-xs font-semibold text-slate-700">
-                        Legal Business Name (Invoice Header)
+                        Company / Business Name (Prints on Invoices &amp; Bills)
                       </label>
                       <input
                         type="text"
+                        required
                         value={businessName}
                         onChange={(e) => setBusinessName(e.target.value)}
                         placeholder="e.g. M/S SEASTONE PVC PIPE INDUSTRY"
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow-2xs focus:border-sky-500 focus:outline-hidden"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-900 shadow-2xs focus:border-sky-500 focus:ring-1 focus:ring-sky-500 focus:outline-hidden"
                       />
                     </div>
 
-                    {/* Software Brand Title */}
+                    {/* Owner Name */}
                     <div>
                       <label className="mb-1 block text-xs font-semibold text-slate-700">
-                        Software Brand Title (Top Bar)
-                      </label>
-                      <input
-                        type="text"
-                        value={softwareBrand}
-                        onChange={(e) => setSoftwareBrand(e.target.value)}
-                        placeholder="e.g. Softifyx"
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 shadow-2xs focus:border-sky-500 focus:outline-hidden"
-                      />
-                    </div>
-
-                    {/* Owner / Managing Director */}
-                    <div>
-                      <label className="mb-1 block text-xs font-semibold text-slate-700">
-                        Owner / Managing Director Name
+                        Owner / Director Name
                       </label>
                       <input
                         type="text"
                         value={ownerName}
                         onChange={(e) => setOwnerName(e.target.value)}
                         placeholder="e.g. Faisal (Owner)"
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 shadow-2xs focus:border-sky-500 focus:outline-hidden"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 shadow-2xs focus:border-sky-500 focus:outline-hidden"
                       />
                     </div>
 
-                    {/* NTN Number */}
+                    {/* Software Title */}
                     <div>
                       <label className="mb-1 block text-xs font-semibold text-slate-700">
-                        FBR National Tax Number (NTN)
+                        Software Title (Top Header)
                       </label>
                       <input
                         type="text"
-                        value={ntn}
-                        onChange={(e) => setNtn(e.target.value)}
-                        placeholder="e.g. 4125890-7"
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow-2xs tabular-nums focus:border-sky-500 focus:outline-hidden"
-                      />
-                    </div>
-
-                    {/* STRN Number */}
-                    <div>
-                      <label className="mb-1 block text-xs font-semibold text-slate-700">
-                        Sales Tax Registration Number (STRN)
-                      </label>
-                      <input
-                        type="text"
-                        value={strn}
-                        onChange={(e) => setStrn(e.target.value)}
-                        placeholder="e.g. 3277876124891"
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow-2xs tabular-nums focus:border-sky-500 focus:outline-hidden"
+                        value={softwareBrand}
+                        onChange={(e) => setSoftwareBrand(e.target.value)}
+                        placeholder="e.g. Softifyx"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 shadow-2xs focus:border-sky-500 focus:outline-hidden"
                       />
                     </div>
 
                     {/* Phone Number */}
                     <div>
                       <label className="mb-1 block text-xs font-semibold text-slate-700">
-                        Official Phone / WhatsApp Contact
+                        Phone / WhatsApp Contact
                       </label>
                       <input
                         type="text"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="e.g. 0945-822140"
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 shadow-2xs tabular-nums focus:border-sky-500 focus:outline-hidden"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 shadow-2xs tabular-nums focus:border-sky-500 focus:outline-hidden"
                       />
                     </div>
 
                     {/* Email */}
                     <div>
                       <label className="mb-1 block text-xs font-semibold text-slate-700">
-                        Official Email Address
+                        Email Address
                       </label>
                       <input
                         type="email"
@@ -590,10 +546,10 @@ export function CompanyProfileModal() {
                       />
                     </div>
 
-                    {/* Head Office Address */}
-                    <div>
+                    {/* Business Address */}
+                    <div className="sm:col-span-2">
                       <label className="mb-1 block text-xs font-semibold text-slate-700">
-                        Head Office / Factory Address
+                        Business / Factory Address
                       </label>
                       <input
                         type="text"
@@ -606,17 +562,70 @@ export function CompanyProfileModal() {
                   </div>
                 </div>
 
-                {/* Financial Defaults & Receipt Note */}
+                {/* CARD 2: FBR TAX REGISTRATION & DEFAULTS */}
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs">
-                  <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2 mb-3">
-                    Financial Defaults &amp; Thermal Receipt Policy
-                  </h3>
+                  <div className="flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+                      <ShieldCheck className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-bold text-slate-900">
+                        2. FBR Tax Numbers &amp; Currency
+                      </h2>
+                      <p className="text-[11px] text-slate-500">
+                        Tax registration numbers required for FBR POS invoices and official receipts
+                      </p>
+                    </div>
+                  </div>
 
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+                    {/* NTN Number */}
+                    <div className="sm:col-span-2">
+                      <label className="mb-1 block text-xs font-semibold text-slate-700">
+                        FBR NTN Number (National Tax Number)
+                      </label>
+                      <input
+                        type="text"
+                        value={ntn}
+                        onChange={(e) => setNtn(e.target.value)}
+                        placeholder="e.g. 4125890-7"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow-2xs tabular-nums focus:border-sky-500 focus:outline-hidden"
+                      />
+                    </div>
+
+                    {/* STRN Number */}
+                    <div className="sm:col-span-2">
+                      <label className="mb-1 block text-xs font-semibold text-slate-700">
+                        Sales Tax Registration Number (STRN)
+                      </label>
+                      <input
+                        type="text"
+                        value={strn}
+                        onChange={(e) => setStrn(e.target.value)}
+                        placeholder="e.g. 3277876124891"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow-2xs tabular-nums focus:border-sky-500 focus:outline-hidden"
+                      />
+                    </div>
+
+                    {/* Default Tax Rate */}
+                    <div className="sm:col-span-2">
+                      <label className="mb-1 block text-xs font-semibold text-slate-700">
+                        Standard Sales Tax / GST Rate (%)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={defaultTaxRate}
+                        onChange={(e) => setDefaultTaxRate(e.target.value)}
+                        placeholder="18"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow-2xs tabular-nums focus:border-sky-500 focus:outline-hidden"
+                      />
+                    </div>
+
                     {/* Currency Symbol */}
                     <div>
                       <label className="mb-1 block text-xs font-semibold text-slate-700">
-                        Default Currency Symbol
+                        Currency Symbol
                       </label>
                       <input
                         type="text"
@@ -627,25 +636,10 @@ export function CompanyProfileModal() {
                       />
                     </div>
 
-                    {/* Default Tax Rate */}
+                    {/* Default Opening Cash */}
                     <div>
                       <label className="mb-1 block text-xs font-semibold text-slate-700">
-                        Standard GST Rate (%)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={defaultTaxRate}
-                        onChange={(e) => setDefaultTaxRate(e.target.value)}
-                        placeholder="18"
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-900 shadow-2xs tabular-nums focus:border-sky-500 focus:outline-hidden"
-                      />
-                    </div>
-
-                    {/* Opening Cash Default */}
-                    <div>
-                      <label className="mb-1 block text-xs font-semibold text-slate-700">
-                        Default Opening Cash (Rs.)
+                        Default Float Cash (Rs.)
                       </label>
                       <input
                         type="number"
@@ -656,37 +650,92 @@ export function CompanyProfileModal() {
                       />
                     </div>
                   </div>
+                </div>
 
-                  {/* Receipt Footer Message */}
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700">
-                      Thermal Receipt Bottom Note &amp; FBR Verification Notice
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={receiptFooter}
-                      onChange={(e) => setReceiptFooter(e.target.value)}
-                      placeholder="e.g. Thank you for shopping with M/S Seastone PVC Pipe Industry! Verify FBR invoice via Tax Asaan App or SMS to 9966."
-                      className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs text-slate-900 shadow-2xs focus:border-sky-500 focus:outline-hidden"
-                    />
+                {/* CARD 3: THERMAL RECEIPT FOOTER & LIVE PREVIEW */}
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs">
+                  <div className="flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-700">
+                      <Receipt className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-bold text-slate-900">
+                        3. Thermal Receipt Note &amp; Footer Message
+                      </h2>
+                      <p className="text-[11px] text-slate-500">
+                        Custom thank you note and tax verification text printed at the bottom of 80mm cash slips
+                      </p>
+                    </div>
                   </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-slate-700">
+                        Receipt Bottom Note Text
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={receiptFooter}
+                        onChange={(e) => setReceiptFooter(e.target.value)}
+                        placeholder="e.g. Thank you for shopping with M/S Seastone PVC Pipe Industry! Verify FBR invoice via Tax Asaan App or SMS to 9966."
+                        className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs font-medium text-slate-900 shadow-2xs focus:border-sky-500 focus:outline-hidden leading-relaxed"
+                      />
+                    </div>
+
+                    {/* Live Preview Box */}
+                    <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3 text-center">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                        Live Preview on 80mm Receipt Bottom
+                      </span>
+                      <div className="mx-auto max-w-sm rounded border border-slate-200 bg-white p-3 shadow-2xs text-[11px] text-slate-700 leading-relaxed">
+                        <div className="border-t border-dashed border-slate-300 pt-2 mb-2 text-slate-400 text-[10px]">
+                          ------------------------------------------------
+                        </div>
+                        <p className="font-semibold text-slate-800">
+                          {receiptFooter || 'Thank you for shopping with us! Please visit again.'}
+                        </p>
+                        <span className="text-[10px] text-emerald-700 font-bold block mt-1">
+                          FBR Tier-1 Verified POS Invoicing
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* FORM SUBMISSION BUTTONS */}
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={closeCompanyModal}
+                    className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 px-6 py-2.5 text-xs font-bold text-white shadow-md hover:from-emerald-700 hover:to-teal-800 disabled:opacity-50 transition"
+                  >
+                    <Save className="h-4 w-4" />
+                    <span>{saving ? 'Saving Changes...' : 'Save Company Profile'}</span>
+                  </button>
                 </div>
               </form>
             )}
 
             {/* ----------------------------------------------------------------------- */}
-            {/* TAB 2: MULTI-TENANT COMPANIES DIRECTORY                                 */}
+            {/* TAB 2: REGISTERED COMPANIES DIRECTORY                                   */}
             {/* ----------------------------------------------------------------------- */}
-            {activeTab === 'tenants' && (
-              <div className="space-y-4">
-                {/* Top Action Header */}
+            {activeTab === 'companies' && (
+              <div className="space-y-4 max-w-4xl mx-auto">
+                {/* Header Action Bar */}
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
                   <div>
                     <h3 className="text-sm font-bold text-slate-900">
-                      Multi-Tenant Organization Accounts
+                      Registered Companies Directory
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Each company operates with its own independent catalog, branches, users, and tax returns.
+                      Overview of business entities configured in your system
                     </p>
                   </div>
 
@@ -698,7 +747,7 @@ export function CompanyProfileModal() {
                       className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:from-emerald-700 hover:to-teal-800 transition"
                     >
                       <Plus className="h-4 w-4" />
-                      <span>Register New Company / Tenant</span>
+                      <span>Register New Company</span>
                     </button>
                   ) : (
                     <div className="flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600 border border-slate-200">
@@ -715,14 +764,14 @@ export function CompanyProfileModal() {
                     <thead className="sticky top-0 bg-slate-100/95 backdrop-blur-xs text-[11px] font-bold uppercase tracking-wider text-slate-700 border-b border-slate-200">
                       <tr>
                         <th className="px-3 py-2.5 text-center w-12">Sr #</th>
-                        <th className="px-3 py-2.5 text-center w-28">Tenant Code</th>
+                        <th className="px-3 py-2.5 text-center w-28">Company Code</th>
                         <th className="px-3 py-2.5 text-center">Business / Legal Name</th>
-                        <th className="px-3 py-2.5 text-center">Owner / Contact</th>
+                        <th className="px-3 py-2.5 text-center">Owner &amp; Phone</th>
                         <th className="px-3 py-2.5 text-center">NTN / STRN</th>
-                        <th className="px-3 py-2.5 text-center">Operating Currency</th>
+                        <th className="px-3 py-2.5 text-center">Currency</th>
                         <th className="px-3 py-2.5 text-center">Branches</th>
                         <th className="px-3 py-2.5 text-center">Status</th>
-                        <th className="no-print px-3 py-2.5 text-center w-28">Actions</th>
+                        <th className="no-print px-3 py-2.5 text-center w-24">Actions</th>
                       </tr>
                     </thead>
 
@@ -744,7 +793,7 @@ export function CompanyProfileModal() {
                             {currencySymbol} ({defaultTaxRate}% GST)
                           </td>
                           <td className="px-3 py-2.5 text-center font-bold text-slate-900 tabular-nums">
-                            {branches.length} Branches
+                            {branches.length} Outlets
                           </td>
                           <td className="px-3 py-2.5 text-center">
                             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10.5px] font-bold text-emerald-800">
@@ -756,7 +805,7 @@ export function CompanyProfileModal() {
                             <button
                               type="button"
                               onClick={() => setActiveTab('profile')}
-                              className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition"
+                              className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition"
                             >
                               Edit Profile
                             </button>
@@ -784,7 +833,7 @@ export function CompanyProfileModal() {
                               {c.currency_symbol || 'Rs.'} ({c.default_tax_rate || 18}%)
                             </td>
                             <td className="px-3 py-2.5 text-center font-bold text-slate-900 tabular-nums">
-                              {c.branch_count || branches.length} Branches
+                              {c.branch_count || branches.length} Outlets
                             </td>
                             <td className="px-3 py-2.5 text-center">
                               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10.5px] font-bold text-emerald-800">
@@ -796,7 +845,7 @@ export function CompanyProfileModal() {
                               <button
                                 type="button"
                                 onClick={() => setActiveTab('profile')}
-                                className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition"
+                                className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition"
                               >
                                 Edit Profile
                               </button>
@@ -806,73 +855,6 @@ export function CompanyProfileModal() {
                       )}
                     </tbody>
                   </table>
-                </div>
-
-                {/* Super Admin Notice */}
-                <div className="rounded-xl border border-sky-200 bg-sky-50/70 p-3 text-xs text-sky-900 flex items-start gap-2.5">
-                  <ShieldCheck className="h-4 w-4 text-sky-700 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold">Multi-Tenant Licensing Rule:</span> New branches inside any company can only be created by the Super Admin. Company Admins manage their inventory, pricing, users, and day closing within their assigned organization.
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ----------------------------------------------------------------------- */}
-            {/* TAB 3: ENTERPRISE LICENSING & QUOTA                                     */}
-            {/* ----------------------------------------------------------------------- */}
-            {activeTab === 'licensing' && (
-              <div className="space-y-4 max-w-3xl mx-auto">
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs space-y-4">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <div>
-                      <h3 className="text-sm font-bold text-slate-900">
-                        Software License &amp; Deployment Scope
-                      </h3>
-                      <p className="text-xs text-slate-500">
-                        Official software certification and commercial tenant quotas.
-                      </p>
-                    </div>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
-                      <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                      <span>Certified Enterprise Edition</span>
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 text-xs">
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                      <span className="font-bold text-slate-600 block">Product Edition</span>
-                      <span className="text-sm font-black text-slate-900">Softifyx Multi-Tenant ERP POS</span>
-                      <span className="text-[11px] text-slate-400 block mt-0.5">Version 2.4.0 (2026 Release)</span>
-                    </div>
-
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                      <span className="font-bold text-slate-600 block">Licensed Tenant</span>
-                      <span className="text-sm font-black text-slate-900">{businessName}</span>
-                      <span className="text-[11px] text-slate-400 block mt-0.5">NTN: {ntn || '4125890-7'}</span>
-                    </div>
-
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                      <span className="font-bold text-slate-600 block">Branch Provisioning Right</span>
-                      <span className="text-sm font-black text-amber-700">Super Admin Exclusive</span>
-                      <span className="text-[11px] text-slate-500 block mt-0.5">Company admins cannot add branches</span>
-                    </div>
-
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                      <span className="font-bold text-slate-600 block">FBR POS Integration</span>
-                      <span className="text-sm font-black text-emerald-800">Certified Tier-1 Integration</span>
-                      <span className="text-[11px] text-slate-500 block mt-0.5">Online Real-time &amp; Offline Queue</span>
-                    </div>
-                  </div>
-
-                  {/* Software Provider Credit Block */}
-                  <div className="rounded-xl border border-slate-200 bg-slate-900 p-4 text-white text-xs flex items-center justify-between">
-                    <div>
-                      <span className="font-bold text-amber-400 text-sm block">Softifyx Technologies</span>
-                      <span className="text-slate-300">Official Software Provider &amp; System Architect</span>
-                    </div>
-                    <span className="text-[11px] text-slate-400 tabular-nums">Support: 0300-XXXXXXX</span>
-                  </div>
                 </div>
               </div>
             )}
@@ -884,11 +866,11 @@ export function CompanyProfileModal() {
           <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-600">
             <div className="flex items-center gap-3">
               <span className="font-semibold text-slate-700">
-                Operating Role: {isSuperAdmin ? 'Super Admin (Software Owner)' : 'Company Admin'}
+                Operating Role: {isSuperAdmin ? 'Super Admin (Owner)' : 'Company Admin'}
               </span>
               <span className="text-slate-300">|</span>
-              <span className="tabular-nums">
-                Tenant: {businessName || 'Seastone POS'}
+              <span className="tabular-nums font-medium text-slate-700">
+                Company: {businessName || 'M/S SEASTONE PVC PIPE INDUSTRY'}
               </span>
             </div>
 
@@ -909,7 +891,7 @@ export function CompanyProfileModal() {
       </div>
 
       {/* ========================================================================= */}
-      {/* SUPER ADMIN: REGISTER NEW TENANT DRAWER MODAL                             */}
+      {/* SUPER ADMIN: REGISTER NEW COMPANY DRAWER MODAL                            */}
       {/* ========================================================================= */}
       {showAddCompanyModal && (
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4">
@@ -918,7 +900,7 @@ export function CompanyProfileModal() {
               <div className="flex items-center gap-2">
                 <Building2 className="h-5 w-5 text-emerald-600" />
                 <h3 className="text-base font-bold text-slate-900">
-                  Register New Organization Tenant
+                  Register New Business Entity
                 </h3>
               </div>
               <button
@@ -934,7 +916,7 @@ export function CompanyProfileModal() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-slate-700">
-                    Tenant Code (e.g. HARDWARE)
+                    Company Code (e.g. HARDWARE)
                   </label>
                   <input
                     type="text"
