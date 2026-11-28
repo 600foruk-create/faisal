@@ -106,12 +106,16 @@ const ADMIN_SUBHEADER_MENUS: DropdownGroup[] = [
 export function PosHeader() {
   const {
     branches,
+    terminals,
     users,
     settings,
     activeBranchId,
+    activeTerminalId,
+    activeShift,
     activeUser,
     setActiveBranchId,
     setActiveUser,
+    logoutUser,
     triggerRefresh,
     openCustomerModal,
     openInventoryModal,
@@ -141,6 +145,11 @@ export function PosHeader() {
   const barRef = useRef<HTMLDivElement | null>(null);
   const isCashier = activeUser?.role === 'CASHIER';
   const activeBranch = branches.find((b) => b.id === activeBranchId) ?? null;
+  const activeTerminal =
+    terminals.find((t) => t.id === activeTerminalId) ??
+    terminals.find((t) => t.branch_id === activeBranchId) ??
+    terminals[0] ??
+    null;
 
   useEffect(() => {
     const handleOutside = (e: MouseEvent) => {
@@ -684,22 +693,36 @@ export function PosHeader() {
             )}
           </div>
 
+          {/* Active Terminal & Shift pill */}
+          {activeTerminal && (
+            <div className="hidden items-center gap-1.5 rounded-full border border-sky-400/30 bg-sky-500/10 px-2.5 py-1 text-[11px] font-bold text-sky-200 xl:inline-flex">
+              <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
+              <span>Counter {activeTerminal.terminal_code}</span>
+              <span className="text-sky-400/60">•</span>
+              <span className="text-amber-300 capitalize">{activeShift.toLowerCase()}</span>
+            </div>
+          )}
+
           <div className="hidden items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold text-white md:inline-flex">
             <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-400 text-slate-950">
               <UserCheck className="h-3 w-3" />
             </span>
-            <span className="max-w-[165px] truncate">
-              Welcome {activeUser?.full_name ?? 'Administrator'}
+            <span className="max-w-[150px] truncate">
+              {activeUser?.full_name ?? 'Administrator'}
+            </span>
+            <span className="rounded-sm bg-white/20 px-1 py-0.5 text-[9px] uppercase tracking-wider text-emerald-300">
+              {activeUser?.role || 'ADMIN'}
             </span>
           </div>
 
           <button
             type="button"
-            onClick={handleQuickSwitchUser}
-            title="Switch user session"
-            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-rose-600/90 text-white ring-2 ring-rose-300/70 transition hover:bg-rose-500"
+            onClick={logoutUser}
+            title="Sign Out / Lock Terminal"
+            className="flex items-center gap-1.5 cursor-pointer rounded-full bg-rose-600/90 hover:bg-rose-600 px-3 py-1 text-xs font-bold text-white ring-2 ring-rose-300/70 shadow-sm transition"
           >
             <LogOut className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Logout</span>
           </button>
         </div>
       </div>

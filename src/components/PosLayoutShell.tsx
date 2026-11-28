@@ -29,9 +29,12 @@ import { SystemSettingsModal } from './SystemSettingsModal';
 import { ClearTransactionsModal } from './ClearTransactionsModal';
 import { BackupUtilityModal } from './BackupUtilityModal';
 import { CompanyLogoModal } from './CompanyLogoModal';
+import { LoginScreen } from './LoginScreen';
 
 export function PosLayoutShell({ children }: { children: React.ReactNode }) {
   const {
+    activeUser,
+    loading,
     isPosModalOpen,
     isCustomerModalOpen,
     isInventoryModalOpen,
@@ -56,6 +59,21 @@ export function PosLayoutShell({ children }: { children: React.ReactNode }) {
     isBackupUtilityModalOpen,
     isLogoModalOpen,
   } = usePosContext();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#071120] text-white">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-400 border-t-transparent" />
+          <p className="text-xs font-semibold text-slate-300">Loading POS ERP Environment...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!activeUser) {
+    return <LoginScreen />;
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F3F5F8] text-slate-900 antialiased lg:h-screen lg:overflow-hidden">

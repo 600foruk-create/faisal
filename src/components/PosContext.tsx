@@ -124,8 +124,19 @@ interface PosContextValue {
   closeInventoryBalanceModal: () => void;
   selectedProductIdForPos: number | null;
   setSelectedProductIdForPos: (id: number | null) => void;
+  activeTerminalId: number | null;
+  setActiveTerminalId: (id: number | null) => void;
+  activeShift: 'MORNING' | 'EVENING';
+  setActiveShift: (shift: 'MORNING' | 'EVENING') => void;
   setActiveBranchId: (branchId: number | null) => void;
   setActiveUser: (user: UserSummary | null) => void;
+  loginUser: (
+    user: UserSummary,
+    branchId?: number | null,
+    terminalId?: number | null,
+    shift?: 'MORNING' | 'EVENING'
+  ) => void;
+  logoutUser: () => void;
   triggerRefresh: () => void;
   reloadContext: () => Promise<void>;
   refreshHeldCount: () => Promise<void>;
@@ -154,6 +165,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<BusinessSettings>(DEFAULT_SETTINGS);
   const [activeBranchId, setActiveBranchIdState] = useState<number | null>(null);
   const [activeUser, setActiveUserState] = useState<UserSummary | null>(null);
+  const [activeTerminalId, setActiveTerminalIdState] = useState<number | null>(1);
+  const [activeShift, setActiveShiftState] = useState<'MORNING' | 'EVENING'>('MORNING');
   const [heldCount, setHeldCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshNonce, setRefreshNonce] = useState(0);
@@ -292,19 +305,20 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
           if (refreshed) return refreshed;
           return prev;
         }
+        const isLoggedOut =
+          typeof window !== 'undefined'
+            ? window.localStorage.getItem('pos_logged_out') === '1'
+            : false;
+        if (isLoggedOut) {
+          return null;
+        }
         const savedUserId =
           typeof window !== 'undefined' ? window.localStorage.getItem('pos_user_id') : null;
         if (savedUserId && data.users) {
           const found = data.users.find((u) => u.id === Number(savedUserId));
           if (found) return found;
         }
-        const faisal = data.users?.find((u) => {
-          const uname = (u.username || '').toLowerCase();
-          const fname = (u.full_name || '').toLowerCase();
-          return uname === 'faisal' || uname === 'admin' || fname.includes('faisal');
-        });
-        if (faisal) return faisal;
-        return data.users?.[0] ?? null;
+        return null;
       });
 
       setActiveBranchIdState((prev) => {
@@ -315,8 +329,23 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
           const id = Number(savedBranch);
           if (data.branches.some((b) => b.id === id)) return id;
         }
-        return null;
+        return data.branches?.[0]?.id ?? null;
       });
+
+      if (typeof window !== 'undefined') {
+        const savedTerm = window.localStorage.getItem('pos_terminal_id');
+        if (savedTerm) {
+          setActiveTerminalIdState(Number(savedTerm));
+        } else if (data.terminals && data.terminals.length > 0) {
+          setActiveTerminalIdState(data.terminals[0].id);
+        }
+        const savedShift = window.localStorage.getItem('pos_shift');
+        if (savedShift === 'MORNING' || savedShift === 'EVENING') {
+          setActiveShiftState(savedShift);
+        } else {
+          setActiveShiftState(new Date().getHours() < 14 ? 'MORNING' : 'EVENING');
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -334,15 +363,95 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const setActiveTerminalId = useCallback((terminalId: number | null) => {
+    setActiveTerminalIdState(terminalId);
+    if (typeof window !== 'undefined') {
+      if (terminalId !== null) {
+        window.localStorage.setItem('pos_terminal_id', String(terminalId));
+      } else {
+        window.localStorage.removeItem('pos_terminal_id');
+      }
+    }
+  }, []);
+
+  const setActiveShift = useCallback((shift: 'MORNING' | 'EVENING') => {
+    setActiveShiftState(shift);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('pos_shift', shift);
+    }
+  }, []);
+
   const setActiveUser = useCallback((user: UserSummary | null) => {
     setActiveUserState(user);
     if (typeof window !== 'undefined') {
       if (user) {
         window.localStorage.setItem('pos_user_id', String(user.id));
+        window.localStorage.removeItem('pos_logged_out');
       } else {
         window.localStorage.removeItem('pos_user_id');
+        window.localStorage.setItem('pos_logged_out', '1');
       }
     }
+  }, []);
+
+  const loginUser = useCallback(
+    (
+      user: UserSummary,
+      branchId?: number | null,
+      terminalId?: number | null,
+      shift?: 'MORNING' | 'EVENING'
+    ) => {
+      setActiveUserState(user);
+      if (branchId !== undefined && branchId !== null) {
+        setActiveBranchIdState(branchId);
+      }
+      if (terminalId !== undefined && terminalId !== null) {
+        setActiveTerminalIdState(terminalId);
+      }
+      if (shift !== undefined) {
+        setActiveShiftState(shift);
+      }
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('pos_user_id', String(user.id));
+        window.localStorage.removeItem('pos_logged_out');
+        if (branchId) window.localStorage.setItem('pos_branch_id', String(branchId));
+        if (terminalId) window.localStorage.setItem('pos_terminal_id', String(terminalId));
+        if (shift) window.localStorage.setItem('pos_shift', shift);
+      }
+    },
+    []
+  );
+
+  const logoutUser = useCallback(() => {
+    setActiveUserState(null);
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('pos_user_id');
+      window.localStorage.setItem('pos_logged_out', '1');
+    }
+    // Close all open modals so next session starts clean
+    setIsPosModalOpen(false);
+    setIsCustomerModalOpen(false);
+    setIsInventoryModalOpen(false);
+    setIsStockOpeningModalOpen(false);
+    setIsPriceSettingsModalOpen(false);
+    setIsSalesTaxRatesModalOpen(false);
+    setIsSalesReturnModalOpen(false);
+    setIsHoldRecallModalOpen(false);
+    setIsDayClosingModalOpen(false);
+    setIsSalesRegisterModalOpen(false);
+    setIsSaleSummaryModalOpen(false);
+    setIsTopProductsModalOpen(false);
+    setIsGstTaxSummaryModalOpen(false);
+    setIsInventoryBalanceModalOpen(false);
+    setIsCompanyModalOpen(false);
+    setIsBranchesCountersModalOpen(false);
+    setIsUserLoginsModalOpen(false);
+    setIsUserRightsModalOpen(false);
+    setIsPasswordsModalOpen(false);
+    setIsSystemSettingsModalOpen(false);
+    setIsClearTransactionsModalOpen(false);
+    setIsBackupUtilityModalOpen(false);
+    setIsLogoModalOpen(false);
   }, []);
 
   const triggerRefresh = useCallback(() => {
@@ -474,8 +583,14 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         closeLogoModal,
         selectedProductIdForPos,
         setSelectedProductIdForPos,
+        activeTerminalId,
+        setActiveTerminalId,
+        activeShift,
+        setActiveShift,
         setActiveBranchId,
         setActiveUser,
+        loginUser,
+        logoutUser,
         triggerRefresh,
         reloadContext,
         refreshHeldCount,

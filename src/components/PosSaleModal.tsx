@@ -89,6 +89,7 @@ export function PosSaleModal() {
     branches,
     terminals,
     activeBranchId,
+    activeTerminalId,
     activeUser,
     settings,
     setActiveBranchId,
@@ -320,7 +321,10 @@ export function PosSaleModal() {
 
   // Active branch & terminal sequence
   const activeBranch = branches.find((b) => b.id === branchId) ?? branches[0];
-  const activeTerminal = terminals.find((t) => t.branch_id === branchId) ?? terminals[0];
+  const activeTerminal =
+    (activeTerminalId ? terminals.find((t) => t.id === activeTerminalId) : null) ??
+    terminals.find((t) => t.branch_id === branchId) ??
+    terminals[0];
 
   const generatedInvoiceNo = useMemo(() => {
     const prefix = activeTerminal?.invoice_prefix || activeBranch?.code || 'HRP';
